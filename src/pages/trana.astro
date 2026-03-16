@@ -2,70 +2,60 @@
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Träna provpass (55 min) – HPMästaren">
-  <div class="page-content hp-practice-page">
+<Base title="Träna hela provpass – HPMästaren">
+  <div class="page-content">
     <div class="container container--wide">
-      <h1>Träna provpass som på Högskoleprovet</h1>
-      <p class="page-intro">
-        Välj ett helt pass (<strong>Kvantitativ</strong> eller <strong>Verbal</strong>), sätt igång timern
-        på 55 minuter och svara med radioknappar. När tiden är slut (eller när du lämnar in)
-        får du facit och resultat direkt.
-      </p>
+      <h1>Träna hela provpasset (55 min)</h1>
+      <p class="page-intro">Välj <strong>Kvantitativt</strong> eller <strong>Verbalt</strong> pass och kör hela blocket under 55 minuter. Alla frågor visas och besvaras med radioknappar, som på HP.</p>
 
       <div class="tip-box">
-        <strong>Tips:</strong>
-        För bästa träning — skriv under tidspress utan hjälpmedel och låt timern gå hela vägen.
+        <strong>Obs:</strong> Det här är ett fullpass-upplägg med alla frågor i respektive block (inte ett urval).
       </div>
 
-      <section id="setup-screen" class="card hp-setup">
-        <h2>Välj del att träna</h2>
-        <div class="mode-grid">
-          <button id="start-quant" class="mode-card" type="button">
-            <span class="mode-icon">📊</span>
-            <span class="mode-title">Kvantitativa</span>
-            <span class="mode-meta">XYZ, KVA, NOG, DTK • 55 min</span>
+      <section id="setup-screen" class="card">
+        <h2>Välj provpass</h2>
+        <div class="card-grid pass-grid">
+          <button class="card pass-card" data-pass="quant" type="button">
+            <span class="card-icon">📊</span>
+            <h3>Kvantitativt pass</h3>
+            <p>XYZ, KVA, NOG, DTK • 55 min</p>
           </button>
-
-          <button id="start-verbal" class="mode-card" type="button">
-            <span class="mode-icon">📘</span>
-            <span class="mode-title">Verbala</span>
-            <span class="mode-meta">ORD, LÄS, MEK, ELF • 55 min</span>
+          <button class="card pass-card" data-pass="verbal" type="button">
+            <span class="card-icon">📘</span>
+            <h3>Verbalt pass</h3>
+            <p>ORD, LÄS, MEK, ELF • 55 min</p>
           </button>
         </div>
       </section>
 
-      <section id="exam-screen" class="card hp-exam" hidden>
-        <header class="exam-header">
+      <section id="exam-screen" class="card" hidden>
+        <div class="exam-top">
           <div>
-            <p class="exam-label" id="exam-label"></p>
-            <h2>Provpass</h2>
+            <button class="btn btn-outline btn-sm" id="back-btn" type="button">← Tillbaka</button>
+            <h2 id="exam-title"></h2>
           </div>
-          <div class="timer-wrap" aria-live="polite">
-            <span class="timer-label">Tid kvar</span>
-            <span class="timer" id="timer">55:00</span>
+          <div class="timer-box">
+            <span>Tid kvar</span>
+            <strong id="timer">55:00</strong>
           </div>
-        </header>
+        </div>
 
         <form id="exam-form">
           <div id="question-list" class="question-list"></div>
-
-          <div class="exam-actions">
-            <button type="submit" class="btn btn-primary">Lämna in och rätta</button>
-            <button id="back-to-select" type="button" class="btn btn-outline">Avbryt</button>
+          <div class="quiz-actions">
+            <button class="btn btn-primary" type="submit">Lämna in och rätta</button>
           </div>
         </form>
       </section>
 
-      <section id="result-screen" class="card hp-results" hidden>
+      <section id="results-screen" class="card" hidden>
         <h2>Resultat</h2>
-        <p id="score-line" class="score-line"></p>
-        <p id="time-line"></p>
-
-        <div id="review" class="review"></div>
-
+        <div class="results-score" id="results-score"></div>
+        <p id="results-meta"></p>
+        <div id="results-breakdown"></div>
         <div class="results-actions">
-          <button id="retry-btn" type="button" class="btn btn-primary">Gör om samma pass</button>
-          <button id="new-pass-btn" type="button" class="btn btn-outline">Välj annan del</button>
+          <button class="btn btn-primary" id="retry-btn" type="button">Kör igen</button>
+          <button class="btn btn-outline" id="other-btn" type="button">Välj annat pass</button>
         </div>
       </section>
     </div>
@@ -73,420 +63,661 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <style>
-  .hp-practice-page .container {
-    max-width: 980px;
-  }
+  .pass-grid { margin-top: 1rem; }
+  .pass-card { cursor:pointer; text-align:left; border:none; }
 
-  .hp-setup,
-  .hp-exam,
-  .hp-results {
-    margin-top: 1rem;
-    border: 1px solid var(--color-border);
-  }
+  .exam-top { display:flex; justify-content:space-between; align-items:flex-start; gap:1rem; margin-bottom:1rem; }
+  .btn-sm { padding:0.4rem 1rem; font-size:0.9rem; margin-bottom:0.8rem; }
+  .timer-box { text-align:right; color:var(--color-muted); }
+  .timer-box strong { display:block; font-size:2rem; color:var(--color-primary); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
+  .timer-box strong.low { color:#dc2626; }
 
-  .mode-grid {
-    display: grid;
-    gap: 1rem;
-    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    margin-top: 1rem;
-  }
+  .question-list { display:flex; flex-direction:column; gap:1rem; }
+  .question-card { border:1px solid var(--color-border); border-radius:var(--radius); padding:1rem; }
+  .question-meta { font-size:0.78rem; color:var(--color-muted); font-weight:700; letter-spacing:0.03em; margin-bottom:0.4rem; }
+  .question-title { margin:0; font-size:1rem; line-height:1.5; }
+  .reading-text { background:#f8fafc; border:1px solid var(--color-border); border-radius:var(--radius); padding:1rem; margin:0.8rem 0; line-height:1.65; }
 
-  .mode-card {
-    border: 2px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: 1rem;
-    text-align: left;
-    background: #fff;
-    cursor: pointer;
-    font-family: inherit;
-    transition: all 0.15s ease;
-    display: flex;
-    flex-direction: column;
-    gap: 0.35rem;
-  }
+  .radio-stack { display:flex; flex-direction:column; gap:0.35rem; margin-top:0.8rem; }
+  .radio-option { display:flex; align-items:flex-start; gap:0.5rem; border:1px solid var(--color-border); border-radius:8px; padding:0.6rem 0.7rem; }
+  .radio-option input { margin-top:0.2rem; }
 
-  .mode-card:hover {
-    border-color: var(--color-primary);
-    transform: translateY(-1px);
-  }
-
-  .mode-icon {
-    font-size: 1.35rem;
-  }
-
-  .mode-title {
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-
-  .mode-meta {
-    color: var(--color-muted);
-    font-size: 0.92rem;
-  }
-
-  .exam-header {
-    display: flex;
-    justify-content: space-between;
-    gap: 1rem;
-    border-bottom: 1px solid var(--color-border);
-    padding-bottom: 1rem;
-    margin-bottom: 1rem;
-    align-items: center;
-  }
-
-  .exam-label {
-    margin: 0;
-    color: var(--color-muted);
-    font-size: 0.9rem;
-    text-transform: uppercase;
-    letter-spacing: 0.04em;
-  }
-
-  .timer-wrap {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-  }
-
-  .timer-label {
-    font-size: 0.8rem;
-    color: var(--color-muted);
-  }
-
-  .timer {
-    font-size: 2rem;
-    line-height: 1;
-    font-weight: 800;
-    color: var(--color-primary);
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  }
-
-  .timer.low {
-    color: #dc2626;
-  }
-
-  .question-list {
-    display: flex;
-    flex-direction: column;
-    gap: 1.1rem;
-  }
-
-  .question-card {
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    padding: 1rem;
-  }
-
-  .question-card h3 {
-    margin-top: 0;
-    font-size: 1rem;
-  }
-
-  .subtest-tag {
-    display: inline-block;
-    font-size: 0.74rem;
-    font-weight: 700;
-    border: 1px solid var(--color-border);
-    border-radius: 999px;
-    padding: 0.15rem 0.55rem;
-    margin-bottom: 0.5rem;
-    color: #334155;
-    background: #f8fafc;
-  }
-
-  .question-reading {
-    margin: 0.7rem 0;
-    padding: 0.7rem;
-    border-radius: 0.45rem;
-    border: 1px solid #dbe5ef;
-    background: #f8fbff;
-    font-size: 0.95rem;
-  }
-
-  .options {
-    margin-top: 0.7rem;
-    display: grid;
-    gap: 0.45rem;
-  }
-
-  .option-label {
-    display: flex;
-    align-items: flex-start;
-    gap: 0.55rem;
-    border: 1px solid var(--color-border);
-    border-radius: 0.45rem;
-    padding: 0.55rem 0.7rem;
-  }
-
-  .option-label input {
-    margin-top: 0.2rem;
-  }
-
-  .exam-actions,
-  .results-actions {
-    display: flex;
-    gap: 0.75rem;
-    margin-top: 1.2rem;
-    flex-wrap: wrap;
-  }
-
-  .score-line {
-    font-size: 1.25rem;
-    font-weight: 700;
-  }
-
-  .review {
-    margin-top: 1rem;
-    display: grid;
-    gap: 0.7rem;
-  }
-
-  .review-item {
-    border: 1px solid var(--color-border);
-    border-radius: 0.5rem;
-    padding: 0.7rem;
-  }
-
-  .review-item.correct {
-    border-color: #16a34a;
-    background: #f0fdf4;
-  }
-
-  .review-item.incorrect {
-    border-color: #ef4444;
-    background: #fef2f2;
-  }
+  .quiz-actions { margin-top:1rem; }
+  .results-score { font-size:2rem; font-weight:800; color:var(--color-primary); margin-bottom:0.5rem; }
+  #results-breakdown { margin-top:1rem; display:grid; gap:0.5rem; }
+  .result-item { border-bottom:1px solid var(--color-border); padding-bottom:0.4rem; }
+  .result-item.correct { color:var(--color-success); }
+  .result-item.incorrect { color:#ef4444; }
 </style>
 
 <script>
-  type Mode = 'quant' | 'verbal';
-
   interface Question {
-    subtest: string;
-    text: string;
+    question: string;
     reading?: string;
     options: string[];
     correct: number;
+    explanation: string;
   }
 
-  const DATA: Record<Mode, { label: string; questions: Question[] }> = {
-    quant: {
-      label: 'Kvantitativa delar (inspirerat av Vår 2021)',
+  interface QuestionBank {
+    [key: string]: { title: string; questions: Question[] };
+  }
+
+  const questionBank: QuestionBank = {
+    ord: {
+      title: "ORD — Ordförståelse",
       questions: [
-        { subtest: 'XYZ', text: 'Vad är 18% av 250?', options: ['35', '40', '45', '50'], correct: 2 },
-        { subtest: 'KVA', text: 'A: 3/4 av 120. B: 70. Vilket är störst?', options: ['A är större', 'B är större', 'A och B är lika stora', 'Kan inte avgöras'], correct: 0 },
-        { subtest: 'NOG', text: 'x är ett heltal. Räcker följande för att bestämma x? (1) x är jämnt. (2) x > 10', options: ['(1) ensamt räcker', '(2) ensamt räcker', 'Båda tillsammans räcker', 'Inte ens tillsammans'], correct: 3 },
-        { subtest: 'DTK', text: 'I ett diagram visas att försäljningen var 120 enheter i januari och 150 i februari. Hur många procent ökade försäljningen?', options: ['20%', '25%', '30%', '35%'], correct: 1 },
-        { subtest: 'XYZ', text: 'Lös ekvationen: 2x + 7 = 19', options: ['4', '5', '6', '7'], correct: 2 },
-        { subtest: 'KVA', text: 'A: √81. B: 3². Vilket gäller?', options: ['A är större', 'B är större', 'A och B är lika stora', 'Kan inte avgöras'], correct: 2 },
-        { subtest: 'NOG', text: 'Är n > 0? (1) n² = 9 (2) n är positivt', options: ['(1) ensamt räcker', '(2) ensamt räcker', 'Båda tillsammans räcker', 'Inte ens tillsammans'], correct: 1 },
-        { subtest: 'DTK', text: 'Ett cirkeldiagram visar 30% för kategori A av totalt 240 svar. Hur många svar tillhör kategori A?', options: ['60', '72', '84', '96'], correct: 1 }
+        {
+          question: "Vad betyder <strong>arkaisk</strong>?",
+          options: ["Hemlig", "Ålderdomlig", "Konstnärlig", "Värdefull"],
+          correct: 1,
+          explanation: "Arkaisk betyder ålderdomlig. Minnesknep: \"Arka\" → Noaks ark, som är urgammal."
+        },
+        {
+          question: "Vad betyder <strong>pragmatisk</strong>?",
+          options: ["Strikt", "Oärlig", "Praktisk, nyttobetonad", "Idealistisk"],
+          correct: 2,
+          explanation: "Pragmatisk betyder praktisk och nyttobetonad. Minnesknep: \"Prag\" → en praktisk person i Prag."
+        },
+        {
+          question: "Vad betyder <strong>speleologi</strong>?",
+          options: ["Studiet av språk", "Läran om grottor", "Rymdforskning", "Studiet av stavning"],
+          correct: 1,
+          explanation: "Speleologi är läran om grottor. Minnesknep: tänk dig någon som spelar gitarr i en grotta."
+        },
+        {
+          question: "Vad betyder <strong>embargo</strong>?",
+          options: ["Resa till sjöss", "Handelsförbud", "Diplomatiskt avtal", "Vapenviloavtal"],
+          correct: 1,
+          explanation: "Embargo betyder handelsförbud. Minnesknep: en barge (pråm) som inte får lämna hamnen."
+        },
+        {
+          question: "Vad betyder <strong>hereditet</strong>?",
+          options: ["Helighet", "Historisk period", "Ärftlighet", "Mod"],
+          correct: 2,
+          explanation: "Hereditet betyder ärftlighet. Minnesknep: \"heir\" (arvinge på engelska) — vad en arvinge ärver."
+        },
+        {
+          question: "Vad betyder <strong>majuskel</strong>?",
+          options: ["Muskelgrupp", "Stor bokstav", "Liten staty", "Majestätisk byggnad"],
+          correct: 1,
+          explanation: "Majuskel betyder stor bokstav. Minnesknep: \"majus\" → majestätisk → en MAJESTÄTISK stor bokstav."
+        },
+        {
+          question: "Vad betyder <strong>bodega</strong>?",
+          options: ["Kroppsdel", "Dansstil", "Vinkällare, enklare vinrestaurang", "Typ av båt"],
+          correct: 2,
+          explanation: "Bodega betyder vinkällare eller enklare vinrestaurang. Tänk på en mysig spansk källare med vinfat."
+        },
+        {
+          question: "Vad betyder <strong>koral</strong>?",
+          options: ["Havsdjur", "Psalmmelodi", "Halsband", "Korallrev"],
+          correct: 1,
+          explanation: "Koral betyder psalmmelodi. Minnesknep: en kyrkokör som sjunger en psalm — en koral."
+        },
+        {
+          question: "Vad betyder <strong>parlör</strong>?",
+          options: ["Parlör", "Ordbok med fraser", "Person som pratar mycket", "Smycke"],
+          correct: 1,
+          explanation: "Parlör betyder ordbok med fraser, en liten bok man \"parlar\" (pratar) med hjälp av."
+        },
+        {
+          question: "Vad betyder <strong>samarit</strong>?",
+          options: ["Ensamvarg", "Hjälpare", "Vandringsman", "Präst"],
+          correct: 1,
+          explanation: "Samarit betyder hjälpare. Tänk på den barmhärtige samariten — en person som hjälper andra."
+        }
       ]
     },
-    verbal: {
-      label: 'Verbala delar (inspirerat av Vår 2021)',
+
+    las: {
+      title: "LÄS — Läsförståelse",
       questions: [
-        { subtest: 'ORD', text: 'Vad betyder ordet "koncis"?', options: ['Utförlig', 'Kortfattad', 'Svårbegriplig', 'Poetisk'], correct: 1 },
         {
-          subtest: 'LÄS',
-          reading: 'Många elever tror att längre studietid automatiskt ger bättre resultat. Forskning pekar dock på att kvaliteten i repetitionen är viktigare än den totala tiden.',
-          text: 'Vilken slutsats stöds bäst av texten?',
-          options: ['Studietid saknar betydelse', 'Kvaliteten i repetition är central', 'Alla elever bör studera lika länge', 'Korta pass är alltid bäst'],
-          correct: 1
+          reading: "Forskning visar att den som sover sju till åtta timmar per natt presterar bättre på kognitiva tester än den som sover mindre. Sambandet är särskilt tydligt vid uppgifter som kräver arbetsminne och koncentration. Forskarna betonar dock att sambandet inte nödvändigtvis är kausalt — det kan finnas andra faktorer som påverkar både sömn och prestation, exempelvis stressnivåer och fysisk hälsa.",
+          question: "Vilket påstående stöds av texten?",
+          options: [
+            "Mer sömn leder alltid till bättre resultat",
+            "Det finns ett samband mellan sömn och prestation, men orsaken är oklar",
+            "Stressnivåer har ingen koppling till sömn",
+            "Alla som sover 8 timmar presterar bra på prov"
+          ],
+          correct: 1,
+          explanation: "Texten säger att sambandet \"inte nödvändigtvis är kausalt\" och nämner andra möjliga faktorer. Tips: var försiktig med svar som säger \"alltid\" eller \"alla\"."
         },
-        { subtest: 'MEK', text: 'Hon var så ______ i sin argumentation att motståndarna snabbt gav med sig.', options: ['trevande', 'stringent', 'osäker', 'vag'], correct: 1 },
         {
-          subtest: 'ELF',
-          reading: 'Remote work can improve flexibility, but some employees report that boundaries between work and leisure become blurred.',
-          text: 'What challenge of remote work is mentioned?',
-          options: ['Higher commute costs', 'Blurred boundaries between work and free time', 'Lack of internet access', 'Lower salaries'],
-          correct: 1
+          reading: "Under 1800-talet genomgick Sverige en dramatisk omvandling från jordbrukssamhälle till industrisamhälle. Urbaniseringen ledde till att miljontals människor flyttade från landsbygden till städerna. Många möttes dock av usla boendeförhållanden, långa arbetsdagar och låga löner. Det var i denna miljö som den svenska arbetarrörelsen började organisera sig, med krav på bättre villkor och politiska rättigheter.",
+          question: "Vad var den främsta anledningen till att arbetarrörelsen uppstod enligt texten?",
+          options: [
+            "Människor ville flytta tillbaka till landsbygden",
+            "Industrialiseringen medförde dåliga arbets- och levnadsvillkor",
+            "Politikerna ville modernisera samhället",
+            "Jordbruket blev olönsamt"
+          ],
+          correct: 1,
+          explanation: "Texten beskriver usla förhållanden i städerna som bakgrund till att arbetarrörelsen organiserade sig. Tips: svaret finns alltid i texten — läs noggrant."
         },
-        { subtest: 'ORD', text: 'Vad betyder "implicit"?', options: ['Tydligt uttryckt', 'Underförstådd', 'Motsägelsefull', 'Tillfällig'], correct: 1 },
         {
-          subtest: 'LÄS',
-          reading: 'Artikeln menar att lokal kollektivtrafik är avgörande för att minska utsläpp i städer, men att investeringar måste kombineras med rimliga biljettpriser.',
-          text: 'Vad krävs enligt texten för att nå effekt?',
-          options: ['Endast fler bussar', 'Bara nya spår', 'Investeringar + rimliga priser', 'Gratis bilparkering'],
-          correct: 2
+          reading: "Ekosystem är komplexa nätverk där alla organismer är beroende av varandra. När en art försvinner påverkas hela systemet. Till exempel kan förlusten av en toppredator leda till att bytesdjuren ökar kraftigt, vilket i sin tur kan orsaka överbetning och degradering av växtligheten. Denna kedjereaktion kallas trofisk kaskad.",
+          question: "Vad menas med \"trofisk kaskad\" enligt texten?",
+          options: [
+            "Att nya arter invandrar i ett ekosystem",
+            "Att en förändring i en art orsakar kedjereaktioner genom näringskedjan",
+            "Att växtligheten i ett område förbättras",
+            "Att toppredatorer alltid är viktigast"
+          ],
+          correct: 1,
+          explanation: "Texten förklarar trofisk kaskad som en kedjereaktion genom näringskedjan — predator försvinner → bytesdjur ökar → växtlighet skadas."
         },
-        { subtest: 'MEK', text: 'Rapporten var så ______ att den blev svår att följa.', options: ['pedagogisk', 'överskådlig', 'fragmentarisk', 'stringent'], correct: 2 },
         {
-          subtest: 'ELF',
-          reading: 'The article argues that critical thinking is not a fixed talent but a skill developed through practice and feedback.',
-          text: 'What is the article’s main point?',
-          options: ['Critical thinking is innate', 'Feedback is irrelevant', 'Critical thinking can be trained', 'Only experts can think critically'],
-          correct: 2
+          reading: "Kaffekonsumtionen i Sverige har ökat stadigt sedan 1950-talet och svenskar dricker idag i genomsnitt tre till fyra koppar om dagen. Forskare har funnit att måttligt kaffeintag kan ha positiva hälsoeffekter, bland annat minskad risk för typ 2-diabetes och vissa former av leversjukdom. Samtidigt varnar andra experter för att högt kaffeintag kan leda till sömnstörningar och ökad ångest hos känsliga individer.",
+          question: "Vilken slutsats kan man dra av texten?",
+          options: [
+            "Kaffe är entydigt bra för hälsan",
+            "Svenskar borde dricka mindre kaffe",
+            "Kaffets hälsoeffekter beror på mängd och individ",
+            "Forskningen visar att kaffe inte påverkar sömnen"
+          ],
+          correct: 2,
+          explanation: "Texten presenterar både positiva och negativa effekter och nämner \"måttligt intag\" och \"känsliga individer\" — det handlar om mängd och person."
+        },
+        {
+          reading: "Språket förändras ständigt, och nya ord tillkommer varje år i svenska ordböcker. Många av dessa är lånord från engelskan, som \"mejl\" och \"dejt\". Språkvetare menar att detta är en naturlig process som pågått i alla tider — under medeltiden lånade svenskan tusentals ord från tyskan, och under 1700-talet var det franskan som var den stora språkliga förebilden.",
+          question: "Vad är textens huvudbudskap?",
+          options: [
+            "Engelskan hotar svenska språket",
+            "Att låna ord från andra språk är en naturlig och historisk process",
+            "Medeltidssvenskan var bättre än dagens svenska",
+            "Vi borde sluta använda engelska lånord"
+          ],
+          correct: 1,
+          explanation: "Texten beskriver lånord som \"en naturlig process som pågått i alla tider\" och ger historiska exempel. Tips: leta efter textens huvudlinje — inte dina egna åsikter."
+        }
+      ]
+    },
+
+    mek: {
+      title: "MEK — Meningskomplettering",
+      questions: [
+        {
+          question: "Trots att projektet hade fått omfattande kritik från flera håll, valde styrelsen att ______ med planerna.",
+          options: ["avbryta", "fortskrida", "avvisa", "ifrågasätta"],
+          correct: 1,
+          explanation: "\"Trots\" signalerar kontrast — kritik, men ändå gå vidare. Signalord som \"trots\", \"dock\" och \"men\" visar att svaret ska gå emot det som sagts."
+        },
+        {
+          question: "Hennes argument var så ______ att även de mest skeptiska åhörarna blev övertygade.",
+          options: ["vaga", "övertygande", "kontroversiella", "förutsägbara"],
+          correct: 1,
+          explanation: "\"Även de mest skeptiska blev övertygade\" — argumenten måste ha varit mycket övertygande."
+        },
+        {
+          question: "Den ekonomiska krisen ledde till ______ konsekvenser för hela samhället, inte minst för de mest ______ grupperna.",
+          options: [
+            "positiva ... privilegierade",
+            "allvarliga ... utsatta",
+            "oväntade ... starka",
+            "milda ... aktiva"
+          ],
+          correct: 1,
+          explanation: "\"Kris\" + \"inte minst\" pekar på allvarliga konsekvenser som drabbar utsatta grupper hårdast. Tips: vid två luckor — testa bägge orden tillsammans."
+        },
+        {
+          question: "Boken fick ett ______ mottagande av kritikerna; vissa hyllade den som ett mästerverk medan andra kallade den pretentiös.",
+          options: ["enhälligt", "blandat", "entusiastiskt", "likgiltigt"],
+          correct: 1,
+          explanation: "\"Vissa hyllade ... medan andra kallade den pretentiös\" beskriver ett blandat mottagande."
+        },
+        {
+          question: "Det råder stor ______ bland forskarna om vad som orsakar fenomenet, och det finns ännu inga ______ svar.",
+          options: [
+            "enighet ... tydliga",
+            "oenighet ... definitiva",
+            "frustration ... enkla",
+            "optimism ... fullständiga"
+          ],
+          correct: 1,
+          explanation: "\"Stor oenighet\" passar med \"inga definitiva svar\" — båda signalerar osäkerhet och brist på konsensus."
+        }
+      ]
+    },
+
+    elf: {
+      title: "ELF — Engelsk läsförståelse",
+      questions: [
+        {
+          reading: "The concept of \"digital detox\" has gained popularity in recent years, with many people choosing to temporarily disconnect from their electronic devices. Proponents argue that constant connectivity leads to increased stress and diminished attention spans. However, critics point out that for many workers, especially in the gig economy, being offline is simply not an option — their livelihoods depend on being constantly reachable.",
+          question: "What is the main argument of the critics mentioned in the text?",
+          options: [
+            "Digital detox is harmful to mental health",
+            "Some people cannot afford to disconnect because their income depends on it",
+            "Electronic devices improve productivity",
+            "The gig economy should be abolished"
+          ],
+          correct: 1,
+          explanation: "Critics say that for gig economy workers, \"being offline is simply not an option\" because \"their livelihoods depend on being constantly reachable\"."
+        },
+        {
+          reading: "Coral reefs, often called the rainforests of the sea, support approximately 25 percent of all marine species despite covering less than one percent of the ocean floor. Rising ocean temperatures caused by climate change have led to widespread coral bleaching events, where corals expel the algae living in their tissues and turn white. Without these algae, the corals lose their primary source of nutrition and are more susceptible to disease.",
+          question: "According to the text, why is coral bleaching dangerous?",
+          options: [
+            "It causes the ocean temperature to rise further",
+            "Corals lose their nutrition source and become vulnerable to disease",
+            "It reduces the ocean floor area",
+            "The expelled algae become toxic"
+          ],
+          correct: 1,
+          explanation: "The text states that without algae, corals \"lose their primary source of nutrition and are more susceptible to disease\"."
+        },
+        {
+          reading: "In an experiment conducted at a British university, participants were asked to solve puzzles in two conditions: with their smartphones placed face down on the desk, and with their smartphones in another room. Those whose phones were in another room performed significantly better, even though no one in either group actually used their phones during the test.",
+          question: "What does the experiment suggest?",
+          options: [
+            "Smartphones should be banned in universities",
+            "The mere presence of a smartphone can reduce cognitive performance",
+            "People perform better when they use their phones before a test",
+            "British students are more affected by phones than others"
+          ],
+          correct: 1,
+          explanation: "Even without using the phones, having them nearby reduced performance — suggesting the mere presence is a distraction."
+        },
+        {
+          reading: "The word 'ubiquitous' — meaning present everywhere — aptly describes the role of artificial intelligence in modern society. From recommendation algorithms on streaming services to voice assistants in our homes, AI has become so deeply embedded in daily life that many people interact with it dozens of times a day without even realising it.",
+          question: "What point does the author make about AI?",
+          options: [
+            "Most people are aware of every AI interaction they have",
+            "AI is only used in entertainment",
+            "AI is so widespread that people often use it without noticing",
+            "Voice assistants are the most important form of AI"
+          ],
+          correct: 2,
+          explanation: "The text says people \"interact with it dozens of times a day without even realising it\" — AI is ubiquitous and often invisible."
+        },
+        {
+          reading: "Bilingualism was once thought to confuse children and delay their language development. Modern research has thoroughly debunked this myth. Studies now show that bilingual children develop cognitive advantages, including better executive function and an enhanced ability to switch between tasks. These benefits appear to persist well into adulthood.",
+          question: "What does modern research say about bilingualism in children?",
+          options: [
+            "It delays language development as previously thought",
+            "It provides cognitive benefits that can last into adulthood",
+            "It only benefits children, not adults",
+            "It improves language skills but harms other cognitive abilities"
+          ],
+          correct: 1,
+          explanation: "The text says bilingual children develop \"cognitive advantages\" and \"these benefits appear to persist well into adulthood\"."
+        }
+      ]
+    },
+
+    xyz: {
+      title: "XYZ — Matematisk problemlösning",
+      questions: [
+        {
+          question: "En vara kostar 800 kr. Priset höjs först med 25% och sänks sedan med 20%. Vad kostar varan nu?",
+          options: ["800 kr", "840 kr", "820 kr", "810 kr"],
+          correct: 0,
+          explanation: "800 × 1,25 = 1000. Sedan 1000 × 0,80 = 800 kr. Tips: Att höja 25% och sedan sänka 20% tar dig tillbaka till samma pris — förändringsfaktor 1,25 × 0,80 = 1,00."
+        },
+        {
+          question: "Om x + y = 10 och x − y = 4, vad är x?",
+          options: ["5", "6", "7", "8"],
+          correct: 2,
+          explanation: "Addera ekvationerna: 2x = 14, alltså x = 7. Tips: addera eller subtrahera ekvationer för att eliminera en variabel."
+        },
+        {
+          question: "En rektangels längd är 3 gånger dess bredd. Om omkretsen är 48 cm, vad är arean?",
+          options: ["96 cm²", "108 cm²", "144 cm²", "72 cm²"],
+          correct: 1,
+          explanation: "Bredd = b, längd = 3b. Omkrets: 2(b + 3b) = 48 → 8b = 48 → b = 6. Längd = 18. Area = 6 × 18 = 108 cm²."
+        },
+        {
+          question: "Hur stor är sannolikheten att slå minst en sexa med två tärningar?",
+          options: ["1/6", "11/36", "1/3", "1/36"],
+          correct: 1,
+          explanation: "P(ingen sexa) = 5/6 × 5/6 = 25/36. P(minst en sexa) = 1 − 25/36 = 11/36. Tips: \"minst en\" → räkna komplementet."
+        },
+        {
+          question: "Vad är 15% av 240?",
+          options: ["36", "34", "38", "32"],
+          correct: 0,
+          explanation: "240 × 0,15 = 36. Snabbmetod: 10% = 24, 5% = 12, totalt 36."
+        },
+        {
+          question: "En triangel har sidorna 3 cm, 4 cm och 5 cm. Vad är triangelns area?",
+          options: ["6 cm²", "10 cm²", "12 cm²", "7,5 cm²"],
+          correct: 0,
+          explanation: "3-4-5 är en rätvinklig triangel (Pythagoras: 3² + 4² = 5²). Area = (3 × 4) / 2 = 6 cm²."
+        },
+        {
+          question: "En biljett kostar 120 kr för vuxna och 80 kr för barn. En grupp på 10 personer betalar totalt 1040 kr. Hur många barn finns i gruppen?",
+          options: ["3", "4", "5", "6"],
+          correct: 1,
+          explanation: "Vuxna: v, Barn: b = 10 − v. 120v + 80(10 − v) = 1040 → 120v + 800 − 80v = 1040 → 40v = 240 → v = 6. Barn = 4."
+        },
+        {
+          question: "Om f(x) = 2x² − 3x + 1, vad är f(3)?",
+          options: ["10", "12", "8", "14"],
+          correct: 0,
+          explanation: "f(3) = 2(9) − 3(3) + 1 = 18 − 9 + 1 = 10."
+        }
+      ]
+    },
+
+    kva: {
+      title: "KVA — Kvantitativa jämförelser",
+      questions: [
+        {
+          question: "<strong>Kvantitet I:</strong> 3⁴<br><strong>Kvantitet II:</strong> 4³<br><br>Jämför de två kvantiteterna.",
+          options: [
+            "I är störst",
+            "II är störst",
+            "De är lika stora",
+            "Det går inte att avgöra"
+          ],
+          correct: 0,
+          explanation: "3⁴ = 81. 4³ = 64. Alltså I > II. Tips: räkna ut när talen är små."
+        },
+        {
+          question: "<em>x > 0</em><br><br><strong>Kvantitet I:</strong> x + 5<br><strong>Kvantitet II:</strong> 5x<br><br>Jämför de två kvantiteterna.",
+          options: [
+            "I är störst",
+            "II är störst",
+            "De är lika stora",
+            "Det går inte att avgöra"
+          ],
+          correct: 3,
+          explanation: "Om x = 1: I = 6, II = 5 → I störst. Om x = 10: I = 15, II = 50 → II störst. Svaret varierar, alltså D. Tips: testa flera värden!"
+        },
+        {
+          question: "En cirkel har radien 5 cm.<br><br><strong>Kvantitet I:</strong> Cirkelns omkrets<br><strong>Kvantitet II:</strong> 30 cm<br><br>Jämför de två kvantiteterna.",
+          options: [
+            "I är störst",
+            "II är störst",
+            "De är lika stora",
+            "Det går inte att avgöra"
+          ],
+          correct: 0,
+          explanation: "Omkrets = 2πr = 2 × π × 5 = 10π ≈ 31,4 cm. 31,4 > 30, alltså I störst."
+        },
+        {
+          question: "<strong>Kvantitet I:</strong> 49% av 200<br><strong>Kvantitet II:</strong> 200% av 49<br><br>Jämför de två kvantiteterna.",
+          options: [
+            "I är störst",
+            "II är störst",
+            "De är lika stora",
+            "Det går inte att avgöra"
+          ],
+          correct: 2,
+          explanation: "I = 0,49 × 200 = 98. II = 2,00 × 49 = 98. De är lika! Tips: a% av b = b% av a — alltid."
+        },
+        {
+          question: "<em>x < 0</em><br><br><strong>Kvantitet I:</strong> x²<br><strong>Kvantitet II:</strong> x³<br><br>Jämför de två kvantiteterna.",
+          options: [
+            "I är störst",
+            "II är störst",
+            "De är lika stora",
+            "Det går inte att avgöra"
+          ],
+          correct: 0,
+          explanation: "Om x < 0: x² är alltid positivt men x³ är alltid negativt. Positivt > negativt, alltså I störst. Tips: tänk på negativa tal!"
+        }
+      ]
+    },
+
+    nog: {
+      title: "NOG — Kvantitativa resonemang",
+      questions: [
+        {
+          question: "Vad är arean av en rektangel?<br><br>(1) Rektangelns omkrets är 20 cm.<br>(2) Rektangelns längd är 7 cm.",
+          options: [
+            "Påstående (1) räcker ensamt",
+            "Påstående (2) räcker ensamt",
+            "Båda behövs tillsammans",
+            "Vardera räcker ensamt",
+            "Inte ens båda tillsammans räcker"
+          ],
+          correct: 2,
+          explanation: "Från (1) ensamt: 2(l + b) = 20, men oändligt många möjliga l och b. Räcker ej. Från (2) ensamt: l = 7, men b okänt. Räcker ej. Tillsammans: 2(7 + b) = 20 → b = 3. Area = 7 × 3 = 21. Båda behövs."
+        },
+        {
+          question: "Är x > y?<br><br>(1) x = 2y<br>(2) y > 0",
+          options: [
+            "Påstående (1) räcker ensamt",
+            "Påstående (2) räcker ensamt",
+            "Båda behövs tillsammans",
+            "Vardera räcker ensamt",
+            "Inte ens båda tillsammans räcker"
+          ],
+          correct: 2,
+          explanation: "Från (1): x = 2y. Om y = 5 → x = 10 > y. Men om y = -5 → x = -10 < y. Räcker ej. Från (2): y > 0, men vi vet inget om x. Räcker ej. Tillsammans: y > 0 och x = 2y → x = 2y > y (eftersom y > 0). Ja, x > y. Båda behövs."
+        },
+        {
+          question: "Hur långt är det mellan stad A och stad B?<br><br>(1) En bil kör sträckan på 2 timmar i 90 km/h.<br>(2) En annan bil kör sträckan på 3 timmar.",
+          options: [
+            "Påstående (1) räcker ensamt",
+            "Påstående (2) räcker ensamt",
+            "Båda behövs tillsammans",
+            "Vardera räcker ensamt",
+            "Inte ens båda tillsammans räcker"
+          ],
+          correct: 0,
+          explanation: "Från (1): sträcka = 90 × 2 = 180 km. Räcker! Från (2): vi vet inte hastigheten. Räcker ej. Svaret är A — (1) räcker ensamt."
+        },
+        {
+          question: "Vad är medelvärdet av tre tal?<br><br>(1) Summan av de tre talen är 24.<br>(2) Det största talet är 10 och det minsta är 6.",
+          options: [
+            "Påstående (1) räcker ensamt",
+            "Påstående (2) räcker ensamt",
+            "Båda behövs tillsammans",
+            "Vardera räcker ensamt",
+            "Inte ens båda tillsammans räcker"
+          ],
+          correct: 0,
+          explanation: "Medelvärde = summa / antal. Från (1): 24 / 3 = 8. Räcker! Från (2): vi vet bara max och min, inte det tredje talet eller summan. Räcker ej."
+        },
+        {
+          question: "Är talet n jämnt?<br><br>(1) n + 1 är udda.<br>(2) n × 2 är jämnt.",
+          options: [
+            "Påstående (1) räcker ensamt",
+            "Påstående (2) räcker ensamt",
+            "Båda behövs tillsammans",
+            "Vardera räcker ensamt",
+            "Inte ens båda tillsammans räcker"
+          ],
+          correct: 0,
+          explanation: "Från (1): om n + 1 är udda → n är jämnt. Räcker! Från (2): n × 2 är alltid jämnt oavsett n (3 × 2 = 6, 4 × 2 = 8). Räcker ej. Svaret är A."
+        }
+      ]
+    },
+
+    dtk: {
+      title: "DTK — Diagram, tabeller och kartor",
+      questions: [
+        {
+          reading: "<strong>Tabell: Befolkning i fyra svenska städer (tusental)</strong><br><br><table style='width:100%;border-collapse:collapse;font-size:0.95rem;'><tr style='background:#f1f5f9;'><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:left;'>Stad</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>2010</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>2020</th></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Stockholm</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>872</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>975</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Göteborg</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>520</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>583</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Malmö</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>302</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>347</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Uppsala</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>200</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>233</td></tr></table><br><em>OBS: Siffrorna är i tusental.</em>",
+          question: "Hur stor var befolkningsökningen i Malmö mellan 2010 och 2020?",
+          options: ["35 000", "45 000", "55 000", "15 000"],
+          correct: 1,
+          explanation: "347 − 302 = 45 tusental = 45 000. OBS: Läs enheten! Siffrorna är i tusental."
+        },
+        {
+          reading: "<strong>Tabell: Befolkning i fyra svenska städer (tusental)</strong><br><br><table style='width:100%;border-collapse:collapse;font-size:0.95rem;'><tr style='background:#f1f5f9;'><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:left;'>Stad</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>2010</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>2020</th></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Stockholm</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>872</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>975</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Göteborg</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>520</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>583</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Malmö</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>302</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>347</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Uppsala</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>200</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>233</td></tr></table><br><em>OBS: Siffrorna är i tusental.</em>",
+          question: "Vilken stad hade den största procentuella befolkningsökningen 2010–2020?",
+          options: ["Stockholm", "Göteborg", "Malmö", "Uppsala"],
+          correct: 3,
+          explanation: "Stockholm: 103/872 ≈ 11,8%. Göteborg: 63/520 ≈ 12,1%. Malmö: 45/302 ≈ 14,9%. Uppsala: 33/200 = 16,5%. Uppsala hade störst procentuell ökning."
+        },
+        {
+          reading: "<strong>Tabell: Elevers betyg i tre ämnen (antal elever)</strong><br><br><table style='width:100%;border-collapse:collapse;font-size:0.95rem;'><tr style='background:#f1f5f9;'><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:left;'>Betyg</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Matte</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Svenska</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Engelska</th></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>A</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>5</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>8</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>6</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>B</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>12</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>10</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>14</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>C</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>15</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>12</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>10</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>D</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>8</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>5</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>7</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>F</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>0</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>5</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>3</td></tr></table>",
+          question: "Hur stor andel av eleverna fick betyget A eller B i engelska?",
+          options: ["40%", "50%", "45%", "55%"],
+          correct: 1,
+          explanation: "Totalt engelska: 6 + 14 + 10 + 7 + 3 = 40. A + B = 6 + 14 = 20. 20/40 = 50%."
+        },
+        {
+          reading: "<strong>Tabell: Försäljning av frukt per kvartal (ton)</strong><br><br><table style='width:100%;border-collapse:collapse;font-size:0.95rem;'><tr style='background:#f1f5f9;'><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:left;'>Frukt</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Q1</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Q2</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Q3</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Q4</th></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Äpplen</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>45</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>30</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>60</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>55</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Bananer</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>50</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>55</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>48</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>52</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Apelsiner</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>35</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>20</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>15</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>40</td></tr></table>",
+          question: "Under vilket kvartal var den totala fruktförsäljningen störst?",
+          options: ["Q1", "Q2", "Q3", "Q4"],
+          correct: 3,
+          explanation: "Q1: 45+50+35 = 130. Q2: 30+55+20 = 105. Q3: 60+48+15 = 123. Q4: 55+52+40 = 147. Q4 är störst. Tips: dubbelkolla beräkningarna."
+        },
+        {
+          reading: "<strong>Tabell: Försäljning av frukt per kvartal (ton)</strong><br><br><table style='width:100%;border-collapse:collapse;font-size:0.95rem;'><tr style='background:#f1f5f9;'><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:left;'>Frukt</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Q1</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Q2</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Q3</th><th style='padding:6px 10px;border-bottom:1px solid #ccc;text-align:right;'>Q4</th></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Äpplen</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>45</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>30</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>60</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>55</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Bananer</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>50</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>55</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>48</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>52</td></tr><tr><td style='padding:6px 10px;border-bottom:1px solid #eee;'>Apelsiner</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>35</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>20</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>15</td><td style='padding:6px 10px;border-bottom:1px solid #eee;text-align:right;'>40</td></tr></table>",
+          question: "Hur mycket mer bananer än apelsiner såldes totalt under hela året?",
+          options: ["85 ton", "95 ton", "105 ton", "75 ton"],
+          correct: 1,
+          explanation: "Bananer totalt: 50+55+48+52 = 205. Apelsiner totalt: 35+20+15+40 = 110. Skillnad: 205 − 110 = 95 ton."
         }
       ]
     }
   };
 
-  const DURATION_SECONDS = 55 * 60;
+  // ============================================================
+  // Full-pass quiz engine
+  // ============================================================
+  const PASS_MAP = {
+    verbal: ['ord', 'las', 'mek', 'elf'],
+    quant: ['xyz', 'kva', 'nog', 'dtk']
+  } as const;
+
+  type PassType = keyof typeof PASS_MAP;
+
+  const DURATION = 55 * 60;
+  let currentPass: PassType | null = null;
+  let currentQuestions: Array<Question & { section: string }> = [];
+  let timeLeft = DURATION;
+  let timerId: number | null = null;
 
   const setupScreen = document.getElementById('setup-screen') as HTMLElement;
   const examScreen = document.getElementById('exam-screen') as HTMLElement;
-  const resultScreen = document.getElementById('result-screen') as HTMLElement;
-
-  const examForm = document.getElementById('exam-form') as HTMLFormElement;
-  const questionList = document.getElementById('question-list') as HTMLElement;
-  const examLabel = document.getElementById('exam-label') as HTMLElement;
-
+  const resultsScreen = document.getElementById('results-screen') as HTMLElement;
+  const examTitle = document.getElementById('exam-title') as HTMLElement;
   const timerEl = document.getElementById('timer') as HTMLElement;
-  const scoreLine = document.getElementById('score-line') as HTMLElement;
-  const timeLine = document.getElementById('time-line') as HTMLElement;
-  const reviewEl = document.getElementById('review') as HTMLElement;
+  const questionList = document.getElementById('question-list') as HTMLElement;
+  const examForm = document.getElementById('exam-form') as HTMLFormElement;
 
-  const startQuantBtn = document.getElementById('start-quant') as HTMLButtonElement;
-  const startVerbalBtn = document.getElementById('start-verbal') as HTMLButtonElement;
-  const backToSelectBtn = document.getElementById('back-to-select') as HTMLButtonElement;
-  const retryBtn = document.getElementById('retry-btn') as HTMLButtonElement;
-  const newPassBtn = document.getElementById('new-pass-btn') as HTMLButtonElement;
+  const resultsScore = document.getElementById('results-score') as HTMLElement;
+  const resultsMeta = document.getElementById('results-meta') as HTMLElement;
+  const resultsBreakdown = document.getElementById('results-breakdown') as HTMLElement;
 
-  let currentMode: Mode | null = null;
-  let timeLeft = DURATION_SECONDS;
-  let intervalId: number | null = null;
+  const setScreen = (screen: 'setup' | 'exam' | 'results') => {
+    setupScreen.hidden = screen !== 'setup';
+    examScreen.hidden = screen !== 'exam';
+    resultsScreen.hidden = screen !== 'results';
+  };
 
-  function formatTime(seconds: number): string {
-    const mm = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const ss = (seconds % 60).toString().padStart(2, '0');
-    return `${mm}:${ss}`;
-  }
+  const formatTime = (sec: number) => `${String(Math.floor(sec / 60)).padStart(2, '0')}:${String(sec % 60).padStart(2, '0')}`;
 
-  function updateTimerUI() {
+  const updateTimer = () => {
     timerEl.textContent = formatTime(timeLeft);
     timerEl.classList.toggle('low', timeLeft <= 5 * 60);
-  }
+  };
 
-  function stopTimer() {
-    if (intervalId !== null) {
-      window.clearInterval(intervalId);
-      intervalId = null;
+  const stopTimer = () => {
+    if (timerId !== null) {
+      clearInterval(timerId);
+      timerId = null;
     }
-  }
+  };
 
-  function startTimer() {
+  const startTimer = () => {
     stopTimer();
-    timeLeft = DURATION_SECONDS;
-    updateTimerUI();
-
-    intervalId = window.setInterval(() => {
+    timeLeft = DURATION;
+    updateTimer();
+    timerId = window.setInterval(() => {
       timeLeft -= 1;
-      updateTimerUI();
-
+      updateTimer();
       if (timeLeft <= 0) {
         stopTimer();
         submitExam(true);
       }
     }, 1000);
-  }
+  };
 
-  function renderQuestions(mode: Mode) {
-    const { questions } = DATA[mode];
-    questionList.innerHTML = '';
+  const buildQuestionsForPass = (pass: PassType) => {
+    return PASS_MAP[pass].flatMap(section =>
+      questionBank[section].questions.map((q) => ({ ...q, section: section.toUpperCase() }))
+    );
+  };
 
-    questions.forEach((q, i) => {
-      const wrapper = document.createElement('article');
-      wrapper.className = 'question-card';
+  const renderExam = () => {
+    questionList.innerHTML = currentQuestions.map((q, idx) => {
+      const optionsHtml = q.options.map((opt, i) => `
+        <label class="radio-option">
+          <input type="radio" name="q-${idx}" value="${i}" />
+          <span>${String.fromCharCode(65 + i)}. ${opt}</span>
+        </label>
+      `).join('');
 
-      const readingHtml = q.reading ? `<p class="question-reading">${q.reading}</p>` : '';
-      const optionsHtml = q.options
-        .map(
-          (option, optionIdx) => `
-            <label class="option-label">
-              <input type="radio" name="q-${i}" value="${optionIdx}" />
-              <span>${String.fromCharCode(65 + optionIdx)}. ${option}</span>
-            </label>
-          `
-        )
-        .join('');
-
-      wrapper.innerHTML = `
-        <span class="subtest-tag">${q.subtest}</span>
-        <h3>${i + 1}. ${q.text}</h3>
-        ${readingHtml}
-        <div class="options">${optionsHtml}</div>
+      return `
+        <article class="question-card">
+          <div class="question-meta">Fråga ${idx + 1} • ${q.section}</div>
+          ${q.reading ? `<div class="reading-text">${q.reading}</div>` : ''}
+          <p class="question-title"><strong>${q.question}</strong></p>
+          <div class="radio-stack">${optionsHtml}</div>
+        </article>
       `;
+    }).join('');
+  };
 
-      questionList.appendChild(wrapper);
-    });
-  }
-
-  function showScreen(screen: 'setup' | 'exam' | 'result') {
-    setupScreen.hidden = screen !== 'setup';
-    examScreen.hidden = screen !== 'exam';
-    resultScreen.hidden = screen !== 'result';
-  }
-
-  function startExam(mode: Mode) {
-    currentMode = mode;
-    examLabel.textContent = DATA[mode].label;
-    renderQuestions(mode);
-    showScreen('exam');
+  const startPass = (pass: PassType) => {
+    currentPass = pass;
+    currentQuestions = buildQuestionsForPass(pass);
+    examTitle.textContent = pass === 'quant' ? 'Kvantitativt pass (hela blocket)' : 'Verbalt pass (hela blocket)';
+    renderExam();
+    setScreen('exam');
     startTimer();
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  };
 
-  function submitExam(autoSubmitted = false) {
-    if (!currentMode) return;
-
+  const submitExam = (auto = false) => {
+    if (!currentQuestions.length) return;
     stopTimer();
 
-    const { questions } = DATA[currentMode];
-    let correctCount = 0;
-    let answeredCount = 0;
-    const usedSeconds = DURATION_SECONDS - timeLeft;
+    let correct = 0;
+    let answered = 0;
 
-    reviewEl.innerHTML = '';
+    const rows = currentQuestions.map((q, idx) => {
+      const checked = examForm.querySelector(`input[name="q-${idx}"]:checked`) as HTMLInputElement | null;
+      const ans = checked ? Number(checked.value) : null;
+      const isCorrect = ans === q.correct;
+      if (ans !== null) answered += 1;
+      if (isCorrect) correct += 1;
 
-    questions.forEach((q, i) => {
-      const checked = examForm.querySelector(`input[name="q-${i}"]:checked`) as HTMLInputElement | null;
-      const answer = checked ? Number(checked.value) : null;
-
-      if (answer !== null) answeredCount += 1;
-      const isCorrect = answer === q.correct;
-      if (isCorrect) correctCount += 1;
-
-      const row = document.createElement('div');
-      row.className = `review-item ${isCorrect ? 'correct' : 'incorrect'}`;
-      row.innerHTML = `
-        <strong>Fråga ${i + 1} (${q.subtest})</strong><br/>
-        Ditt svar: ${answer === null ? 'Inget svar' : String.fromCharCode(65 + answer)}
-        &nbsp;•&nbsp; Rätt svar: ${String.fromCharCode(65 + q.correct)}
-      `;
-      reviewEl.appendChild(row);
+      return `<div class="result-item ${isCorrect ? 'correct' : 'incorrect'}">${isCorrect ? '✓' : '✗'} Fråga ${idx + 1} (${q.section}) — ditt svar: ${ans === null ? '-' : String.fromCharCode(65 + ans)}, rätt: ${String.fromCharCode(65 + q.correct)}</div>`;
     });
 
-    scoreLine.textContent = `Du fick ${correctCount} av ${questions.length} rätt (${Math.round((correctCount / questions.length) * 100)}%)`;
-    const minuteInfo = `${Math.floor(usedSeconds / 60)} min ${usedSeconds % 60} sek`;
-    timeLine.textContent = autoSubmitted
-      ? `Tiden tog slut efter ${minuteInfo}. Du besvarade ${answeredCount}/${questions.length} frågor.`
-      : `Inlämnat efter ${minuteInfo}. Du besvarade ${answeredCount}/${questions.length} frågor.`;
+    const percent = Math.round((correct / currentQuestions.length) * 100);
+    const used = DURATION - timeLeft;
+    resultsScore.textContent = `${correct} / ${currentQuestions.length} (${percent}%)`;
+    resultsMeta.textContent = `${auto ? 'Tiden tog slut' : 'Inlämnat'} efter ${Math.floor(used / 60)} min ${used % 60} sek. Besvarade: ${answered}/${currentQuestions.length}.`;
+    resultsBreakdown.innerHTML = rows.join('');
 
-    showScreen('result');
+    setScreen('results');
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
+  };
 
-  examForm.addEventListener('submit', (event) => {
-    event.preventDefault();
+  document.querySelectorAll('.pass-card').forEach((el) => {
+    el.addEventListener('click', () => startPass((el as HTMLElement).dataset.pass as PassType));
+  });
+
+  examForm.addEventListener('submit', (e) => {
+    e.preventDefault();
     submitExam(false);
   });
 
-  startQuantBtn.addEventListener('click', () => startExam('quant'));
-  startVerbalBtn.addEventListener('click', () => startExam('verbal'));
-
-  backToSelectBtn.addEventListener('click', () => {
+  document.getElementById('back-btn')!.addEventListener('click', () => {
     stopTimer();
-    currentMode = null;
-    showScreen('setup');
+    setScreen('setup');
   });
 
-  retryBtn.addEventListener('click', () => {
-    if (currentMode) startExam(currentMode);
+  document.getElementById('retry-btn')!.addEventListener('click', () => {
+    if (currentPass) startPass(currentPass);
   });
 
-  newPassBtn.addEventListener('click', () => {
-    currentMode = null;
-    showScreen('setup');
+  document.getElementById('other-btn')!.addEventListener('click', () => {
+    stopTimer();
+    currentPass = null;
+    currentQuestions = [];
+    setScreen('setup');
   });
 </script>

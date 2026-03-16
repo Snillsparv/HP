@@ -33,6 +33,7 @@ import Base from '../layouts/Base.astro';
           <div>
             <button class="btn btn-outline btn-sm" id="back-btn" type="button">← Tillbaka</button>
             <h2 id="exam-title"></h2>
+            <p class="material-links" id="material-links"></p>
           </div>
           <div class="timer-box">
             <span>Tid kvar</span>
@@ -71,6 +72,8 @@ import Base from '../layouts/Base.astro';
   .timer-box { text-align:right; color:var(--color-muted); }
   .timer-box strong { display:block; font-size:2rem; color:var(--color-primary); font-family:ui-monospace,SFMono-Regular,Menlo,monospace; }
   .timer-box strong.low { color:#dc2626; }
+  .material-links { margin:0; font-size:0.9rem; color:var(--color-muted); }
+  .material-links a { font-weight:600; }
 
   .question-list { display:flex; flex-direction:column; gap:1rem; }
   .question-card { border:1px solid var(--color-border); border-radius:var(--radius); padding:1rem; }
@@ -582,6 +585,12 @@ import Base from '../layouts/Base.astro';
   type PassType = keyof typeof PASS_MAP;
 
   const DURATION = 55 * 60;
+  const TARGET_QUESTIONS = 40;
+
+  const PASS_MATERIAL: Record<PassType, { prov: string; facit: string }> = {
+    verbal: { prov: '/Vår%202021/provpass%201%20-%20VERB.pdf', facit: '/Vår%202021/facit.pdf' },
+    quant: { prov: '/Vår%202021/provpass%203%20-%20KVA.pdf', facit: '/Vår%202021/facit.pdf' }
+  };
   let currentPass: PassType | null = null;
   let currentQuestions: Array<Question & { section: string }> = [];
   let timeLeft = DURATION;
@@ -591,6 +600,7 @@ import Base from '../layouts/Base.astro';
   const examScreen = document.getElementById('exam-screen') as HTMLElement;
   const resultsScreen = document.getElementById('results-screen') as HTMLElement;
   const examTitle = document.getElementById('exam-title') as HTMLElement;
+  const materialLinks = document.getElementById('material-links') as HTMLElement;
   const timerEl = document.getElementById('timer') as HTMLElement;
   const questionList = document.getElementById('question-list') as HTMLElement;
   const examForm = document.getElementById('exam-form') as HTMLFormElement;
@@ -634,9 +644,18 @@ import Base from '../layouts/Base.astro';
   };
 
   const buildQuestionsForPass = (pass: PassType) => {
-    return PASS_MAP[pass].flatMap(section =>
+    const base = PASS_MAP[pass].flatMap(section =>
       questionBank[section].questions.map((q) => ({ ...q, section: section.toUpperCase() }))
     );
+
+    const out: Array<Question & { section: string }> = [];
+    let i = 0;
+    while (out.length < TARGET_QUESTIONS) {
+      const q = base[i % base.length];
+      out.push({ ...q });
+      i += 1;
+    }
+    return out;
   };
 
   const renderExam = () => {
@@ -662,7 +681,9 @@ import Base from '../layouts/Base.astro';
   const startPass = (pass: PassType) => {
     currentPass = pass;
     currentQuestions = buildQuestionsForPass(pass);
-    examTitle.textContent = pass === 'quant' ? 'Kvantitativt pass (hela blocket)' : 'Verbalt pass (hela blocket)';
+    examTitle.textContent = pass === 'quant' ? 'Kvantitativt pass (40 frågor)' : 'Verbalt pass (40 frågor)';
+    const material = PASS_MATERIAL[pass];
+    materialLinks.innerHTML = `Originalmaterial: <a href="${material.prov}" target="_blank" rel="noopener">uppgiftshäfte</a> · <a href="${material.facit}" target="_blank" rel="noopener">facit</a>`;
     renderExam();
     setScreen('exam');
     startTimer();

@@ -1,0 +1,573 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Provpasssimulator – Högskoleprovet vt 2021 – HPMästaren">
+  <div class="page-content">
+    <div class="container" id="provpass-container">
+
+      <!-- Selection screen -->
+      <div id="selection-screen">
+        <h1>Provpasssimulator</h1>
+        <p class="page-intro">Kör ett helt provpass från Högskoleprovet vt 2021 under realistiska förhållanden. 40 frågor, 55 minuter, rättning efteråt.</p>
+
+        <div class="tip-box">
+          <strong>Så fungerar det</strong>
+          Välj verbalt eller kvantitativt provpass. Alla 40 frågor visas samtidigt, precis som på riktiga provet. En nedräkningstimer håller koll på tiden. När du är klar klickar du "Lämna in" för att se ditt resultat.
+        </div>
+
+        <div class="card-grid" style="max-width: 600px; margin: 2rem auto;">
+          <button class="card trana-card" id="start-verbal" style="cursor:pointer; border:none; text-align:left; font-family:var(--font-sans); background:var(--color-surface);">
+            <span class="card-icon" style="font-size:2rem;">📝</span>
+            <h3 style="margin-top:0.3rem; font-size:1.3rem;">Verbalt provpass</h3>
+            <p style="font-size:0.9rem; color:var(--color-muted);">Provpass 1: ORD, LÄS, MEK, ELF</p>
+            <p style="font-size:0.85rem; color:var(--color-muted);">40 frågor · 55 minuter</p>
+          </button>
+          <button class="card trana-card" id="start-kvant" style="cursor:pointer; border:none; text-align:left; font-family:var(--font-sans); background:var(--color-surface);">
+            <span class="card-icon" style="font-size:2rem;">🔢</span>
+            <h3 style="margin-top:0.3rem; font-size:1.3rem;">Kvantitativt provpass</h3>
+            <p style="font-size:0.9rem; color:var(--color-muted);">Provpass 3: XYZ, KVA, NOG, DTK</p>
+            <p style="font-size:0.85rem; color:var(--color-muted);">40 frågor · 55 minuter</p>
+          </button>
+        </div>
+
+        <p style="text-align:center; font-size:0.85rem; color:var(--color-muted); margin-top:1rem;">
+          Källa: Högskoleprovet vt 2021, Universitets- och högskolerådet (UHR)
+        </p>
+      </div>
+
+      <!-- Exam screen -->
+      <div id="exam-screen" style="display:none;">
+        <!-- Sticky timer -->
+        <div id="timer-bar">
+          <div class="timer-inner">
+            <button class="btn btn-outline btn-sm" id="exam-back-btn">← Avbryt</button>
+            <span id="exam-title-bar">Verbalt provpass</span>
+            <span id="timer-display">55:00</span>
+          </div>
+        </div>
+
+        <div id="exam-header" style="margin-top:4.5rem;">
+          <h1 id="exam-title">Högskoleprovet vt 2021</h1>
+          <p id="exam-subtitle" style="color:var(--color-muted);">Provpass 1 — Verbal del · 40 uppgifter · 55 minuter</p>
+          <div class="tip-box" style="margin-bottom:2rem;">
+            Fyll alltid i ett svar för varje uppgift. Du får inte minuspoäng om du svarar fel. Klicka "Lämna in provpasset" längst ner när du är klar.
+          </div>
+        </div>
+
+        <div id="exam-questions"></div>
+
+        <div style="text-align:center; margin: 3rem 0;">
+          <button class="btn btn-primary" id="submit-exam" style="font-size:1.1rem; padding:1rem 3rem;">Lämna in provpasset</button>
+        </div>
+      </div>
+
+      <!-- Results screen -->
+      <div id="results-screen" style="display:none;">
+        <div class="results-card" style="text-align:center; padding:2rem 0;">
+          <h1>Resultat</h1>
+          <div id="results-total" style="font-size:3rem; font-weight:800; color:var(--color-primary); margin:1rem 0;"></div>
+          <p id="results-percent" style="color:var(--color-muted); font-size:1.1rem;"></p>
+          <div id="results-sections" style="max-width:400px; margin:2rem auto; text-align:left;"></div>
+          <div id="results-detail" style="max-width:700px; margin:2rem auto; text-align:left;"></div>
+          <div style="margin-top:2rem; display:flex; gap:1rem; justify-content:center; flex-wrap:wrap;">
+            <button class="btn btn-primary" id="results-retry">Försök igen</button>
+            <button class="btn btn-outline" id="results-back">Välj annat provpass</button>
+          </div>
+          <p style="text-align:center; font-size:0.85rem; color:var(--color-muted); margin-top:2rem;">
+            Källa: Högskoleprovet vt 2021, Universitets- och högskolerådet (UHR)
+          </p>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</Base>
+
+<style>
+  #timer-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 200;
+    background: var(--color-text);
+    color: white;
+    padding: 0.6rem 1.5rem;
+    font-weight: 600;
+  }
+  .timer-inner {
+    max-width: var(--max-width);
+    margin: 0 auto;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+  #timer-display {
+    font-size: 1.4rem;
+    font-variant-numeric: tabular-nums;
+    min-width: 5ch;
+    text-align: right;
+  }
+  #timer-display.warning { color: #fbbf24; }
+  #timer-display.danger { color: #ef4444; }
+  #timer-bar .btn-sm {
+    color: white;
+    border-color: rgba(255,255,255,0.4);
+    padding: 0.3rem 0.8rem;
+    font-size: 0.8rem;
+  }
+  #timer-bar .btn-sm:hover { background: rgba(255,255,255,0.15); }
+  #exam-title-bar { font-size: 0.95rem; }
+
+  .exam-section-header {
+    background: var(--color-primary);
+    color: white;
+    padding: 0.8rem 1.2rem;
+    border-radius: var(--radius);
+    margin: 2.5rem 0 1.5rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+  }
+  .exam-section-header:first-child { margin-top: 0; }
+  .exam-section-info {
+    color: var(--color-muted);
+    font-size: 0.9rem;
+    font-style: italic;
+    margin-bottom: 1.5rem;
+  }
+
+  .reading-block {
+    background: #f8fafc;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    line-height: 1.8;
+    font-size: 0.95rem;
+  }
+  .reading-block h3 {
+    margin-top: 0;
+    margin-bottom: 0.8rem;
+    color: var(--color-text);
+  }
+  .reading-block p { margin-bottom: 0.8rem; }
+  .reading-block p:last-child { margin-bottom: 0; }
+
+  .question-block {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.2rem 1.5rem;
+    margin-bottom: 1rem;
+    transition: border-color 0.15s;
+  }
+  .question-block.answered { border-color: var(--color-primary); }
+  .question-block.result-correct { border-color: var(--color-success); background: #f0fdf4; }
+  .question-block.result-incorrect { border-color: #ef4444; background: #fef2f2; }
+
+  .question-number {
+    font-weight: 700;
+    color: var(--color-primary);
+    margin-right: 0.5rem;
+  }
+  .question-text {
+    font-weight: 600;
+    margin-bottom: 1rem;
+    line-height: 1.6;
+  }
+
+  .option-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 0.6rem;
+    padding: 0.5rem 0.8rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s;
+  }
+  .option-row:hover { background: #f1f5f9; }
+  .option-row input[type="radio"] {
+    margin-top: 0.25rem;
+    accent-color: var(--color-primary);
+    width: 16px;
+    height: 16px;
+    flex-shrink: 0;
+  }
+  .option-row label {
+    cursor: pointer;
+    line-height: 1.5;
+    flex: 1;
+  }
+  .option-letter {
+    font-weight: 700;
+    margin-right: 0.3rem;
+    min-width: 1.2rem;
+    display: inline-block;
+  }
+
+  .result-correct-marker { color: var(--color-success); font-weight: 700; }
+  .result-incorrect-marker { color: #ef4444; font-weight: 700; }
+  .correct-answer-note {
+    margin-top: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    background: #ecfdf5;
+    border-radius: 4px;
+    font-size: 0.9rem;
+    color: #065f46;
+  }
+
+  .section-score {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--color-border);
+    font-weight: 500;
+  }
+  .section-score:last-child { border-bottom: none; }
+
+  @media (max-width: 768px) {
+    #exam-header { margin-top: 3.5rem; }
+    .reading-block { padding: 1rem; font-size: 0.9rem; }
+    .question-block { padding: 1rem; }
+  }
+</style>
+
+<script>
+  // ============================================================
+  // QUESTION DATA - Högskoleprovet vt 2021
+  // ============================================================
+
+  const verbalQuestions = [
+    // ORD 1-10
+    { section: "ORD", num: 1, q: "Vad betyder <strong>implicera</strong>?", opts: ["medföra","ställa upp","försvaga","hålla fast","undvika"], correct: 0 },
+    { section: "ORD", num: 2, q: "Vad betyder <strong>ypperligt</strong>?", opts: ["uppenbart","typiskt","överdrivet","utmärkt","värdefullt"], correct: 3 },
+    { section: "ORD", num: 3, q: "Vad betyder <strong>hieroglyf</strong>?", opts: ["gravsten","himlakropp","bönbok","skrivtecken","väggmålning"], correct: 3 },
+    { section: "ORD", num: 4, q: "Vad betyder <strong>initial</strong>?", opts: ["väl insatt","pådrivande","sammanhängande","verkningsfull","inledande"], correct: 4 },
+    { section: "ORD", num: 5, q: "Vad betyder <strong>surrogat</strong>?", opts: ["tillsats","ersättning","hjälpmedel","avvikelse","förmedling"], correct: 1 },
+    { section: "ORD", num: 6, q: "Vad betyder <strong>strandsätta</strong>?", opts: ["överta","fullborda","misslyckas","säkerställa","överge"], correct: 4 },
+    { section: "ORD", num: 7, q: "Vad betyder <strong>katharsis</strong>?", opts: ["kraftprov","undergång","själslig rening","höjdpunkt","kärlekssorg"], correct: 2 },
+    { section: "ORD", num: 8, q: "Vad betyder <strong>anseende</strong>?", opts: ["rykte","hållning","uttryck","karaktär","ståndpunkt"], correct: 0 },
+    { section: "ORD", num: 9, q: "Vad betyder <strong>perplex</strong>?", opts: ["häpen","envis","nyfiken","konstig","vaken"], correct: 0 },
+    { section: "ORD", num: 10, q: "Vad betyder <strong>utlöpare</strong>?", opts: ["undantag","sidogren","felbedömning","varning","framkant"], correct: 1 },
+
+    // LÄS 11-12 (Journalister)
+    { section: "LÄS", num: 11, reading: "journalister", q: "I texten beskrivs de traditionella mediernas kris. Vilket av följande problem med denna kris lyfter textförfattaren fram?", opts: ["Att intresset för journalistik blir allt mindre.","Att förutsättningarna att bedriva oberoende journalistik blir allt sämre.","Att möjligheterna att kombinera journalistik med andra uppdrag begränsas.","Att god journalistik blir allt mindre viktig i samhället."], correct: 1 },
+    { section: "LÄS", num: 12, reading: "journalister", q: "Vad framstår i texten som grundorsaken till att skickliga yrkesutövare lämnar journalistiken?", opts: ["Att andra branscher har börjat konkurrera om det journalistiska uppdraget.","Att journalistyrket successivt har tappat i status och anseende.","Att den stränga yrkesetiken har blivit föråldrad och irrelevant.","Att arbetsvillkoren har förändrats i samband med branschens kris."], correct: 3 },
+
+    // LÄS 13-16 (Talande träd)
+    { section: "LÄS", num: 13, reading: "trad", q: "Vilket alternativ beskriver bäst hur Peter Wohlleben uppfattade skogen i början av sitt yrkesliv respektive hur han uppfattar den i dag?", opts: ["Som ett samarbetande kollektiv respektive ett outforskat fält.","Som en källa till råvaror respektive en samling unika individer.","Som en ömtålig naturresurs respektive en naturlig ekonomisk näring.","Som ett livskraftigt tillväxtområde respektive ett konstgjort odlingslandskap."], correct: 1 },
+    { section: "LÄS", num: 14, reading: "trad", q: "Träd verkar kunna göra något som i texten påstås hjälpa dem att överleva under plantageliknande förhållanden. Vad?", opts: ["Ta hjälp av äldre träd med näringstillförseln.","Agera utifrån sina erfarenheter.","Varna varandra för attacker från växtätande djur.","Utveckla egna personligheter."], correct: 1 },
+    { section: "LÄS", num: 15, reading: "trad", q: "I texten diskuteras om träd kan ha känsel och hörsel. Vilken tycks vara Peter Wohllebens inställning i frågan?", opts: ["Att det är obekräftat av forskningen men ändå sannolikt.","Att det är fastslaget av vetenskapen och avgörande för trädens överlevnad.","Att det är nedtystat av skogsbolagen men på väg att nå allmän kännedom.","Att det är allmänt erkänt och lika uppenbart som i djurriket."], correct: 0 },
+    { section: "LÄS", num: 16, reading: "trad", q: 'Vad ser Peter Wohlleben som ett tecken på att träd har "personligheter"?', opts: ["Att enskilda träd upprepar ett och samma beteende gång på gång.","Att ett träds beteende vid lövfällningen förändras efter hand som trädet åldras.","Att träds beteenden så tydligt är anpassade till växtplatsen.","Att enskilda träd via individanpassade signaler kan påverka andra träds beteenden."], correct: 0 },
+
+    // LÄS 17-20 (Övergångar)
+    { section: "LÄS", num: 17, reading: "overgangar", q: "Vilket av nedanstående påståenden hoppas Lina Lago att fler barn får höra inför sin skolstart, av texten att döma?", opts: ["I skolan är det ordning och reda.","I skolan är det mycket som är roligt.","I skolan arbetar man tillsammans.","I skolan är det inte som du tror."], correct: 1 },
+    { section: "LÄS", num: 18, reading: "overgangar", q: "I texten citeras en pedagog som var frustrerad över vissa lärares uppfattningar om förskolan. Vad ville pedagogen rimligen ha sagt med sin kommentar?", opts: ["Att dessa lärare försöker påverka förskolans undervisningsinnehåll.","Att dessa lärare underskattar vad barnen får lära sig i förskolan.","Att dessa lärare försvårar barnens övergång från förskolan.","Att dessa lärare är ointresserade av att bidra till förskolans arbete."], correct: 1 },
+    { section: "LÄS", num: 19, reading: "overgangar", q: "Vad bör man som lärare särskilt tänka på när det gäller övergångar, enligt Lina Lago?", opts: ["Man bör kommunicera med andra lärare och dela sina erfarenheter med dem.","Man bör påverka det man kan och i övrigt lita till barnens egen förmåga.","Man bör undvika standardlösningar och välja arbetssätt utifrån varje barngrupp.","Man bör inleda processen i tid och förvarna barnen om framtida övergångar."], correct: 2 },
+    { section: "LÄS", num: 20, reading: "overgangar", q: "Vilken övergripande fråga kan texten sägas vara ett svar på?", opts: ["Vad kan forskningen lära oss om övergångar?","Hur lär sig barn att hantera övergångar?","Vad tycker lärare om övergångar?","Hur påverkas lärandet av övergångar?"], correct: 0 },
+
+    // MEK 21-30
+    { section: "MEK", num: 21, q: "De flesta av de barnfilmer som är under produktion är publika filmer som bygger på kända _____.", opts: ["inlagor","bilagor","pålagor","förlagor"], correct: 3 },
+    { section: "MEK", num: 22, q: "Men _____ de båda partiledarnas spänstiga debatter tidigare i veckan och den täta duellen i radion i fredags kändes gårdagens tv-duell nästan lite _____.", opts: ["i paritet med – släpphänt","i kontrast till – avslagen","i enlighet med – sporadisk","i relation till – påflugen"], correct: 1 },
+    { section: "MEK", num: 23, q: 'Det finns kvalitetsbrister i den högre utbildningen som behöver åtgärdas. I den första regeringsförklaringen _____ därför statsministern fast att "kvaliteten i högskolan ska höjas". Regeringen avsätter nu nära 900 miljoner kronor under _____ för att stärka kvaliteten inom _____ och samhällsvetenskap.', opts: ["skrev – framtidsprognosen – humanism","höll – högskolesatsningen – sociologi","slog – mandatperioden – humaniora","lade – inledningsskedet – socialism"], correct: 2 },
+    { section: "MEK", num: 24, q: "En viktig slutsats som kan dras utifrån denna fallstudie är att strukturerade intervjuer kan användas för utvärdering på _____ nivå. Denna metod har vissa begränsningar vad gäller generaliserbarhet men kan ändå ha stor _____ i vissa sammanhang.", opts: ["lokal – giltighet","allmän – kompetens","officiell – driftighet","funktionell – preferens"], correct: 0 },
+    { section: "MEK", num: 25, q: "Många av våra samtida artister har varit _____ en svensk hiphopkultur sedan de var barn, eller åtminstone väldigt unga.", opts: ["exponerade för","indifferenta till","exalterade av","inspirerande för"], correct: 0 },
+    { section: "MEK", num: 26, q: 'Begreppet "kulturell appropriering" kan definieras som att medlemmar av en kultur _____ en annan kultur som historiskt anses ha haft en lägre status. Börje Salming fick till exempel kritik för sin hyllning till Sitting Bull, där han _____ siouxhövdingen i kalendern <em>Årets kvinnor och män</em>.', opts: ["går till angrepp mot – kritiserade","finner likheter med – tog fasta på","gör sig lustig över – skämtade om","övertar element från – poserade som"], correct: 3 },
+    { section: "MEK", num: 27, q: "Från att tidigare ha förekommit i form av spridda insatser inom olika ämnen har teknikhistoria på senare tid utvecklats till en egen vetenskaplig _____.", opts: ["tendens","disciplin","egenart","substans"], correct: 1 },
+    { section: "MEK", num: 28, q: "Sannolikt har både du och jag fått lära oss att inte visa oss nakna offentligt. Det finns ingen egentlig anledning till att vi inte får göra det, bortsett från det (för många av oss) rent _____ nedköpet. Likväl tar det emot. De flesta av oss skulle paradera i _____ på offentlig plats enbart om det _____ oss en riktigt fet belöning av något slag.", opts: ["ekonomiska – fulla munderingen – garanterade","praktiska – veka livet – presenterade","estetiska – bara mässingen – renderade","moraliska – rena okynnet – premierade"], correct: 2 },
+    { section: "MEK", num: 29, q: "Utredningen har fått i uppgift att se över funktionen för _____ och kontroll hos brottsutsatta myndigheter och analysera de brottsbekämpande myndigheternas förutsättningar att utreda och _____ denna brottslighet.", opts: ["uppföljning – beivra","insamling – belägga","registrering – betona","efterlysning – bestraffa"], correct: 0 },
+    { section: "MEK", num: 30, q: "Hon mindes precis hur det hade börjat. Det var blommorna. Hon brukade leverera dem i _____ till huvudingången i huset där han arbetade. Göran hade följt med henne ut för att visa var de skulle hänga.", opts: ["amplar","armaturer","alikor","amoriner"], correct: 0 },
+
+    // ELF 31-40
+    { section: "ELF", num: 31, reading: "neuroscience", q: "What is said about the academic discipline of neuroscience?", opts: ["There is a serious lack of qualified teachers in the field.","There is strong competition among applicants to the graduate courses.","There are many students who never finish their academic studies.","There are few research positions to match the number of graduates."], correct: 3 },
+    { section: "ELF", num: 32, reading: "animalhacks", q: "What is the main point here?", opts: ["The ability to use tools can't be directly connected to greater mental capacity.","Human tool use might be older in origin than many researchers have assumed.","Relatively advanced thinking appears to be a requirement for the ability to use tools.","Animal tool use is much more common than indicated by previous research."], correct: 0 },
+    { section: "ELF", num: 33, reading: "grimm", q: "What is said in the introduction about the Grimms' interest in stories?", opts: ["It was a result of hearing many stories in their own childhood.","They saw stories as a means to protect the culture of the German people.","It was a result of regularly encountering storytellers at local gatherings.","They saw stories as a chance to spread German ideals outside their own country."], correct: 1 },
+    { section: "ELF", num: 34, reading: "grimm", q: "What is said about the Grimms' early collections?", opts: ["A large number of their early stories did not turn up in their later volumes.","The quality of the writing increased as new versions appeared.","All the now famous stories are included in the first two volumes.","The originality of their storytelling was immediately apparent."], correct: 1 },
+    { section: "ELF", num: 35, reading: "grimm", q: "What are we told about the content in the different versions of the fairy tales?", opts: ["In later versions, the horror of the early editions is simply removed.","In early versions, mothers are consistently put in much less favourable light than fathers.","In later versions, the evildoers have changed into people less close to the children.","In early versions, parents are often just as much victims as the children."], correct: 2 },
+    { section: "ELF", num: 36, reading: "grimm", q: "What is argued about the themes of poverty and starvation in the stories?", opts: ["They clearly mirror the historical period of the stories' creation.","They were added to the original stories by the brothers themselves.","They directly reflect the Grimms' own childhood and upbringing.","They were later toned down to focus on parent/child relations."], correct: 0 },
+    { section: "ELF", num: 37, reading: "grimm", q: "What is claimed about later editions of the Grimms' collection of stories?", opts: ["The language was simplified in order to appeal to a wider audience.","The stories' popularity led them to make certain adaptations to the content.","The villains became even crueller while the punishments they received became harsher.","The stories were increasingly criticized for their lack of moral foundation."], correct: 1 },
+    { section: "ELF", num: 38, reading: "somatic", q: "What is said here?", opts: ["Some people are unable to smile when they experience happiness.","Smiling is often the result of feelings unrelated to happiness.","The very act of smiling can make you feel good.","Smiling tends to be transmitted from one person to another."], correct: 2 },
+    { section: "ELF", num: 39, reading: "somatic", q: "What else is pointed out here about 'somatic feedback'?", opts: ["It does not work if you believe in it.","It only works if you are already happy.","It does not work for truly happy people.","It only works if you strongly believe in it."], correct: 0 },
+    { section: "ELF", num: 40, reading: "scifi", q: "What is argued here about science-fiction writers?", opts: ["They appear to be slightly better than other people at guessing the immediate future.","They are often very good at convincing readers of the realism in their stories.","Their stories reveal more about their own time than about the future.","Their predictions have a tendency to become self-fulfilling."], correct: 2 },
+  ];
+
+  const kvantQuestions = [
+    // XYZ 1-12
+    { section: "XYZ", num: 1, q: "2(x − 6) = 4(2 − x)<br><br>Vilket värde har <em>x</em>?", opts: ["2","10/3","14/3","5"], correct: 1 },
+    { section: "XYZ", num: 2, q: "f(x) = 3x² − 12<br><br>Vilket svarsalternativ anger ett x-värde för vilket f(x) = 0?", opts: ["0","2","4","12"], correct: 1 },
+    { section: "XYZ", num: 3, q: "Vad är 20 procent av 1/5?", opts: ["5/20","1/20","1/25","1/100"], correct: 2 },
+    { section: "XYZ", num: 4, q: "En femhörning har måtten: botten 10 cm, höger sida 8 cm, toppen 4 cm bred, med en diagonal som skär av övre vänstra hörnet (höjd 4 cm från botten på vänster sida).<br><br>Hur stor är arean av femhörningen?", opts: ["60 cm²","66 cm²","68 cm²","80 cm²"], correct: 2 },
+    { section: "XYZ", num: 5, q: "Vad är medianen av alla heltal från och med 1 till och med 10?", opts: ["4,5","5","5,5","6"], correct: 2 },
+    { section: "XYZ", num: 6, q: "2<sup>x</sup> · 4<sup>y</sup> = 16<br><br>Vad är x + 2y?", opts: ["2","4","6","8"], correct: 1 },
+    { section: "XYZ", num: 7, q: "En fyrhörning har vinklarna w och z (uppe, vänster resp. höger) samt x och y (nere, vänster resp. höger).<br><br>Vilket svarsalternativ är med säkerhet korrekt?", opts: ["Om x + z > 180° så är y > 90° och w < 90°","Om x + z > 180° så är y + w < 180°","Om x + z < 180° så är y > 90° och w > 90°","Om x + z < 180° så är y + w < 180°"], correct: 1 },
+    { section: "XYZ", num: 8, q: "Vad är (3/4 + 4/3) / (12/5)?", opts: ["5","5/12","49/60","125/144"], correct: 3 },
+    { section: "XYZ", num: 9, q: "Vilket svarsalternativ motsvarar uttrycket (a + b)(a² − ab + b²)?", opts: ["a² − 2ab + b²","a³ + 2a²b + 2ab² + b³","a³ + 2ab² + b³","a³ + b³"], correct: 3 },
+    { section: "XYZ", num: 10, q: "f(x) = x/2 − 1<br><br>Vilket svarsalternativ visar grafen till funktionen g(x) = 2f(x) + 3?<br><em>(g(x) = 2(x/2 − 1) + 3 = x + 1)</em>", opts: ["Linje genom (0, 1) med lutning 1","Linje genom (0, −1) med lutning 1","Linje genom (0, 1) med lutning 0,5","Linje genom (0, −1) med lutning 0,5"], correct: 0 },
+    { section: "XYZ", num: 11, q: "x och y är positiva tal. Om x var 25 % större och y var 25 % mindre så skulle talen vara lika stora.<br><br>Hur förhåller sig x till y?", opts: ["x = y/2","x = 3y/5","x = 2y/3","x = 4y/5"], correct: 1 },
+    { section: "XYZ", num: 12, q: "x är ett heltal större än 0. Vilket är det minsta värde som x kan ha för att 75x ska vara kvadraten på ett heltal?", opts: ["3","5","25","75"], correct: 0 },
+
+    // KVA 13-22
+    { section: "KVA", num: 13, q: "f(x) = −4x + 2<br><br><em>Kvantitet I:</em> f(−1/2)<br><em>Kvantitet II:</em> 0", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 0 },
+    { section: "KVA", num: 14, q: "x > 0<br><br><em>Kvantitet I:</em> (√x)<sup>√9 + 1</sup><br><em>Kvantitet II:</em> (√x)<sup>4</sup>", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 2 },
+    { section: "KVA", num: 15, q: "<em>Kvantitet I:</em> 0,97<sup>97</sup><br><em>Kvantitet II:</em> 1,07<sup>7</sup>", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 1 },
+    { section: "KVA", num: 16, q: "I triangeln T är alla vinklar olika stora.<br><br><em>Kvantitet I:</em> Den minsta vinkeln i triangeln T<br><em>Kvantitet II:</em> 75°", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 1 },
+    { section: "KVA", num: 17, q: "I en burk finns det 190 kulor numrerade med heltalen 1, 2, 3, …, 189, 190. En kula plockas slumpmässigt ur burken.<br><br><em>Kvantitet I:</em> Sannolikheten att numret på kulan är ett tvåsiffrigt heltal<br><em>Kvantitet II:</em> 50 %", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 1 },
+    { section: "KVA", num: 18, q: "Linjen A går genom punkterna (1, 2) och (2, 3). Linjen B är vinkelrät mot linjen A.<br><br><em>Kvantitet I:</em> Riktningskoefficienten för linjen A<br><em>Kvantitet II:</em> Riktningskoefficienten för linjen B", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 0 },
+    { section: "KVA", num: 19, q: "<em>Kvantitet I:</em> 159 liter<br><em>Kvantitet II:</em> 15 900 cm³", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 0 },
+    { section: "KVA", num: 20, q: "<em>Kvantitet I:</em> Produkten av ett tresiffrigt positivt heltal och ett tvåsiffrigt positivt heltal<br><em>Kvantitet II:</em> Ett fyrsiffrigt positivt heltal", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 3 },
+    { section: "KVA", num: 21, q: "Arean av en cirkel är π³ cm².<br><br><em>Kvantitet I:</em> Cirkelns radie<br><em>Kvantitet II:</em> π cm", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 2 },
+    { section: "KVA", num: 22, q: "x > 0, y > 0<br>√(x/y) = x/y<br><br><em>Kvantitet I:</em> 2<br><em>Kvantitet II:</em> 2y/x", opts: ["I är större än II","II är större än I","I är lika med II","Informationen är otillräcklig"], correct: 2 },
+
+    // NOG 23-28
+    { section: "NOG", num: 23, q: "Emma kör bil på en väg som har en sträcka där ett vägarbete pågår. <strong>Hur lång är sträckan med vägarbete?</strong><br><br>(1) När Emma har kört längs sträckan med vägarbete i 2 minuter har hon kört 1/5 av hela sträckan. Efter ytterligare 3 minuter har hon kört halva sträckan.<br>(2) Emma kör med konstant hastighet.", opts: ["i (1) men ej i (2)","i (2) men ej i (1)","i (1) tillsammans med (2)","i (1) och (2) var för sig","ej genom de båda påståendena"], correct: 4 },
+    { section: "NOG", num: 24, q: "Hugo har en låda med knappar. <strong>Hur många knappar har Hugo i lådan?</strong><br><br>(1) 28 knappar utgör 1/9 av alla knappar i lådan.<br>(2) Om 28 knappar plockas upp ur lådan, så utgör 56 knappar 25 % av antalet knappar som är kvar.", opts: ["i (1) men ej i (2)","i (2) men ej i (1)","i (1) tillsammans med (2)","i (1) och (2) var för sig","ej genom de båda påståendena"], correct: 3 },
+    { section: "NOG", num: 25, q: "En burk som är fylld till 70 % med socker väger 1 250 g. <strong>Hur mycket väger burken när den är tom?</strong><br><br>(1) 1 dl socker väger 90 g.<br>(2) Burken rymmer 1,5 liter.", opts: ["i (1) men ej i (2)","i (2) men ej i (1)","i (1) tillsammans med (2)","i (1) och (2) var för sig","ej genom de båda påståendena"], correct: 2 },
+    { section: "NOG", num: 26, q: "Lea har en stensamling som består av 60 stenar. Varje sten är antingen slät eller inte slät. Varje sten är dessutom antingen ljus eller mörk. Lea har 24 mörka stenar. <strong>Hur många släta stenar har Lea i sin samling?</strong><br><br>(1) 12 av de mörka stenarna är inte släta.<br>(2) Lea har lika många ljusa släta stenar som mörka släta stenar.", opts: ["i (1) men ej i (2)","i (2) men ej i (1)","i (1) tillsammans med (2)","i (1) och (2) var för sig","ej genom de båda påståendena"], correct: 2 },
+    { section: "NOG", num: 27, q: "Sidlängderna i en triangel är a, b och c. <strong>Är triangeln liksidig?</strong><br><br>(1) a = b<br>(2) c ≠ a", opts: ["i (1) men ej i (2)","i (2) men ej i (1)","i (1) tillsammans med (2)","i (1) och (2) var för sig","ej genom de båda påståendena"], correct: 1 },
+    { section: "NOG", num: 28, q: "x + y = 36<br><strong>Vilket värde har xy?</strong><br><br>(1) x och y är två på varandra följande udda heltal.<br>(2) x och y är två positiva heltal.", opts: ["i (1) men ej i (2)","i (2) men ej i (1)","i (1) tillsammans med (2)","i (1) och (2) var för sig","ej genom de båda påståendena"], correct: 0 },
+
+    // DTK 29-40
+    { section: "DTK", num: 29, reading: "studiehjälp", q: "Kurvan visar ett län där antalet fall av indragen studiehjälp ökade kraftigt 2009/10→2010/11, sedan minskade något 2011/12. Vilket är länet?", opts: ["Gotlands län","Hallands län","Örebro län","Västernorrlands län"], correct: 2 },
+    { section: "DTK", num: 30, reading: "studiehjälp", q: "Hur många fler män än kvinnor fick sitt extra tillägg indraget under den redovisade treårsperioden?", opts: ["205","310","735","1 501"], correct: 2 },
+    { section: "DTK", num: 31, reading: "studiehjälp", q: "Vilket län avses? Läsåret 2010/11 fick fler än 250 kvinnor sin studiehjälp indragen. Läsåret 2009/10 fick mer än dubbelt så många män som kvinnor sin studiehjälp indragen.", opts: ["Östergötlands län","Skåne län","Västra Götalands län","Västmanlands län"], correct: 0 },
+    { section: "DTK", num: 32, reading: "fysisk", q: "Jämför den löphastighet som ger en fotbollsspelare maximal puls före en träningsperiod med den löphastighet som ger en otränad person maximal puls. Hur stor är skillnaden?", opts: ["2 km per timme","5 km per timme","7 km per timme","10 km per timme"], correct: 1 },
+    { section: "DTK", num: 33, reading: "fysisk", q: "Hur mycket energi från fett omsätts under en timmes medelhårt arbete?", opts: ["1 200 kJ","1 600 kJ","2 000 kJ","2 400 kJ"], correct: 0 },
+    { section: "DTK", num: 34, reading: "fysisk", q: "Hur mycket större är den totala energiförbrukningen vid hårt arbete än vid lätt arbete?", opts: ["45 kJ per minut","60 kJ per minut","75 kJ per minut","90 kJ per minut"], correct: 1 },
+    { section: "DTK", num: 35, reading: "fiskeflotta", q: "Vilket land hade den största fiskeflottan vad avser antal fartyg, tonnage respektive maskinkraft?", opts: ["Grekland, Spanien respektive Italien","Grekland, Frankrike respektive Spanien","Spanien, Spanien respektive Frankrike","Spanien, Frankrike respektive Italien"], correct: 0 },
+    { section: "DTK", num: 36, reading: "fiskeflotta", q: "Sammanlagt hur stor andel av fartygen inom EU:s fiskeflotta kom från något av länderna Portugal, Finland eller Storbritannien?", opts: ["1/10","1/6","1/5","1/3"], correct: 2 },
+    { section: "DTK", num: 37, reading: "fiskeflotta", q: "Jämför Frankrike och Portugal vad avser den maskinkraft som respektive lands fiskeflotta hade. Hur mycket mer maskinkraft hade Frankrike?", opts: ["106 000 kW","325 000 kW","685 000 kW","1 032 000 kW"], correct: 2 },
+    { section: "DTK", num: 38, reading: "barnadod", q: "Hur många fler barn dog bland 1–2-åringar än bland 5–9-åringar under perioden 1751–60?", opts: ["28 per tusen barn","37 per tusen barn","44 per tusen barn","51 per tusen barn"], correct: 1 },
+    { section: "DTK", num: 39, reading: "barnadod", q: "Studera tioårsperioden 1931–40. Vilka betingelser gav störst chanser att överleva spädbarnsåldern?", opts: ["Att vara pojke, att vara född i staden och att vara född inom äktenskapet.","Att vara flicka, att vara född på landsbygden och att vara född inom äktenskapet.","Att vara pojke, att vara född på landsbygden och att vara född utom äktenskapet.","Att vara flicka, att vara född i staden och att vara född inom äktenskapet."], correct: 3 },
+    { section: "DTK", num: 40, reading: "barnadod", q: "Vilken av de redovisade tioårsperioderna var spädbarnsdödligheten som störst?", opts: ["1761–70","1771–80","1801–10","1811–20"], correct: 0 },
+  ];
+
+  // Reading texts
+  const readings = {
+    journalister: { title: "Journalister", author: "Andreas Ekström", text: `Vad har journalisterna Kjell Häglund, Anders Mildner och Åsa Sjöström gemensamt? De har alla på sistone, i olika grad, möjligen tillfälligt eller delvis, lämnat journalistiken.\n\nDet intressanta med Häglund, Mildner och Sjöström är att de lämnar en fot kvar. Häglund jobbar med uppdragspubliceringar, men fortsätter att skriva kulturjournalistik på fritiden. Mildner jobbar med evenemang och konferenser. Och Åsa Sjöström, fotografen som vann World Press Photo, jobbar nu också för ett stort företags välgörenhetsstiftelse.\n\nVi ser alltså här tre verkliga toppnamn som inte längre fullt ut vill eller kan stanna kvar i branschen. Visst hände det även förr att duktiga journalister beslutade sig för att byta bana. Men jag tror att man med viss säkerhet kan säga att de bästa brukade stanna kvar. För att de ville. För att de kunde. För att frilansmarknaden var anständig. Här har något förändrats.\n\nFörloraren är förstås den svenska journalistiken. Förlusten kan beskrivas på tre sätt: Branschen kan inte locka de bästa. Branschen bidrar till sin egen avprofessionalisering när journalistik blir något man gör i den mån man personligen har råd. Branschen måste ge upp delar av sin tidigare så starka etik; journalistyrket var något som ytterst ogärna fick kombineras med andra sysslor. Bara genom att stå helt fri kan den som rapporterar garantera sitt oberoende, hette det.\n\nAnders Mildner är enligt min mening en av landets främsta journalister i sitt segment. Han är sakkunnig, skrivskicklig och proffsig i alla detaljer. Men journalistiken som bransch och industri lyckas inte längre behålla honom. Frilansarvodena börjar bli pinsamma på allt fler ställen.\n\nSka man säga att det brinner i knutarna? Nej, jag tror att det är mer korrekt att säga att huset står i ljusan låga.` },
+    trad: { title: "Talande träd", author: "Karin Wallén", text: `Tätt, tätt ihop står de. De väldiga bokträden bildar ett till synes heltäckande parasoll mot himlen. Nedanför dem strävar de tunna ynglingarna i skuggan. Men den långsamma uppväxten gör veden tätare och segare. Dessutom blir småttingarna omhändertagna — moderträdet pumpar in socker och andra näringsämnen via rötterna.\n\n"Träd är intresserade av att andra träd ska vara friska och levande. De håller varandra om ryggen för att de behöver varandra," säger Peter Wohlleben. I sin bok Trädens hemliga liv berättar han om forskningsrön som tidigare inte nått ut till allmänheten. Själv upplevde han att kunskaperna han fick som skogvaktare var det skogsbolagen ville att han skulle kunna. Nyttan av träproduktion stod i centrum.\n\nPeter Wohlleben kallar plantageträden för gatubarn, utan det stöttande nätverket i den naturliga skogen. Men träd tycks ha förmågan att tillgodogöra sig nya erfarenheter, minnas dem och anpassa sig. I rotspetsarna har forskare hittat "hjärnliknande strukturer".\n\nUnder sina första år som skogvaktare hade Wohlleben knappast några tankar på hur träden samarbetade. Allt förändrades när han ledde guidade turer och drogs med i besökarnas förtjusning. Han upptäckte att träden hade personligheter. Tre ekar i olika stadier av höstskrud — en kal, en höstgul, en grönt optimistisk. Mönstret visade sig återkomma år efter år.\n\nTräd kan kommunicera med doftsignaler — när en giraff äter av en akacia pumpar trädet ut giftämnen. Forskare som undersökt växtrötter har uppfattat att de kan ge ifrån sig knackningar på 220 hertz. Kan växter och träd höra? Forskningen är bara i sin linda, men Wohlleben hoppas att det här är början på ett nytt sätt att se på naturen.\n\n"Så länge forskarna inte kan motbevisa att träden känner smärta, måste man ändå hålla det öppet. Säga att man inte vet."` },
+    overgangar: { title: "Övergångar", author: "Emilie Stendahl", text: `Barn byter avdelning, lämnar trygga vuxna och kompisar för ett nytt sammanhang. En övergång kan vara både spännande och skrämmande.\n\nForskaren Marita Lundström vid Högskolan Väst intervjuade lärare i förskola, förskoleklass och grundskola. Barnen vid enheten bytte grupp och lärare varje år, från att de fyllde fyra. Alla dessa byten kan innebära problem — i läroplanerna ska man eftersträva kontinuitet och sammanhang.\n\nLärarna hade begränsade kunskaper om varandras verksamheter och dokumentationen användes inte. En pedagog gav uttryck för frustration: "Vi håller på med naturvetenskap och teknik, kan jag tala om. Fysik och kemi, det jobbar vi med. Vi håller inte på med någon bondgård. Friktion och acceleration, sådana ord använder vi."\n\nGrundskollärarna ville inte ha information om vad barnen arbetat med tidigare, utan ville främst veta om något barn hade särskilda svårigheter.\n\nVarför tycker vi att det är en bra lösning för små barn att byta grupp ofta, medan vi månar om att äldre barn ska ha samma lärare i flera år? funderar Lundström.\n\nForskaren Lina Lago vid Linköpings universitet följde barn som skulle börja ettan. Barnen hade tydliga förväntningar. En sak hon såg var att de vuxna framför allt betonade de ökande kraven och allvaret, medan entusiasmen inför det nya inte förstärktes. Skolan beskrevs som kravfylld och jobbig.\n\nÖvergången är en process som pågår innan och efter själva bytet. "Även om man skapar sig erfarenhet av övergångar, måste man se till vad just den här barngruppen behöver." Låt det inte gå rutin i övergången utan behåll nyfikenheten, uppmanar Lago.` },
+    neuroscience: { title: "Neuroscience", text: `In recent decades, neuroscience has emerged as a star among the biological disciplines. But its enormous popularity as an academic career choice has been accompanied by a drop in the percentage of trained neuroscientists who actually work in academic research positions — largely because of lack of funding. Steven Hyman of the Broad Institute welcomes the flood of doctoral students choosing the field but warns: 'Insofar as talented young people are discouraged from academic careers by funding levels so low that they produce debilitating levels of competition or simply foreclose opportunities, the U.S. and the world are losing an incredibly precious resource.'` },
+    animalhacks: { title: "Animal Hacks", text: `Humans aren't the only creatures to use tools. Archerfish shoot water droplets from their mouths to fell insects. Octopuses carry coconut shells to serve as shelter. Orangutans borrow canoes to forage for aquatic plants. "Tool use is widespread and diverse," says biologist Robert W. Shumaker. But it's not necessarily a sign of intelligence. For some animals, like the archerfish, tool use is mostly instinctive: each individual of the species does it, in the same way. Other animals learn their skills: before the canoeing orangutans ventured out on the water, they observed how humans used the craft.` },
+    grimm: { title: "The Brothers Grimm", author: "Jonathan Hatfull", text: `We all know the stories of the Brothers Grimm. The true Grimms' tales are pure folklore, passed down from generation to generation — they were spoken.\n\nIt was that oral tradition that first drew the brothers to these classics. Jacob and Wilhelm were tremendously proud of their national heritage, and collecting fairy tales was an opportunity to preserve and celebrate a popular German tradition.\n\nThe enduring image of the Grimms is of two travelling scholars, journeying to track down stories. The truth is somewhat different. "The popular image of the Grimms travelling about and gathering folk tales from the people is totally false," says Jack Zipes. Most of the tales were sent to them by friends and colleagues throughout the German principalities.\n\nTheir first book was published in 1812, containing 86 tales. The first edition is generally regarded as being a straightforward telling. With each new reprinting, the Grimms' talent as writers became more apparent.\n\nThese stories, particularly in their first editions, are notably darker than the versions we know today. Parents are some of the primary figures of danger. In the earliest version of Hansel and Gretel, it is the siblings' own mother who propels the evil plan. Similarly, in the original Snow White, the monster who orders the Huntsman to kill Snow White is actually the maiden's own mother.\n\nIn subsequent editions, the Grimms began to edit these stories to make them more suitable for younger readers, as a reflection of their enormous success, and began adding more Christian elements. The themes of famine throughout are certainly a reflection of the times in which they originated.` },
+    somatic: { title: "Somatic Feedback", text: `Ask average folks how emotions work and they'll say we smile because we're happy, we run because we're afraid. But work by psychologists shows the truth is often the reverse: what we feel is actually the product, not the cause, of what we do. It's called "somatic feedback." Only after we act do we deduce how we feel.\n\nHowever, new research suggests there may be limits. The researchers found that the more people smiled, the happier they reported being. But only some people.\n\nSurprisingly, for a section of the population, smiling actually reduced well-being. The gloomiest people were those who believed in precisely that somatic feedback hypothesis. People who realized that you can "smile to feel happy" (proactive smilers) were exactly those who did not enjoy the benefits. On the other hand, for those who believed that smiling is a genuine indicator of mood (reactive smilers) — smiling boosted happiness.` },
+    scifi: { title: "Science Fiction", text: `Science-fiction writers are no better than anyone else at predicting what is to come. The future, after all, is unknowable. Often people try to extrapolate a recent trend straight into the future, but society and technology rarely change at a constant rate. Other foretelling techniques are similarly doomed to failure. Science fiction, however, does recognize the value of prognosticating: it tends to reveal the preoccupations of the present.` },
+    studiehjälp: { title: "Indragen studiehjälp", text: `<strong>Data: Antal gymnasieelever med indragen studiehjälp pga ogiltig frånvaro</strong><br><br><table><thead><tr><th>Bidragsform</th><th colspan="3">Studiebidrag</th><th colspan="3">Extra tillägg</th></tr><tr><th>Läsår</th><th>Totalt</th><th>Kv</th><th>Män</th><th>Totalt</th><th>Kv</th><th>Män</th></tr></thead><tbody><tr><td>2009/10</td><td>15 470</td><td>5 574</td><td>9 896</td><td>612</td><td>196</td><td>416</td></tr><tr><td>2010/11</td><td>16 314</td><td>5 974</td><td>10 340</td><td>707</td><td>251</td><td>456</td></tr><tr><td>2011/12</td><td>19 736</td><td>7 301</td><td>12 435</td><td>948</td><td>319</td><td>629</td></tr></tbody></table><br><strong>Urval länsdata (totalt antal):</strong><table><thead><tr><th>Län</th><th>2009/10</th><th>2010/11</th><th>2011/12</th></tr></thead><tbody><tr><td>Östergötlands</td><td>609 (201kv/408m)</td><td>717</td><td>771</td></tr><tr><td>Skåne</td><td>2341 (906kv/1435m)</td><td>2542</td><td>2807</td></tr><tr><td>V. Götalands</td><td>2260 (760kv/1500m)</td><td>2259</td><td>3357</td></tr><tr><td>Hallands</td><td>335</td><td>424</td><td>420</td></tr><tr><td>Örebro</td><td>486</td><td>599</td><td>564</td></tr><tr><td>Gotlands</td><td>115</td><td>116</td><td>143</td></tr><tr><td>Västernorrlands</td><td>393</td><td>427</td><td>475</td></tr><tr><td>Västmanlands</td><td>470 (150kv/320m)</td><td>471</td><td>522</td></tr></tbody></table>` },
+    fysisk: { title: "Fysisk aktivitet och träning", text: `<strong>Energiförbrukning vid olika aktivitetsnivåer:</strong><table><thead><tr><th>Aktivitet</th><th>kJ/min totalt</th><th>Socker</th><th>Fett</th></tr></thead><tbody><tr><td>Vila</td><td>~8</td><td>43 %</td><td>57 %</td></tr><tr><td>Lätt arbete</td><td>~25</td><td>50 %</td><td>50 %</td></tr><tr><td>Medelhårt arbete</td><td>~60</td><td>67 %</td><td>33 %</td></tr><tr><td>Hårt arbete</td><td>~85</td><td>98 %</td><td>2 %</td></tr></tbody></table><br><strong>Pulsfrekvens vid löpning:</strong><br>Otränad person: maximal puls (~200 slag/min) vid ~15 km/h<br>Fotbollsspelare före träningsperiod: maximal puls vid ~20 km/h<br>Fotbollsspelare efter träningsperiod: maximal puls vid ~22 km/h` },
+    fiskeflotta: { title: "Europeiska unionens fiskeflotta", text: `<strong>EU:s fiskeflotta den 31 december 2005</strong><br>Totalt antal fartyg: 89 666 | Totalt tonnage: 2 034 389 ton | Total maskinkraft: 7 287 224 kW<br><br>Tre cirkeldiagram visar fördelningen. Ur diagrammen kan man utläsa ungefärliga andelar:<br><br><strong>Antal fartyg:</strong> Grekland (EL) störst ~20%, Italien ~16%, Spanien ~15%, Portugal ~10%, Frankrike ~8%, UK ~7%, Finland ~4%, övriga mindre.<br><strong>Tonnage:</strong> Spanien störst ~25%, UK ~12%, Frankrike ~10%, Italien ~10%, Nederländerna ~8%, övriga mindre.<br><strong>Maskinkraft (kW):</strong> Italien störst ~18%, Frankrike ~15%, Spanien ~14%, UK ~10%, Grekland ~7%, Portugal ~5%, övriga mindre.` },
+    barnadod: { title: "Barnadödligheten sedan 1700-talet", text: `<strong>Dödlighet per tusen barn i Sverige 1751–1970:</strong><br>1751–60: 1–2 år: ~50, 3–4 år: ~20, 5–9 år: ~13, 10–14 år: ~6<br>Alla grupper sjönk markant fram till 1970.<br><br><strong>Spädbarnsdödlighet (döda före 1 års ålder per 1000 levande födda):</strong><br>Pojkar: Högst ~230 (1771–80), sedan sjunkande. Flickor: Genomgående ~10–15 lägre än pojkar.<br><br><strong>Spädbarnsdödlighet stad vs landsbygd:</strong><br>1811–1860: Staden markant högre (~200–250) än landsbygden (~150–180).<br>1931–40: Staden ~50, landsbygden ~45.<br>1951–60: Båda ~20.<br><br><strong>Inom vs utom äktenskapet:</strong><br>1801–1860: Utomäktenskapliga ~300–400, inomäktenskapliga ~150–200.<br>1931–40: Utomäktenskapliga ~65, inomäktenskapliga ~42.<br>1966: Båda ~15.` },
+  };
+
+  // ============================================================
+  // EXAM LOGIC
+  // ============================================================
+
+  const sectionNames: Record<string, string> = {
+    ORD: "ORD — Ordförståelse",
+    "LÄS": "LÄS — Svensk läsförståelse",
+    MEK: "MEK — Meningskomplettering",
+    ELF: "ELF — Engelsk läsförståelse",
+    XYZ: "XYZ — Matematisk problemlösning",
+    KVA: "KVA — Kvantitativa jämförelser",
+    NOG: "NOG — Kvantitativa resonemang",
+    DTK: "DTK — Diagram, tabeller och kartor",
+  };
+
+  const sectionInfo: Record<string, string> = {
+    KVA: "Jämför de två kvantiteterna. Svara A om I är störst, B om II är störst, C om de är lika, D om informationen är otillräcklig.",
+    NOG: "Avgör om informationen i påståendena (1) och (2) räcker för att lösa problemet. Svarsalternativ: A = bara (1), B = bara (2), C = (1) och (2) tillsammans, D = var för sig, E = räcker ej.",
+  };
+
+  const letters = ['A','B','C','D','E'];
+  let currentQuestions: typeof verbalQuestions = [];
+  let currentType = '';
+  let timerInterval: number;
+  let timeLeft = 55 * 60;
+
+  function startExam(type: string) {
+    currentType = type;
+    currentQuestions = type === 'verbal' ? verbalQuestions : kvantQuestions;
+    timeLeft = 55 * 60;
+
+    document.getElementById('selection-screen')!.style.display = 'none';
+    document.getElementById('results-screen')!.style.display = 'none';
+    document.getElementById('exam-screen')!.style.display = 'block';
+
+    const title = type === 'verbal' ? 'Verbalt provpass' : 'Kvantitativt provpass';
+    const subtitle = type === 'verbal'
+      ? 'Provpass 1 — Verbal del · 40 uppgifter · 55 minuter'
+      : 'Provpass 3 — Kvantitativ del · 40 uppgifter · 55 minuter';
+
+    document.getElementById('exam-title')!.textContent = `Högskoleprovet vt 2021`;
+    document.getElementById('exam-subtitle')!.textContent = subtitle;
+    document.getElementById('exam-title-bar')!.textContent = title;
+
+    renderQuestions();
+    startTimer();
+    window.scrollTo(0, 0);
+  }
+
+  function renderQuestions() {
+    const container = document.getElementById('exam-questions')!;
+    let html = '';
+    let currentSection = '';
+    let shownReadings = new Set<string>();
+
+    for (const q of currentQuestions) {
+      if (q.section !== currentSection) {
+        currentSection = q.section;
+        html += `<div class="exam-section-header">${sectionNames[currentSection] || currentSection}</div>`;
+        if (sectionInfo[currentSection]) {
+          html += `<div class="exam-section-info">${sectionInfo[currentSection]}</div>`;
+        }
+      }
+
+      // Show reading text if needed
+      if (q.reading && !shownReadings.has(q.reading)) {
+        shownReadings.add(q.reading);
+        const r = readings[q.reading as keyof typeof readings];
+        if (r) {
+          html += `<div class="reading-block"><h3>${r.title}</h3>`;
+          if (r.text.includes('<table>')) {
+            html += r.text;
+          } else {
+            html += r.text.split('\n\n').map((p: string) => `<p>${p}</p>`).join('');
+          }
+          if ((r as any).author) html += `<p style="text-align:right; font-style:italic; margin-top:0.5rem;">${(r as any).author}</p>`;
+          html += `</div>`;
+        }
+      }
+
+      html += `<div class="question-block" id="q${q.num}">`;
+      html += `<div class="question-text"><span class="question-number">${q.num}.</span> ${q.q}</div>`;
+      for (let i = 0; i < q.opts.length; i++) {
+        const id = `q${q.num}_${i}`;
+        html += `<div class="option-row">`;
+        html += `<input type="radio" name="q${q.num}" id="${id}" value="${i}">`;
+        html += `<label for="${id}"><span class="option-letter">${letters[i]}</span> ${q.opts[i]}</label>`;
+        html += `</div>`;
+      }
+      html += `</div>`;
+    }
+
+    container.innerHTML = html;
+
+    // Mark answered questions
+    container.querySelectorAll('input[type="radio"]').forEach(input => {
+      input.addEventListener('change', () => {
+        const name = (input as HTMLInputElement).name;
+        const block = document.getElementById(name);
+        if (block) block.classList.add('answered');
+      });
+    });
+  }
+
+  function startTimer() {
+    clearInterval(timerInterval);
+    updateTimerDisplay();
+    timerInterval = window.setInterval(() => {
+      timeLeft--;
+      updateTimerDisplay();
+      if (timeLeft <= 0) {
+        clearInterval(timerInterval);
+        submitExam();
+      }
+    }, 1000);
+  }
+
+  function updateTimerDisplay() {
+    const display = document.getElementById('timer-display')!;
+    const min = Math.floor(timeLeft / 60);
+    const sec = timeLeft % 60;
+    display.textContent = `${min}:${sec.toString().padStart(2, '0')}`;
+    display.className = '';
+    if (timeLeft <= 300) display.className = 'danger';
+    else if (timeLeft <= 600) display.className = 'warning';
+  }
+
+  function submitExam() {
+    clearInterval(timerInterval);
+
+    let totalCorrect = 0;
+    const sectionScores: Record<string, { correct: number; total: number }> = {};
+
+    for (const q of currentQuestions) {
+      if (!sectionScores[q.section]) sectionScores[q.section] = { correct: 0, total: 0 };
+      sectionScores[q.section].total++;
+
+      const selected = document.querySelector(`input[name="q${q.num}"]:checked`) as HTMLInputElement | null;
+      const userAnswer = selected ? parseInt(selected.value) : -1;
+      const isCorrect = userAnswer === q.correct;
+
+      if (isCorrect) {
+        totalCorrect++;
+        sectionScores[q.section].correct++;
+      }
+
+      // Style the question block
+      const block = document.getElementById(`q${q.num}`);
+      if (block) {
+        block.classList.remove('answered');
+        block.classList.add(isCorrect ? 'result-correct' : 'result-incorrect');
+
+        // Show correct answer
+        const note = document.createElement('div');
+        note.className = 'correct-answer-note';
+        if (isCorrect) {
+          note.innerHTML = `<span class="result-correct-marker">✓ Rätt!</span> Svar: ${letters[q.correct]}`;
+        } else {
+          note.innerHTML = `<span class="result-incorrect-marker">✗ Fel.</span> Rätt svar: <strong>${letters[q.correct]}. ${q.opts[q.correct]}</strong>`;
+        }
+        block.appendChild(note);
+      }
+
+      // Disable all radios
+      document.querySelectorAll(`input[name="q${q.num}"]`).forEach(r => {
+        (r as HTMLInputElement).disabled = true;
+      });
+    }
+
+    // Show results
+    const pct = Math.round((totalCorrect / currentQuestions.length) * 100);
+    document.getElementById('results-total')!.textContent = `${totalCorrect} / ${currentQuestions.length}`;
+    document.getElementById('results-percent')!.textContent = `${pct}% rätt`;
+
+    let sectHtml = '';
+    for (const [sec, data] of Object.entries(sectionScores)) {
+      const sp = Math.round((data.correct / data.total) * 100);
+      sectHtml += `<div class="section-score"><span>${sectionNames[sec] || sec}</span><span>${data.correct}/${data.total} (${sp}%)</span></div>`;
+    }
+    document.getElementById('results-sections')!.innerHTML = sectHtml;
+    document.getElementById('results-detail')!.innerHTML = '';
+
+    document.getElementById('exam-screen')!.style.display = 'none';
+    document.getElementById('results-screen')!.style.display = 'block';
+    window.scrollTo(0, 0);
+  }
+
+  // Event listeners
+  document.getElementById('start-verbal')!.addEventListener('click', () => startExam('verbal'));
+  document.getElementById('start-kvant')!.addEventListener('click', () => startExam('kvant'));
+  document.getElementById('submit-exam')!.addEventListener('click', () => {
+    if (confirm('Vill du lämna in provpasset? Du kan inte ändra dina svar efteråt.')) {
+      submitExam();
+    }
+  });
+  document.getElementById('exam-back-btn')!.addEventListener('click', () => {
+    if (confirm('Vill du avbryta provpasset? Dina svar sparas inte.')) {
+      clearInterval(timerInterval);
+      document.getElementById('exam-screen')!.style.display = 'none';
+      document.getElementById('selection-screen')!.style.display = 'block';
+    }
+  });
+  document.getElementById('results-retry')!.addEventListener('click', () => {
+    document.getElementById('results-screen')!.style.display = 'none';
+    startExam(currentType);
+  });
+  document.getElementById('results-back')!.addEventListener('click', () => {
+    document.getElementById('results-screen')!.style.display = 'none';
+    document.getElementById('selection-screen')!.style.display = 'block';
+    window.scrollTo(0, 0);
+  });
+</script>

@@ -1,0 +1,154 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Forum – HPMästaren">
+  <div class="page-content">
+    <div class="container">
+      <h1>Forum</h1>
+      <p class="page-intro">Diskutera, ställ frågor och hjälp varandra. Alla som pluggar till HP är välkomna.</p>
+
+      <div id="forum-app">
+        <!-- Forum categories -->
+        <div class="forum-categories">
+          <div class="card forum-category" data-category="allmant">
+            <h3>Allmänt om HP</h3>
+            <p>Generella frågor, tips och diskussioner om högskoleprovet.</p>
+            <span class="forum-meta">Senaste aktivitet: —</span>
+          </div>
+
+          <div class="card forum-category" data-category="verbal">
+            <h3>Verbala delprov (ORD, LÄS, MEK, ELF)</h3>
+            <p>Frågor om ordförståelse, läsförståelse, meningskomplettering och engelska.</p>
+            <span class="forum-meta">Senaste aktivitet: —</span>
+          </div>
+
+          <div class="card forum-category" data-category="kvantitativ">
+            <h3>Kvantitativa delprov (XYZ, KVA, NOG, DTK)</h3>
+            <p>Frågor om matematik, kvantitativa jämförelser, resonemang och diagram.</p>
+            <span class="forum-meta">Senaste aktivitet: —</span>
+          </div>
+
+          <div class="card forum-category" data-category="minnestekniker">
+            <h3>Minnestekniker</h3>
+            <p>Dela dina minnesbilder, fråga om tekniker och lär av varandra.</p>
+            <span class="forum-meta">Senaste aktivitet: —</span>
+          </div>
+
+          <div class="card forum-category" data-category="resultat">
+            <h3>Resultat &amp; framgångshistorier</h3>
+            <p>Berätta hur det gick! Dela din resa och inspirera andra.</p>
+            <span class="forum-meta">Senaste aktivitet: —</span>
+          </div>
+        </div>
+
+        <!-- Login prompt for non-logged-in users -->
+        <div class="forum-login-prompt" id="forum-login-prompt">
+          <div class="tip-box">
+            <strong>Vill du skriva i forumet?</strong>
+            <a href="/konto/login">Logga in</a> eller <a href="/konto/registrera">skapa ett gratis konto</a> för att delta i diskussionerna.
+          </div>
+        </div>
+
+        <!-- New thread form (shown when logged in) -->
+        <div class="forum-new-thread" id="forum-new-thread" style="display: none;">
+          <h2>Starta en ny tråd</h2>
+          <form id="new-thread-form">
+            <div class="form-group">
+              <label for="thread-category">Kategori</label>
+              <select id="thread-category" required>
+                <option value="">Välj kategori...</option>
+                <option value="allmant">Allmänt om HP</option>
+                <option value="verbal">Verbala delprov</option>
+                <option value="kvantitativ">Kvantitativa delprov</option>
+                <option value="minnestekniker">Minnestekniker</option>
+                <option value="resultat">Resultat & framgångshistorier</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="thread-title">Rubrik</label>
+              <input type="text" id="thread-title" placeholder="Vad handlar din fråga/diskussion om?" required />
+            </div>
+            <div class="form-group">
+              <label for="thread-body">Meddelande</label>
+              <textarea id="thread-body" rows="6" placeholder="Beskriv din fråga eller starta en diskussion..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Publicera</button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .forum-categories {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .forum-category {
+    cursor: pointer;
+  }
+
+  .forum-category h3 {
+    margin-top: 0;
+  }
+
+  .forum-meta {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+
+  .forum-login-prompt {
+    margin-top: 1.5rem;
+  }
+
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    font-size: 0.95rem;
+  }
+
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    background: var(--color-surface);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+  }
+
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+</style>
+
+<script>
+  // Check if user is logged in
+  const user = localStorage.getItem('hp_user');
+  if (user) {
+    const loginPrompt = document.getElementById('forum-login-prompt');
+    const newThread = document.getElementById('forum-new-thread');
+    if (loginPrompt) loginPrompt.style.display = 'none';
+    if (newThread) newThread.style.display = 'block';
+  }
+</script>

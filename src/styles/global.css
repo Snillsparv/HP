@@ -424,6 +424,37 @@ tr:hover {
   color: var(--color-primary);
 }
 
+/* === Nav login button === */
+.nav-login {
+  background: var(--color-primary);
+  color: white !important;
+  padding: 0.4rem 1rem;
+  border-radius: var(--radius);
+  font-size: 0.9rem !important;
+  transition: background 0.15s;
+}
+
+.nav-login:hover {
+  background: var(--color-primary-dark);
+  text-decoration: none !important;
+}
+
+/* === Footer swish === */
+.footer-swish {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: #f1f5f9;
+  border-radius: var(--radius);
+  max-width: 500px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.footer-swish p {
+  margin-bottom: 0;
+  font-size: 0.95rem;
+}
+
 @media (max-width: 480px) {
   .hero h1 { font-size: 2rem; }
   h1 { font-size: 1.8rem; }

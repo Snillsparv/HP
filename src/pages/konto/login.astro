@@ -1,0 +1,89 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Logga in – HPMästaren">
+  <div class="page-content">
+    <div class="container" style="max-width: 480px;">
+      <h1>Logga in</h1>
+      <p class="page-intro">Logga in för att delta i forumet och spara dina framsteg.</p>
+
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-email">E-post</label>
+          <input type="email" id="login-email" placeholder="din@email.se" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Lösenord</label>
+          <input type="password" id="login-password" placeholder="Ditt lösenord" required />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Logga in</button>
+      </form>
+
+      <p style="text-align: center; margin-top: 1.5rem; color: var(--color-muted);">
+        Inget konto? <a href="/konto/registrera">Skapa ett gratis</a>
+      </p>
+
+      <div id="login-message" style="display: none; margin-top: 1rem;"></div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    font-size: 0.95rem;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    background: var(--color-surface);
+  }
+
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+</style>
+
+<script>
+  document.getElementById('login-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const email = (document.getElementById('login-email') as HTMLInputElement).value;
+    const msg = document.getElementById('login-message');
+
+    // Placeholder login (for real backend integration later)
+    const stored = localStorage.getItem('hp_user');
+    if (stored) {
+      const user = JSON.parse(stored);
+      if (user.email === email) {
+        if (msg) {
+          msg.style.display = 'block';
+          msg.className = 'tip-box success';
+          msg.innerHTML = `<strong>Välkommen tillbaka, ${user.name}!</strong> <a href="/forum">Gå till forumet →</a>`;
+        }
+        return;
+      }
+    }
+
+    // For demo: accept any login
+    localStorage.setItem('hp_user', JSON.stringify({ name: 'Användare', email }));
+    if (msg) {
+      msg.style.display = 'block';
+      msg.className = 'tip-box success';
+      msg.innerHTML = '<strong>Inloggad!</strong> <a href="/forum">Gå till forumet →</a>';
+    }
+  });
+</script>

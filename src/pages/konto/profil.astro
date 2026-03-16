@@ -1,0 +1,49 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Min profil – HPMästaren">
+  <div class="page-content">
+    <div class="container" style="max-width: 480px;">
+      <h1>Min profil</h1>
+
+      <div id="profile-info">
+        <div class="card" style="text-align: center; padding: 2rem;">
+          <p style="color: var(--color-muted);">Laddar profil...</p>
+        </div>
+      </div>
+
+      <div style="margin-top: 2rem; text-align: center;">
+        <button id="logout-btn" class="btn btn-outline">Logga ut</button>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<script>
+  const user = localStorage.getItem('hp_user');
+  const profileInfo = document.getElementById('profile-info');
+
+  if (user && profileInfo) {
+    const { name, email } = JSON.parse(user);
+    profileInfo.innerHTML = `
+      <div class="card" style="padding: 2rem;">
+        <h2 style="margin-top: 0;">${name}</h2>
+        <p style="color: var(--color-muted);">${email}</p>
+        <p><a href="/forum">Gå till forumet →</a></p>
+      </div>
+    `;
+  } else if (profileInfo) {
+    profileInfo.innerHTML = `
+      <div class="tip-box warning">
+        <strong>Du är inte inloggad.</strong>
+        <a href="/konto/login">Logga in</a> eller <a href="/konto/registrera">skapa ett konto</a>.
+      </div>
+    `;
+  }
+
+  document.getElementById('logout-btn')?.addEventListener('click', () => {
+    localStorage.removeItem('hp_user');
+    window.location.href = '/';
+  });
+</script>

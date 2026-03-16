@@ -1,0 +1,96 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="Skapa konto – HPMästaren">
+  <div class="page-content">
+    <div class="container" style="max-width: 480px;">
+      <h1>Skapa konto</h1>
+      <p class="page-intro">Gratis! Inga premiumplaner, inga dolda kostnader. Skapa ett konto för att delta i forumet.</p>
+
+      <form id="register-form">
+        <div class="form-group">
+          <label for="reg-name">Namn / Användarnamn</label>
+          <input type="text" id="reg-name" placeholder="Ditt namn eller alias" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-email">E-post</label>
+          <input type="email" id="reg-email" placeholder="din@email.se" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Lösenord</label>
+          <input type="password" id="reg-password" placeholder="Minst 8 tecken" minlength="8" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-password2">Bekräfta lösenord</label>
+          <input type="password" id="reg-password2" placeholder="Skriv lösenordet igen" minlength="8" required />
+        </div>
+        <button type="submit" class="btn btn-primary" style="width: 100%;">Skapa konto</button>
+      </form>
+
+      <p style="text-align: center; margin-top: 1.5rem; color: var(--color-muted);">
+        Har du redan ett konto? <a href="/konto/login">Logga in</a>
+      </p>
+
+      <div id="register-message" style="display: none; margin-top: 1rem;"></div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .form-group {
+    margin-bottom: 1.2rem;
+  }
+
+  .form-group label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 0.3rem;
+    font-size: 0.95rem;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 0.7rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    background: var(--color-surface);
+  }
+
+  .form-group input:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+</style>
+
+<script>
+  document.getElementById('register-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const name = (document.getElementById('reg-name') as HTMLInputElement).value;
+    const email = (document.getElementById('reg-email') as HTMLInputElement).value;
+    const pw = (document.getElementById('reg-password') as HTMLInputElement).value;
+    const pw2 = (document.getElementById('reg-password2') as HTMLInputElement).value;
+    const msg = document.getElementById('register-message');
+
+    if (pw !== pw2) {
+      if (msg) {
+        msg.style.display = 'block';
+        msg.className = 'tip-box warning';
+        msg.innerHTML = '<strong>Lösenorden matchar inte.</strong> Försök igen.';
+      }
+      return;
+    }
+
+    // Store user locally (placeholder for real backend)
+    localStorage.setItem('hp_user', JSON.stringify({ name, email }));
+
+    if (msg) {
+      msg.style.display = 'block';
+      msg.className = 'tip-box success';
+      msg.innerHTML = '<strong>Konto skapat!</strong> Du är nu inloggad. <a href="/forum">Gå till forumet →</a>';
+    }
+  });
+</script>

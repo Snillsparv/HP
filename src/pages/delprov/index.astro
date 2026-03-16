@@ -1,0 +1,33 @@
+---
+import Base from '../../layouts/Base.astro';
+
+const delprov = [
+  { slug: 'ord', name: 'ORD — Ordförståelse', icon: '📖', desc: 'Testa din kunskap om svenska ords betydelse. Här gör minnestekniker störst skillnad.' },
+  { slug: 'las', name: 'LÄS — Läsförståelse', icon: '📄', desc: 'Läs längre texter och svara på frågor. Handlar om att läsa effektivt under tidspress.' },
+  { slug: 'mek', name: 'MEK — Meningskomplettering', icon: '✏️', desc: 'Fyll i rätt ord i meningar. Testar ordförråd och språkkänsla.' },
+  { slug: 'elf', name: 'ELF — Engelsk läsförståelse', icon: '🇬🇧', desc: 'Som LÄS men på engelska. Engelska ordkunskaper och läsförståelse.' },
+  { slug: 'xyz', name: 'XYZ — Matematisk problemlösning', icon: '🔢', desc: 'Klassisk matematik. Algebra, geometri, sannolikhet och problemlösning.' },
+  { slug: 'kva', name: 'KVA — Kvantitativa jämförelser', icon: '⚖️', desc: 'Jämför två kvantiteter. Kräver smart förenkling snarare än tunga beräkningar.' },
+  { slug: 'nog', name: 'NOG — Kvantitativa resonemang', icon: '🧩', desc: 'Avgör om informationen räcker. HP:s svåraste och mest unika delprov.' },
+  { slug: 'dtk', name: 'DTK — Diagram, tabeller, kartor', icon: '📊', desc: 'Tolka visuell data. Handlar om noggrannhet och att snabbt hitta rätt information.' },
+];
+---
+
+<Base title="Strategier per delprov – HPMästaren">
+  <div class="page-content">
+    <div class="container container--wide">
+      <h1>Strategier per delprov</h1>
+      <p class="page-intro">Klicka på ett delprov för att läsa min strategi, se exempeluppgifter och få minnesknep specifika för just det provet.</p>
+
+      <div class="card-grid">
+        {delprov.map(d => (
+          <div class="card">
+            <span class="card-icon">{d.icon}</span>
+            <h3><a href={`/delprov/${d.slug}`}>{d.name}</a></h3>
+            <p>{d.desc}</p>
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+</Base>

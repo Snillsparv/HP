@@ -4,7 +4,7 @@ import Base from '../layouts/Base.astro';
 
 <Base title="Träna på Högskoleprovet – HPMästaren">
   <div class="page-content">
-    <div class="container">
+    <div class="container" id="trana-main-container">
       <h1>Träna på Högskoleprovet</h1>
       <p class="page-intro">Öva på exempeluppgifter för varje delprov. Välj ett delprov och kör!</p>
 
@@ -60,6 +60,44 @@ import Base from '../layouts/Base.astro';
             <p>Diagram &amp; tabeller</p>
           </button>
         </div>
+
+        <h2 style="margin-top: 2.5rem;">Öva med riktigt prov (PDF)</h2>
+        <p style="color: var(--color-muted);">Gör ett helt provpass från Vår 2021 med PDF:en i helbredd och svarsalternativ under.</p>
+        <div class="card-grid">
+          <button class="card trana-card" id="open-pdf-selector">
+            <span class="card-icon">📄</span>
+            <h3>Provpass (PDF)</h3>
+            <p>Välj provpass och öva med original-PDF</p>
+          </button>
+        </div>
+      </div>
+
+      <!-- Provpass PDF selector -->
+      <div id="pdf-selector" style="display: none;">
+        <button class="btn btn-outline btn-sm" id="pdf-back-to-menu">← Tillbaka</button>
+        <h2 style="margin-top: 1rem;">Välj provpass</h2>
+        <div class="card-grid">
+          <button class="card trana-card pdf-pass-card" data-pdf="/prov/provpass1-verb.pdf" data-pass="Provpass 1 — VERB">
+            <span class="card-icon">📝</span>
+            <h3>Provpass 1</h3>
+            <p>VERB (ORD, LÄS, MEK, ELF)</p>
+          </button>
+          <button class="card trana-card pdf-pass-card" data-pdf="/prov/provpass3-kva.pdf" data-pass="Provpass 3 — KVA">
+            <span class="card-icon">📐</span>
+            <h3>Provpass 3</h3>
+            <p>KVA (XYZ, KVA, NOG, DTK)</p>
+          </button>
+          <button class="card trana-card pdf-pass-card" data-pdf="/prov/provpass4-verb.pdf" data-pass="Provpass 4 — VERB">
+            <span class="card-icon">📝</span>
+            <h3>Provpass 4</h3>
+            <p>VERB (ORD, LÄS, MEK, ELF)</p>
+          </button>
+          <button class="card trana-card pdf-pass-card" data-pdf="/prov/provpass5-kva.pdf" data-pass="Provpass 5 — KVA">
+            <span class="card-icon">📐</span>
+            <h3>Provpass 5</h3>
+            <p>KVA (XYZ, KVA, NOG, DTK)</p>
+          </button>
+        </div>
       </div>
 
       <!-- Quiz area -->
@@ -94,6 +132,30 @@ import Base from '../layouts/Base.astro';
             <button class="btn btn-primary" id="retry-btn">Försök igen</button>
             <button class="btn btn-outline" id="other-btn">Välj annat delprov</button>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- PDF Viewer (full-width, outside container) -->
+    <div id="pdf-viewer-area" style="display: none;">
+      <div class="pdf-viewer-header">
+        <div class="container">
+          <button class="btn btn-outline btn-sm" id="pdf-viewer-back">← Tillbaka till provpass</button>
+          <span id="pdf-viewer-title" class="pdf-viewer-title-text"></span>
+        </div>
+      </div>
+      <div class="pdf-viewer-wrapper">
+        <iframe id="pdf-iframe" class="pdf-iframe"></iframe>
+      </div>
+      <div class="container">
+        <div class="pdf-answer-section">
+          <h3>Svarsformulär</h3>
+          <p style="color: var(--color-muted); margin-bottom: 1.5rem;">Fyll i dina svar för varje fråga. Tryck "Rätta" när du är klar.</p>
+          <div id="pdf-answer-grid" class="pdf-answer-grid"></div>
+          <div class="pdf-answer-actions">
+            <button class="btn btn-primary" id="pdf-grade-btn">Rätta provpasset</button>
+          </div>
+          <div id="pdf-results" class="pdf-results" style="display: none;"></div>
         </div>
       </div>
     </div>
@@ -266,6 +328,148 @@ import Base from '../layouts/Base.astro';
 
   #results-breakdown .result-item.incorrect {
     color: #ef4444;
+  }
+
+  /* PDF Viewer styles */
+  .pdf-viewer-header {
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+    padding: 0.8rem 0;
+    display: flex;
+    align-items: center;
+  }
+
+  .pdf-viewer-header .container {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+  }
+
+  .pdf-viewer-title-text {
+    font-weight: 700;
+    font-size: 1.1rem;
+  }
+
+  .pdf-viewer-wrapper {
+    width: 100%;
+    background: #525659;
+  }
+
+  .pdf-iframe {
+    width: 100%;
+    height: 85vh;
+    border: none;
+    display: block;
+  }
+
+  .pdf-answer-section {
+    padding: 2rem 0 3rem;
+  }
+
+  .pdf-answer-section h3 {
+    margin-top: 0;
+  }
+
+  .pdf-answer-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .pdf-question-row {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0.8rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+
+  .pdf-question-row .q-label {
+    font-weight: 700;
+    min-width: 2rem;
+    color: var(--color-muted);
+  }
+
+  .pdf-question-row .answer-btns {
+    display: flex;
+    gap: 0.3rem;
+  }
+
+  .pdf-question-row .answer-btn {
+    width: 2.2rem;
+    height: 2.2rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.15s;
+    font-family: var(--font-sans);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .pdf-question-row .answer-btn:hover {
+    border-color: var(--color-primary);
+    background: #eff6ff;
+  }
+
+  .pdf-question-row .answer-btn.selected {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: white;
+  }
+
+  .pdf-question-row .answer-btn.correct-answer {
+    border-color: var(--color-success);
+    background: #ecfdf5;
+    color: var(--color-success);
+  }
+
+  .pdf-question-row .answer-btn.selected.correct-answer {
+    background: var(--color-success);
+    color: white;
+  }
+
+  .pdf-question-row .answer-btn.selected.wrong-answer {
+    border-color: #ef4444;
+    background: #fef2f2;
+    color: #ef4444;
+  }
+
+  .pdf-answer-actions {
+    text-align: center;
+    margin-bottom: 1.5rem;
+  }
+
+  .pdf-results {
+    text-align: center;
+    padding: 1.5rem;
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+  }
+
+  .pdf-results .score {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--color-primary);
+    margin: 0.5rem 0;
+  }
+
+  @media (max-width: 480px) {
+    .pdf-answer-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .pdf-iframe {
+      height: 60vh;
+    }
   }
 </style>
 
@@ -884,5 +1088,142 @@ import Base from '../layouts/Base.astro';
   document.getElementById('other-btn')!.addEventListener('click', () => {
     resultsArea.style.display = 'none';
     selectorEl.style.display = 'block';
+  });
+
+  // ============================================================
+  // PDF Provpass viewer
+  // ============================================================
+  const answerKeys: { [key: string]: string[] } = {
+    '/prov/provpass1-verb.pdf': ['A','D','D','E','B','E','C','A','A','B','B','D','B','B','A','A','B','B','C','A','D','B','C','A','A','D','B','C','A','A','D','A','B','B','C','A','B','C','A','C'],
+    '/prov/provpass3-kva.pdf': ['B','B','C','C','C','B','B','D','D','A','B','A','A','C','B','B','B','A','A','D','C','C','E','D','C','C','B','A','C','C','A','B','A','B','A','C','C','B','D','A'],
+    '/prov/provpass4-verb.pdf': ['C','B','A','E','E','D','D','B','D','E','D','A','C','B','C','A','C','D','B','C','A','D','D','A','B','D','B','C','C','C','B','C','D','A','B','B','C','D','A','C'],
+    '/prov/provpass5-kva.pdf': ['C','C','B','A','D','D','B','A','D','A','C','A','B','D','A','B','C','A','B','A','D','B','C','C','A','E','D','B','B','B','B','A','D','C','B','D','C','D','C','A'],
+  };
+
+  let currentPdfUrl = '';
+  let pdfAnswers: (string | null)[] = [];
+
+  const pdfSelector = document.getElementById('pdf-selector')!;
+  const pdfViewerArea = document.getElementById('pdf-viewer-area')!;
+  const pageContainer = document.getElementById('trana-main-container')!;
+
+  // Open PDF selector
+  document.getElementById('open-pdf-selector')!.addEventListener('click', () => {
+    selectorEl.style.display = 'none';
+    pdfSelector.style.display = 'block';
+  });
+
+  document.getElementById('pdf-back-to-menu')!.addEventListener('click', () => {
+    pdfSelector.style.display = 'none';
+    selectorEl.style.display = 'block';
+  });
+
+  // Select a provpass
+  document.querySelectorAll('.pdf-pass-card').forEach(card => {
+    card.addEventListener('click', () => {
+      const el = card as HTMLElement;
+      currentPdfUrl = el.dataset.pdf!;
+      const passName = el.dataset.pass!;
+      openPdfViewer(currentPdfUrl, passName);
+    });
+  });
+
+  function openPdfViewer(pdfUrl: string, title: string) {
+    pdfSelector.style.display = 'none';
+    pageContainer.style.display = 'none';
+    pdfViewerArea.style.display = 'block';
+
+    document.getElementById('pdf-viewer-title')!.textContent = title;
+    (document.getElementById('pdf-iframe') as HTMLIFrameElement).src = pdfUrl;
+
+    const numQuestions = answerKeys[pdfUrl]?.length || 40;
+    pdfAnswers = new Array(numQuestions).fill(null);
+    renderAnswerGrid(numQuestions);
+
+    document.getElementById('pdf-results')!.style.display = 'none';
+    document.getElementById('pdf-grade-btn')!.style.display = 'inline-block';
+
+    // Remove graded state from all buttons
+    document.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.classList.remove('correct-answer', 'wrong-answer');
+    });
+  }
+
+  function renderAnswerGrid(numQuestions: number) {
+    const grid = document.getElementById('pdf-answer-grid')!;
+    const options = ['A', 'B', 'C', 'D', 'E'];
+    grid.innerHTML = '';
+
+    for (let i = 0; i < numQuestions; i++) {
+      const row = document.createElement('div');
+      row.className = 'pdf-question-row';
+      row.innerHTML = `
+        <span class="q-label">${i + 1}.</span>
+        <div class="answer-btns">
+          ${options.map(opt => `<button class="answer-btn" data-q="${i}" data-ans="${opt}">${opt}</button>`).join('')}
+        </div>
+      `;
+      grid.appendChild(row);
+    }
+
+    grid.querySelectorAll('.answer-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const el = btn as HTMLElement;
+        const qIndex = parseInt(el.dataset.q!);
+        const answer = el.dataset.ans!;
+
+        // Toggle selection
+        const row = el.closest('.pdf-question-row')!;
+        row.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
+        el.classList.add('selected');
+        pdfAnswers[qIndex] = answer;
+      });
+    });
+  }
+
+  document.getElementById('pdf-grade-btn')!.addEventListener('click', () => {
+    const key = answerKeys[currentPdfUrl];
+    if (!key) return;
+
+    let correct = 0;
+    let answered = 0;
+
+    pdfAnswers.forEach((ans, i) => {
+      const row = document.querySelectorAll('.pdf-question-row')[i];
+      if (!row) return;
+
+      // Show correct answer
+      row.querySelectorAll('.answer-btn').forEach(btn => {
+        const el = btn as HTMLElement;
+        if (el.dataset.ans === key[i]) {
+          el.classList.add('correct-answer');
+        }
+        if (ans && el.dataset.ans === ans && ans !== key[i]) {
+          el.classList.add('wrong-answer');
+        }
+      });
+
+      if (ans) {
+        answered++;
+        if (ans === key[i]) correct++;
+      }
+    });
+
+    const resultsEl = document.getElementById('pdf-results')!;
+    resultsEl.style.display = 'block';
+    resultsEl.innerHTML = `
+      <h3>Resultat</h3>
+      <div class="score">${correct} / ${key.length}</div>
+      <p>${answered} av ${key.length} frågor besvarade. ${correct} rätt (${Math.round((correct / key.length) * 100)}%).</p>
+    `;
+
+    document.getElementById('pdf-grade-btn')!.style.display = 'none';
+  });
+
+  document.getElementById('pdf-viewer-back')!.addEventListener('click', () => {
+    pdfViewerArea.style.display = 'none';
+    pageContainer.style.display = 'block';
+    pdfSelector.style.display = 'block';
+    (document.getElementById('pdf-iframe') as HTMLIFrameElement).src = '';
   });
 </script>

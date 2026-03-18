@@ -147,16 +147,18 @@ import Base from '../layouts/Base.astro';
       <div class="pdf-viewer-wrapper">
         <iframe id="pdf-iframe" class="pdf-iframe"></iframe>
       </div>
-      <div class="container">
-        <div class="pdf-answer-section">
-          <h3>Svarsformulär</h3>
-          <p style="color: var(--color-muted); margin-bottom: 1.5rem;">Fyll i dina svar för varje fråga. Tryck "Rätta" när du är klar.</p>
-          <div id="pdf-answer-grid" class="pdf-answer-grid"></div>
-          <div class="pdf-answer-actions">
-            <button class="btn btn-primary" id="pdf-grade-btn">Rätta provpasset</button>
+      <div class="pdf-answer-bar">
+        <div class="pdf-answer-bar-inner">
+          <button class="pdf-nav-btn" id="pdf-prev-btn" title="Föregående fråga">←</button>
+          <div class="pdf-current-question">
+            <span class="pdf-q-label" id="pdf-q-label">Fråga 1 av 40</span>
+            <div class="pdf-q-options" id="pdf-q-options"></div>
           </div>
-          <div id="pdf-results" class="pdf-results" style="display: none;"></div>
+          <button class="pdf-nav-btn" id="pdf-next-btn" title="Nästa fråga">→</button>
+          <button class="btn btn-primary btn-sm" id="pdf-grade-btn" style="margin-left: 1rem;">Rätta</button>
         </div>
+        <div id="pdf-results" class="pdf-results-inline" style="display: none;"></div>
+        <div class="pdf-dot-nav" id="pdf-dot-nav"></div>
       </div>
     </div>
   </div>
@@ -362,50 +364,78 @@ import Base from '../layouts/Base.astro';
     display: block;
   }
 
-  .pdf-answer-section {
-    padding: 2rem 0 3rem;
+  .pdf-answer-bar {
+    background: var(--color-surface);
+    border-top: 1px solid var(--color-border);
+    padding: 0.8rem 1.5rem;
+    position: sticky;
+    bottom: 0;
+    z-index: 50;
+    box-shadow: 0 -2px 8px rgba(0,0,0,0.08);
   }
 
-  .pdf-answer-section h3 {
-    margin-top: 0;
-  }
-
-  .pdf-answer-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-    gap: 1rem;
-    margin-bottom: 2rem;
-  }
-
-  .pdf-question-row {
+  .pdf-answer-bar-inner {
     display: flex;
     align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0.8rem;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    justify-content: center;
+    gap: 0.8rem;
+    max-width: 700px;
+    margin: 0 auto;
   }
 
-  .pdf-question-row .q-label {
-    font-weight: 700;
-    min-width: 2rem;
-    color: var(--color-muted);
-  }
-
-  .pdf-question-row .answer-btns {
-    display: flex;
-    gap: 0.3rem;
-  }
-
-  .pdf-question-row .answer-btn {
-    width: 2.2rem;
-    height: 2.2rem;
+  .pdf-nav-btn {
+    width: 2.5rem;
+    height: 2.5rem;
     border: 2px solid var(--color-border);
     border-radius: var(--radius);
     background: var(--color-surface);
-    font-weight: 600;
-    font-size: 0.9rem;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.15s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+  }
+
+  .pdf-nav-btn:hover {
+    border-color: var(--color-primary);
+    background: #eff6ff;
+  }
+
+  .pdf-nav-btn:disabled {
+    opacity: 0.3;
+    cursor: default;
+  }
+
+  .pdf-current-question {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .pdf-q-label {
+    font-weight: 700;
+    font-size: 0.95rem;
+    white-space: nowrap;
+    min-width: 7rem;
+    text-align: center;
+  }
+
+  .pdf-q-options {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .pdf-q-options .answer-btn {
+    width: 2.6rem;
+    height: 2.6rem;
+    border: 2px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    font-weight: 700;
+    font-size: 1rem;
     cursor: pointer;
     transition: all 0.15s;
     font-family: var(--font-sans);
@@ -414,61 +444,93 @@ import Base from '../layouts/Base.astro';
     justify-content: center;
   }
 
-  .pdf-question-row .answer-btn:hover {
+  .pdf-q-options .answer-btn:hover {
     border-color: var(--color-primary);
     background: #eff6ff;
   }
 
-  .pdf-question-row .answer-btn.selected {
+  .pdf-q-options .answer-btn.selected {
     border-color: var(--color-primary);
     background: var(--color-primary);
     color: white;
   }
 
-  .pdf-question-row .answer-btn.correct-answer {
+  .pdf-q-options .answer-btn.correct-answer {
     border-color: var(--color-success);
     background: #ecfdf5;
     color: var(--color-success);
   }
 
-  .pdf-question-row .answer-btn.selected.correct-answer {
+  .pdf-q-options .answer-btn.selected.correct-answer {
     background: var(--color-success);
     color: white;
   }
 
-  .pdf-question-row .answer-btn.selected.wrong-answer {
+  .pdf-q-options .answer-btn.selected.wrong-answer {
     border-color: #ef4444;
     background: #fef2f2;
     color: #ef4444;
   }
 
-  .pdf-answer-actions {
-    text-align: center;
-    margin-bottom: 1.5rem;
+  .pdf-dot-nav {
+    display: flex;
+    justify-content: center;
+    gap: 0.25rem;
+    margin-top: 0.5rem;
+    flex-wrap: wrap;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
   }
 
-  .pdf-results {
-    text-align: center;
-    padding: 1.5rem;
-    border-radius: var(--radius);
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
+  .pdf-dot {
+    width: 0.55rem;
+    height: 0.55rem;
+    border-radius: 50%;
+    background: var(--color-border);
+    cursor: pointer;
+    transition: all 0.15s;
+    border: none;
+    padding: 0;
   }
 
-  .pdf-results .score {
-    font-size: 2.5rem;
-    font-weight: 800;
+  .pdf-dot.active {
+    background: var(--color-primary);
+    transform: scale(1.3);
+  }
+
+  .pdf-dot.answered {
+    background: var(--color-muted);
+  }
+
+  .pdf-dot.correct-dot {
+    background: var(--color-success);
+  }
+
+  .pdf-dot.wrong-dot {
+    background: #ef4444;
+  }
+
+  .pdf-results-inline {
+    text-align: center;
+    padding: 0.5rem 0;
+    font-weight: 700;
+    font-size: 1.1rem;
     color: var(--color-primary);
-    margin: 0.5rem 0;
   }
 
   @media (max-width: 480px) {
-    .pdf-answer-grid {
-      grid-template-columns: 1fr;
-    }
-
     .pdf-iframe {
       height: 60vh;
+    }
+
+    .pdf-current-question {
+      flex-direction: column;
+      gap: 0.4rem;
+    }
+
+    .pdf-answer-bar-inner {
+      flex-wrap: wrap;
     }
   }
 </style>
@@ -1102,6 +1164,9 @@ import Base from '../layouts/Base.astro';
 
   let currentPdfUrl = '';
   let pdfAnswers: (string | null)[] = [];
+  let currentPdfQuestion = 0;
+  let pdfNumQuestions = 40;
+  let pdfGraded = false;
 
   const pdfSelector = document.getElementById('pdf-selector')!;
   const pdfViewerArea = document.getElementById('pdf-viewer-area')!;
@@ -1132,77 +1197,122 @@ import Base from '../layouts/Base.astro';
     pdfSelector.style.display = 'none';
     pageContainer.style.display = 'none';
     pdfViewerArea.style.display = 'block';
+    pdfGraded = false;
 
     document.getElementById('pdf-viewer-title')!.textContent = title;
     (document.getElementById('pdf-iframe') as HTMLIFrameElement).src = pdfUrl;
 
-    const numQuestions = answerKeys[pdfUrl]?.length || 40;
-    pdfAnswers = new Array(numQuestions).fill(null);
-    renderAnswerGrid(numQuestions);
+    pdfNumQuestions = answerKeys[pdfUrl]?.length || 40;
+    pdfAnswers = new Array(pdfNumQuestions).fill(null);
+    currentPdfQuestion = 0;
 
     document.getElementById('pdf-results')!.style.display = 'none';
     document.getElementById('pdf-grade-btn')!.style.display = 'inline-block';
 
-    // Remove graded state from all buttons
-    document.querySelectorAll('.answer-btn').forEach(btn => {
-      btn.classList.remove('correct-answer', 'wrong-answer');
+    renderDotNav();
+    showPdfQuestion();
+  }
+
+  function renderDotNav() {
+    const dotNav = document.getElementById('pdf-dot-nav')!;
+    dotNav.innerHTML = '';
+    for (let i = 0; i < pdfNumQuestions; i++) {
+      const dot = document.createElement('button');
+      dot.className = 'pdf-dot' + (i === currentPdfQuestion ? ' active' : '') + (pdfAnswers[i] ? ' answered' : '');
+      dot.title = `Fråga ${i + 1}`;
+      dot.addEventListener('click', () => {
+        currentPdfQuestion = i;
+        showPdfQuestion();
+      });
+      dotNav.appendChild(dot);
+    }
+  }
+
+  function updateDots() {
+    const dots = document.querySelectorAll('.pdf-dot');
+    dots.forEach((dot, i) => {
+      dot.className = 'pdf-dot';
+      if (i === currentPdfQuestion) dot.classList.add('active');
+      if (pdfAnswers[i]) dot.classList.add('answered');
+      if (pdfGraded) {
+        const key = answerKeys[currentPdfUrl];
+        if (pdfAnswers[i]) {
+          dot.classList.add(pdfAnswers[i] === key[i] ? 'correct-dot' : 'wrong-dot');
+        }
+      }
     });
   }
 
-  function renderAnswerGrid(numQuestions: number) {
-    const grid = document.getElementById('pdf-answer-grid')!;
+  function showPdfQuestion() {
+    const label = document.getElementById('pdf-q-label')!;
+    label.textContent = `Fråga ${currentPdfQuestion + 1} av ${pdfNumQuestions}`;
+
+    const optionsEl = document.getElementById('pdf-q-options')!;
     const options = ['A', 'B', 'C', 'D', 'E'];
-    grid.innerHTML = '';
+    const currentAnswer = pdfAnswers[currentPdfQuestion];
 
-    for (let i = 0; i < numQuestions; i++) {
-      const row = document.createElement('div');
-      row.className = 'pdf-question-row';
-      row.innerHTML = `
-        <span class="q-label">${i + 1}.</span>
-        <div class="answer-btns">
-          ${options.map(opt => `<button class="answer-btn" data-q="${i}" data-ans="${opt}">${opt}</button>`).join('')}
-        </div>
-      `;
-      grid.appendChild(row);
-    }
+    optionsEl.innerHTML = options.map(opt => {
+      let cls = 'answer-btn';
+      if (currentAnswer === opt) cls += ' selected';
+      if (pdfGraded) {
+        const key = answerKeys[currentPdfUrl];
+        if (opt === key[currentPdfQuestion]) cls += ' correct-answer';
+        if (currentAnswer === opt && opt !== key[currentPdfQuestion]) cls += ' wrong-answer';
+      }
+      return `<button class="${cls}" data-ans="${opt}">${opt}</button>`;
+    }).join('');
 
-    grid.querySelectorAll('.answer-btn').forEach(btn => {
+    optionsEl.querySelectorAll('.answer-btn').forEach(btn => {
       btn.addEventListener('click', () => {
-        const el = btn as HTMLElement;
-        const qIndex = parseInt(el.dataset.q!);
-        const answer = el.dataset.ans!;
+        if (pdfGraded) return;
+        const answer = (btn as HTMLElement).dataset.ans!;
+        pdfAnswers[currentPdfQuestion] = answer;
 
-        // Toggle selection
-        const row = el.closest('.pdf-question-row')!;
-        row.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
-        el.classList.add('selected');
-        pdfAnswers[qIndex] = answer;
+        // Update button states
+        optionsEl.querySelectorAll('.answer-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+
+        updateDots();
+
+        // Auto-advance after short delay
+        setTimeout(() => {
+          if (currentPdfQuestion < pdfNumQuestions - 1) {
+            currentPdfQuestion++;
+            showPdfQuestion();
+          }
+        }, 250);
       });
     });
+
+    // Update nav buttons
+    (document.getElementById('pdf-prev-btn') as HTMLButtonElement).disabled = currentPdfQuestion === 0;
+    (document.getElementById('pdf-next-btn') as HTMLButtonElement).disabled = currentPdfQuestion === pdfNumQuestions - 1;
+
+    updateDots();
   }
+
+  document.getElementById('pdf-prev-btn')!.addEventListener('click', () => {
+    if (currentPdfQuestion > 0) {
+      currentPdfQuestion--;
+      showPdfQuestion();
+    }
+  });
+
+  document.getElementById('pdf-next-btn')!.addEventListener('click', () => {
+    if (currentPdfQuestion < pdfNumQuestions - 1) {
+      currentPdfQuestion++;
+      showPdfQuestion();
+    }
+  });
 
   document.getElementById('pdf-grade-btn')!.addEventListener('click', () => {
     const key = answerKeys[currentPdfUrl];
     if (!key) return;
+    pdfGraded = true;
 
     let correct = 0;
     let answered = 0;
-
     pdfAnswers.forEach((ans, i) => {
-      const row = document.querySelectorAll('.pdf-question-row')[i];
-      if (!row) return;
-
-      // Show correct answer
-      row.querySelectorAll('.answer-btn').forEach(btn => {
-        const el = btn as HTMLElement;
-        if (el.dataset.ans === key[i]) {
-          el.classList.add('correct-answer');
-        }
-        if (ans && el.dataset.ans === ans && ans !== key[i]) {
-          el.classList.add('wrong-answer');
-        }
-      });
-
       if (ans) {
         answered++;
         if (ans === key[i]) correct++;
@@ -1211,13 +1321,11 @@ import Base from '../layouts/Base.astro';
 
     const resultsEl = document.getElementById('pdf-results')!;
     resultsEl.style.display = 'block';
-    resultsEl.innerHTML = `
-      <h3>Resultat</h3>
-      <div class="score">${correct} / ${key.length}</div>
-      <p>${answered} av ${key.length} frågor besvarade. ${correct} rätt (${Math.round((correct / key.length) * 100)}%).</p>
-    `;
+    resultsEl.textContent = `${correct} / ${key.length} rätt (${Math.round((correct / key.length) * 100)}%) — ${answered} besvarade`;
 
     document.getElementById('pdf-grade-btn')!.style.display = 'none';
+    showPdfQuestion();
+    updateDots();
   });
 
   document.getElementById('pdf-viewer-back')!.addEventListener('click', () => {

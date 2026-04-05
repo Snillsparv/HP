@@ -6,11 +6,12 @@ import Base from '../layouts/Base.astro';
   <div class="hero hero--elegant" id="hero">
     <button class="design-switcher" id="design-switcher" title="Byt design">
       <span class="design-switcher-icon">A</span>
-      <span class="design-switcher-label">Design 1/3</span>
+      <span class="design-switcher-label">1/13 Elegant</span>
     </button>
     <div class="hero-image-side">
       <img src="/hero.webp" alt="Jonas von Essen" />
     </div>
+    <img src="/jonas.webp" alt="Jonas von Essen" class="hero-peek" />
     <div class="hero-content">
       <span class="hero-tag">Från Sveriges mest framgångsrika HP-skribent</span>
       <h1>Nå ditt drömresultat på&nbsp;HP</h1>
@@ -41,9 +42,9 @@ import Base from '../layouts/Base.astro';
   </div>
 
   <script>
-    const designs = ['hero--elegant', 'hero--bold', 'hero--split', 'hero--magazine', 'hero--warm', 'hero--neon', 'hero--ocean', 'hero--minimal', 'hero--starfield', 'hero--nebula', 'hero--cosmos'];
-    const labels = ['1/11 Elegant', '2/11 Bold', '3/11 Split', '4/11 Magazine', '5/11 Warm', '6/11 Neon', '7/11 Ocean', '8/11 Minimal', '9/11 Starfield', '10/11 Nebula', '11/11 Cosmos'];
-    const icons = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K'];
+    const designs = ['hero--elegant', 'hero--bold', 'hero--split', 'hero--magazine', 'hero--warm', 'hero--neon', 'hero--ocean', 'hero--minimal', 'hero--starfield', 'hero--nebula', 'hero--cosmos', 'hero--neon-center', 'hero--cosmos-peek'];
+    const labels = ['1/13 Elegant', '2/13 Bold', '3/13 Split', '4/13 Magazine', '5/13 Warm', '6/13 Neon', '7/13 Ocean', '8/13 Minimal', '9/13 Starfield', '10/13 Nebula', '11/13 Cosmos', '12/13 Neon Center', '13/13 Cosmos+Jonas'];
+    const icons = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M'];
     let current = 0;
 
     const hero = document.getElementById('hero');

@@ -1415,6 +1415,186 @@ li { margin-bottom: 0.3em; }
 }
 
 /* =============================================
+   DESIGN N — Rymd 2 (Jonas in space, text left)
+   ============================================= */
+.hero--space2 {
+  background: url('/rymd_2.webp') center center / cover no-repeat;
+  min-height: 560px;
+  display: flex;
+  align-items: center;
+}
+
+.hero--space2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(0,0,0,0.8) 0%, rgba(0,0,0,0.5) 40%, rgba(0,0,0,0.1) 65%, transparent 100%);
+}
+
+.hero--space2 .hero-content {
+  max-width: var(--max-width-wide);
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  width: 100%;
+  text-align: left;
+}
+
+.hero--space2 h1 {
+  color: #fff;
+  max-width: 500px;
+  font-size: 2.8rem;
+}
+
+.hero--space2 .subtitle {
+  color: rgba(255,255,255,0.7);
+  max-width: 460px;
+}
+
+.hero--space2 .hero-tag {
+  background: rgba(167,139,250,0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(167,139,250,0.25);
+}
+
+.hero--space2 .hero-stat .number {
+  color: #a78bfa;
+}
+
+.hero--space2 .hero-stat .label {
+  color: rgba(255,255,255,0.45);
+}
+
+.hero--space2 .btn-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(124,58,237,0.3);
+}
+
+.hero--space2 .btn-primary:hover {
+  box-shadow: 0 0 35px rgba(124,58,237,0.5);
+}
+
+.hero--space2 .btn-outline {
+  border-color: rgba(167,139,250,0.4);
+  color: #c4b5fd;
+}
+
+.hero--space2 .btn-outline:hover {
+  background: rgba(139,92,246,0.15);
+  border-color: #a78bfa;
+}
+
+.hero--space2 .design-switcher {
+  background: rgba(0,0,0,0.5);
+  border-color: rgba(167,139,250,0.2);
+  color: #fff;
+}
+
+.hero--space2 .design-switcher-icon {
+  background: #7c3aed;
+}
+
+/* =============================================
+   DESIGN O — Rymd 3 (Jonas closer, centered text)
+   ============================================= */
+.hero--space3 {
+  background: url('/rymd_3.webp') center center / cover no-repeat;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero--space3::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 40% 50%, rgba(0,0,0,0.65) 0%, rgba(0,0,0,0.4) 50%, rgba(0,0,0,0.15) 100%);
+}
+
+.hero--space3 .hero-content {
+  max-width: 650px;
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  text-align: center;
+}
+
+.hero--space3 h1 {
+  color: #fff;
+  max-width: none;
+  font-size: 3rem;
+  text-shadow: 0 2px 20px rgba(0,0,0,0.5);
+}
+
+.hero--space3 .subtitle {
+  color: rgba(255,255,255,0.75);
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero--space3 .hero-tag {
+  background: rgba(255,255,255,0.1);
+  color: rgba(255,255,255,0.8);
+  border: 1px solid rgba(255,255,255,0.15);
+}
+
+.hero--space3 .hero-stats {
+  justify-content: center;
+}
+
+.hero--space3 .hero-stat .number {
+  color: #e0e7ff;
+  text-shadow: 0 0 15px rgba(165,180,252,0.4);
+}
+
+.hero--space3 .hero-stat .label {
+  color: rgba(255,255,255,0.5);
+}
+
+.hero--space3 .hero-buttons {
+  justify-content: center;
+}
+
+.hero--space3 .btn-primary {
+  background: rgba(255,255,255,0.15);
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(10px);
+  border-radius: 50px;
+}
+
+.hero--space3 .btn-primary:hover {
+  background: rgba(255,255,255,0.25);
+}
+
+.hero--space3 .btn-outline {
+  border-color: rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.8);
+  border-radius: 50px;
+}
+
+.hero--space3 .btn-outline:hover {
+  background: rgba(255,255,255,0.1);
+  border-color: rgba(255,255,255,0.35);
+  color: #fff;
+}
+
+.hero--space3 .design-switcher {
+  background: rgba(0,0,0,0.4);
+  border-color: rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.8);
+}
+
+.hero--space3 .design-switcher:hover {
+  background: rgba(0,0,0,0.6);
+}
+
+.hero--space3 .design-switcher-icon {
+  background: rgba(255,255,255,0.2);
+}
+
+/* =============================================
    Mobile — all designs
    ============================================= */
 @media (max-width: 768px) {
@@ -1613,6 +1793,42 @@ li { margin-bottom: 0.3em; }
   .hero--nebula .hero-stats,
   .hero--nebula .hero-buttons {
     justify-content: center;
+  }
+
+  /* Space 2 & 3 mobile */
+  .hero--space2,
+  .hero--space3 {
+    min-height: auto;
+  }
+
+  .hero--space2 .hero-content,
+  .hero--space3 .hero-content {
+    text-align: center;
+    padding: 3rem 1.5rem;
+  }
+
+  .hero--space2 h1,
+  .hero--space3 h1 {
+    max-width: none;
+    font-size: 2.2rem;
+  }
+
+  .hero--space2 .subtitle,
+  .hero--space3 .subtitle {
+    max-width: none;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero--space2 .hero-stats,
+  .hero--space2 .hero-buttons,
+  .hero--space3 .hero-stats,
+  .hero--space3 .hero-buttons {
+    justify-content: center;
+  }
+
+  .hero--space2::before {
+    background: radial-gradient(ellipse at 50% 30%, rgba(0,0,0,0.7) 0%, rgba(0,0,0,0.5) 60%, rgba(0,0,0,0.2) 100%);
   }
 
   /* Neon Center mobile */

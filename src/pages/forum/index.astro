@@ -1,5 +1,32 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import { getThreads } from '../../lib/forum.js';
+
+const user = getSessionFromCookies(Astro.request.headers.get('cookie'));
+const category = Astro.url.searchParams.get('kategori') || '';
+const threads = getThreads(category || undefined);
+const error = Astro.url.searchParams.get('error');
+
+const categories = [
+  { value: 'allmant', label: 'Allmänt om HP', desc: 'Generella frågor, tips och diskussioner om högskoleprovet.' },
+  { value: 'verbal', label: 'Verbala delprov (ORD, LÄS, MEK, ELF)', desc: 'Frågor om ordförståelse, läsförståelse, meningskomplettering och engelska.' },
+  { value: 'kvantitativ', label: 'Kvantitativa delprov (XYZ, KVA, NOG, DTK)', desc: 'Frågor om matematik, kvantitativa jämförelser, resonemang och diagram.' },
+  { value: 'minnestekniker', label: 'Minnestekniker', desc: 'Dela dina minnesbilder, fråga om tekniker och lär av varandra.' },
+  { value: 'resultat', label: 'Resultat & framgångshistorier', desc: 'Berätta hur det gick! Dela din resa och inspirera andra.' },
+];
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr + 'Z').getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just nu';
+  if (mins < 60) return `${mins} min sedan`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} tim sedan`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} dagar sedan`;
+  return new Date(dateStr).toLocaleDateString('sv-SE');
+}
 ---
 
 <Base title="Forum – HPAkuten">
@@ -8,75 +35,69 @@ import Base from '../../layouts/Base.astro';
       <h1>Forum</h1>
       <p class="page-intro">Diskutera, ställ frågor och hjälp varandra. Alla som pluggar till HP är välkomna.</p>
 
-      <div id="forum-app">
-        <!-- Forum categories -->
-        <div class="forum-categories">
-          <div class="card forum-category" data-category="allmant">
-            <h3>Allmänt om HP</h3>
-            <p>Generella frågor, tips och diskussioner om högskoleprovet.</p>
-            <span class="forum-meta">Senaste aktivitet: —</span>
-          </div>
+      {error && <div class="tip-box warning"><strong>{error}</strong></div>}
 
-          <div class="card forum-category" data-category="verbal">
-            <h3>Verbala delprov (ORD, LÄS, MEK, ELF)</h3>
-            <p>Frågor om ordförståelse, läsförståelse, meningskomplettering och engelska.</p>
-            <span class="forum-meta">Senaste aktivitet: —</span>
-          </div>
+      <!-- Category filter -->
+      <div class="forum-categories">
+        <a href="/forum" class:list={['forum-cat-pill', { active: !category }]}>Alla</a>
+        {categories.map(c => (
+          <a href={`/forum?kategori=${c.value}`} class:list={['forum-cat-pill', { active: category === c.value }]}>{c.label.split('(')[0].trim()}</a>
+        ))}
+      </div>
 
-          <div class="card forum-category" data-category="kvantitativ">
-            <h3>Kvantitativa delprov (XYZ, KVA, NOG, DTK)</h3>
-            <p>Frågor om matematik, kvantitativa jämförelser, resonemang och diagram.</p>
-            <span class="forum-meta">Senaste aktivitet: —</span>
-          </div>
-
-          <div class="card forum-category" data-category="minnestekniker">
-            <h3>Minnestekniker</h3>
-            <p>Dela dina minnesbilder, fråga om tekniker och lär av varandra.</p>
-            <span class="forum-meta">Senaste aktivitet: —</span>
-          </div>
-
-          <div class="card forum-category" data-category="resultat">
-            <h3>Resultat &amp; framgångshistorier</h3>
-            <p>Berätta hur det gick! Dela din resa och inspirera andra.</p>
-            <span class="forum-meta">Senaste aktivitet: —</span>
-          </div>
+      <!-- Thread list -->
+      {threads.length > 0 ? (
+        <div class="thread-list">
+          {threads.map(t => (
+            <a href={`/forum/${t.id}`} class="thread-item">
+              <div class="thread-main">
+                <span class="thread-category-tag">{categories.find(c => c.value === t.category)?.label.split('(')[0].trim() || t.category}</span>
+                <h3>{t.title}</h3>
+                <p class="thread-meta">
+                  av <strong>{t.user_name}</strong> · {timeAgo(t.created_at)} · {t.reply_count} {t.reply_count === 1 ? 'svar' : 'svar'}
+                </p>
+              </div>
+              <span class="thread-replies">{t.reply_count}</span>
+            </a>
+          ))}
         </div>
-
-        <!-- Login prompt for non-logged-in users -->
-        <div class="forum-login-prompt" id="forum-login-prompt">
-          <div class="tip-box">
-            <strong>Vill du skriva i forumet?</strong>
-            <a href="/konto/login">Logga in</a> eller <a href="/konto/registrera">skapa ett gratis konto</a> för att delta i diskussionerna.
-          </div>
+      ) : (
+        <div class="tip-box" style="margin: 2rem 0;">
+          <strong>Inga trådar ännu.</strong> Bli den första att starta en diskussion!
         </div>
+      )}
 
-        <!-- New thread form (shown when logged in) -->
-        <div class="forum-new-thread" id="forum-new-thread" style="display: none;">
+      <!-- New thread -->
+      {user ? (
+        <div class="forum-new-thread">
           <h2>Starta en ny tråd</h2>
-          <form id="new-thread-form">
+          <form method="POST" action="/api/forum/threads">
             <div class="form-group">
               <label for="thread-category">Kategori</label>
-              <select id="thread-category" required>
+              <select id="thread-category" name="category" required>
                 <option value="">Välj kategori...</option>
-                <option value="allmant">Allmänt om HP</option>
-                <option value="verbal">Verbala delprov</option>
-                <option value="kvantitativ">Kvantitativa delprov</option>
-                <option value="minnestekniker">Minnestekniker</option>
-                <option value="resultat">Resultat & framgångshistorier</option>
+                {categories.map(c => (
+                  <option value={c.value}>{c.label}</option>
+                ))}
               </select>
             </div>
             <div class="form-group">
               <label for="thread-title">Rubrik</label>
-              <input type="text" id="thread-title" placeholder="Vad handlar din fråga/diskussion om?" required />
+              <input type="text" id="thread-title" name="title" placeholder="Vad handlar din fråga/diskussion om?" required />
             </div>
             <div class="form-group">
               <label for="thread-body">Meddelande</label>
-              <textarea id="thread-body" rows="6" placeholder="Beskriv din fråga eller starta en diskussion..." required></textarea>
+              <textarea id="thread-body" name="body" rows="6" placeholder="Beskriv din fråga eller starta en diskussion..." required></textarea>
             </div>
             <button type="submit" class="btn btn-primary">Publicera</button>
           </form>
         </div>
-      </div>
+      ) : (
+        <div class="tip-box" style="margin-top: 1.5rem;">
+          <strong>Vill du skriva i forumet?</strong>
+          <a href="/konto/login">Logga in</a> eller <a href="/konto/registrera">skapa ett gratis konto</a> för att delta i diskussionerna.
+        </div>
+      )}
     </div>
   </div>
 </Base>
@@ -84,26 +105,114 @@ import Base from '../../layouts/Base.astro';
 <style>
   .forum-categories {
     display: flex;
-    flex-direction: column;
-    gap: 1rem;
+    flex-wrap: wrap;
+    gap: 0.5rem;
     margin-bottom: 2rem;
   }
 
-  .forum-category {
-    cursor: pointer;
-  }
-
-  .forum-category h3 {
-    margin-top: 0;
-  }
-
-  .forum-meta {
+  .forum-cat-pill {
+    padding: 0.4rem 0.9rem;
+    border-radius: 50px;
     font-size: 0.85rem;
-    color: var(--color-muted);
+    font-weight: 500;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    color: var(--color-text);
+    text-decoration: none;
+    transition: all 0.15s;
   }
 
-  .forum-login-prompt {
-    margin-top: 1.5rem;
+  .forum-cat-pill:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    text-decoration: none;
+  }
+
+  .forum-cat-pill.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  .thread-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  .thread-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 1rem 1.2rem;
+    border: 1px solid var(--color-border);
+    border-bottom: none;
+    background: var(--color-surface);
+    text-decoration: none;
+    color: var(--color-text);
+    transition: background 0.1s;
+  }
+
+  .thread-item:first-child {
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .thread-item:last-child {
+    border-bottom: 1px solid var(--color-border);
+    border-radius: 0 0 var(--radius) var(--radius);
+  }
+
+  .thread-item:only-child {
+    border-radius: var(--radius);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .thread-item:hover {
+    background: #f8fafc;
+    text-decoration: none;
+  }
+
+  .thread-main h3 {
+    margin: 0.2rem 0 0.3rem;
+    font-size: 1.05rem;
+  }
+
+  .thread-category-tag {
+    font-size: 0.7rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-primary);
+  }
+
+  .thread-meta {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+    margin: 0;
+  }
+
+  .thread-replies {
+    background: var(--color-primary);
+    color: #fff;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .forum-new-thread {
+    margin-top: 2.5rem;
+    padding-top: 2rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .forum-new-thread h2 {
+    margin-top: 0;
   }
 
   .form-group {
@@ -141,14 +250,3 @@ import Base from '../../layouts/Base.astro';
     box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
   }
 </style>
-
-<script>
-  // Check if user is logged in
-  const user = localStorage.getItem('hp_user');
-  if (user) {
-    const loginPrompt = document.getElementById('forum-login-prompt');
-    const newThread = document.getElementById('forum-new-thread');
-    if (loginPrompt) loginPrompt.style.display = 'none';
-    if (newThread) newThread.style.display = 'block';
-  }
-</script>

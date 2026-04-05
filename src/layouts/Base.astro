@@ -1,11 +1,14 @@
 ---
+import { getSessionFromCookies } from '../lib/auth.js';
+
 interface Props {
   title: string;
   description?: string;
 }
 
-const { title, description = 'Jonas von Essen hjälper dig nå ditt drömresultat på högskoleprovet. Strategier, minnestekniker och studieplanering från Sveriges mest framgångsrika HP-skribent.' } = Astro.props;
+const { title, description = 'Jonas von Essen hjälper dig nå ditt drömresultat på högskoleprovet. Strategier, minnestekniker och studieplanering från Sveriges mest framgångsrika HP-skrivare.' } = Astro.props;
 const currentPath = Astro.url.pathname;
+const user = getSessionFromCookies(Astro.request.headers.get('cookie'));
 ---
 
 <!DOCTYPE html>
@@ -30,7 +33,11 @@ const currentPath = Astro.url.pathname;
         <a href="/ovning" class:list={[{ active: currentPath.startsWith('/ovning') }]}>Övning</a>
         <a href="/forum" class:list={[{ active: currentPath.startsWith('/forum') }]}>Forum</a>
         <a href="/om" class:list={[{ active: currentPath.startsWith('/om') }]}>Om Jonas</a>
-        <a href="/konto/login" class="nav-login" id="nav-login-link">Logga in</a>
+        {user ? (
+          <a href="/konto/profil" class="nav-login">{user.name}</a>
+        ) : (
+          <a href="/konto/login" class="nav-login">Logga in</a>
+        )}
       </nav>
     </div>
   </header>
@@ -56,15 +63,6 @@ const currentPath = Astro.url.pathname;
     document.getElementById('nav-toggle')?.addEventListener('click', () => {
       document.getElementById('site-nav')?.classList.toggle('open');
     });
-
-    // Update login link if user is logged in
-    const storedUser = localStorage.getItem('hp_user');
-    const loginLink = document.getElementById('nav-login-link');
-    if (storedUser && loginLink) {
-      const user = JSON.parse(storedUser);
-      loginLink.textContent = user.name;
-      loginLink.setAttribute('href', '/konto/profil');
-    }
   </script>
 </body>
 </html>

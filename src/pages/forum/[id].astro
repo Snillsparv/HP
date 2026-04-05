@@ -1,0 +1,208 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import { getThread, getReplies } from '../../lib/forum.js';
+
+const user = getSessionFromCookies(Astro.request.headers.get('cookie'));
+const id = Number(Astro.params.id);
+const thread = getThread(id);
+
+if (!thread) {
+  return Astro.redirect('/forum?error=Tråden+finns+inte');
+}
+
+const replies = getReplies(id);
+
+const categoryLabels: Record<string, string> = {
+  allmant: 'Allmänt om HP',
+  verbal: 'Verbala delprov',
+  kvantitativ: 'Kvantitativa delprov',
+  minnestekniker: 'Minnestekniker',
+  resultat: 'Resultat & framgångshistorier',
+};
+
+function timeAgo(dateStr: string) {
+  const diff = Date.now() - new Date(dateStr + 'Z').getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'just nu';
+  if (mins < 60) return `${mins} min sedan`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours} tim sedan`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} dagar sedan`;
+  return new Date(dateStr).toLocaleDateString('sv-SE');
+}
+---
+
+<Base title={`${thread.title} – Forum – HPAkuten`}>
+  <div class="page-content">
+    <div class="container">
+      <p class="thread-breadcrumb">
+        <a href="/forum">Forum</a> &rsaquo;
+        <a href={`/forum?kategori=${thread.category}`}>{categoryLabels[thread.category] || thread.category}</a>
+      </p>
+
+      <article class="thread-post">
+        <div class="post-header">
+          <div class="post-avatar">{thread.user_name.charAt(0).toUpperCase()}</div>
+          <div>
+            <strong>{thread.user_name}</strong>
+            <span class="post-time">{timeAgo(thread.created_at)}</span>
+          </div>
+        </div>
+        <h1>{thread.title}</h1>
+        <div class="post-body">{thread.body}</div>
+      </article>
+
+      <!-- Replies -->
+      <h2 class="replies-heading">{replies.length} {replies.length === 1 ? 'svar' : 'svar'}</h2>
+
+      {replies.length > 0 && (
+        <div class="replies-list">
+          {replies.map(r => (
+            <div class="reply-item">
+              <div class="post-header">
+                <div class="post-avatar post-avatar--small">{r.user_name.charAt(0).toUpperCase()}</div>
+                <div>
+                  <strong>{r.user_name}</strong>
+                  <span class="post-time">{timeAgo(r.created_at)}</span>
+                </div>
+              </div>
+              <div class="post-body">{r.body}</div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      <!-- Reply form -->
+      {user ? (
+        <div class="reply-form-section">
+          <h3>Skriv ett svar</h3>
+          <form method="POST" action="/api/forum/reply">
+            <input type="hidden" name="thread_id" value={String(thread.id)} />
+            <div class="form-group">
+              <textarea name="body" rows="4" placeholder="Skriv ditt svar här..." required></textarea>
+            </div>
+            <button type="submit" class="btn btn-primary">Svara</button>
+          </form>
+        </div>
+      ) : (
+        <div class="tip-box" style="margin-top: 1.5rem;">
+          <strong>Vill du svara?</strong>
+          <a href="/konto/login">Logga in</a> eller <a href="/konto/registrera">skapa ett gratis konto</a>.
+        </div>
+      )}
+    </div>
+  </div>
+</Base>
+
+<style>
+  .thread-breadcrumb {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    margin-bottom: 1rem;
+  }
+
+  .thread-post {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+  }
+
+  .thread-post h1 {
+    font-size: 1.6rem;
+    margin: 1rem 0 0.8rem;
+  }
+
+  .post-header {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+  }
+
+  .post-avatar {
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: var(--color-primary);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .post-avatar--small {
+    width: 32px;
+    height: 32px;
+    font-size: 0.85rem;
+  }
+
+  .post-time {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--color-muted);
+  }
+
+  .post-body {
+    line-height: 1.7;
+    white-space: pre-wrap;
+  }
+
+  .replies-heading {
+    margin-top: 0;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+  }
+
+  .replies-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .reply-item {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 1.2rem;
+  }
+
+  .reply-item .post-body {
+    margin-top: 0.8rem;
+  }
+
+  .reply-form-section {
+    margin-top: 2rem;
+    padding-top: 1.5rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .reply-form-section h3 {
+    margin-top: 0;
+  }
+
+  .form-group {
+    margin-bottom: 1rem;
+  }
+
+  .form-group textarea {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    font-family: var(--font-sans);
+    font-size: 1rem;
+    background: var(--color-surface);
+    resize: vertical;
+  }
+
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+</style>

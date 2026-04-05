@@ -3,17 +3,9 @@ import Base from '../layouts/Base.astro';
 ---
 
 <Base title="HPAkuten – Nå 2.0 på Högskoleprovet">
-  <div class="hero hero--elegant" id="hero">
-    <button class="design-switcher" id="design-switcher" title="Byt design">
-      <span class="design-switcher-icon">A</span>
-      <span class="design-switcher-label">1/13 Elegant</span>
-    </button>
-    <div class="hero-image-side">
-      <img src="/hero.webp" alt="Jonas von Essen" />
-    </div>
-    <img src="/jonas.webp" alt="Jonas von Essen" class="hero-peek" />
+  <div class="hero hero--minimal">
     <div class="hero-content">
-      <span class="hero-tag">Från Sveriges mest framgångsrika HP-skribent</span>
+      <span class="hero-tag">Från Sveriges mest framgångsrika HP-skrivare</span>
       <h1>Nå ditt drömresultat på&nbsp;HP</h1>
       <p class="subtitle">
         Strategier och minnestekniker från Jonas von Essen — tvåfaldig världsmästare i minne och 2.0 på HP tolv gånger i rad.
@@ -39,26 +31,6 @@ import Base from '../layouts/Base.astro';
       </div>
     </div>
   </div>
-
-  <script>
-    const designs = ['hero--elegant', 'hero--bold', 'hero--split', 'hero--magazine', 'hero--warm', 'hero--neon', 'hero--ocean', 'hero--minimal', 'hero--starfield', 'hero--nebula', 'hero--cosmos', 'hero--neon-center', 'hero--cosmos-peek', 'hero--space2', 'hero--space3', 'hero--space2-center', 'hero--neon-space2', 'hero--neon-space3'];
-    const labels = ['1/18 Elegant', '2/18 Bold', '3/18 Split', '4/18 Magazine', '5/18 Warm', '6/18 Neon', '7/18 Ocean', '8/18 Minimal', '9/18 Starfield', '10/18 Nebula', '11/18 Cosmos', '12/18 Neon Center', '13/18 Cosmos+Jonas', '14/18 Rymd 2', '15/18 Rymd 3', '16/18 Rymd 2 Center', '17/18 Neon Rymd 2', '18/18 Neon Rymd 3'];
-    const icons = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 'N', 'O', 'P', 'Q', 'R'];
-    let current = 0;
-
-    const hero = document.getElementById('hero');
-    const btn = document.getElementById('design-switcher');
-
-    btn?.addEventListener('click', () => {
-      hero?.classList.remove(designs[current]);
-      current = (current + 1) % designs.length;
-      hero?.classList.add(designs[current]);
-      const iconEl = btn.querySelector('.design-switcher-icon');
-      const labelEl = btn.querySelector('.design-switcher-label');
-      if (iconEl) iconEl.textContent = icons[current];
-      if (labelEl) labelEl.textContent = labels[current];
-    });
-  </script>
 
   <section class="section">
     <div class="container container--wide">

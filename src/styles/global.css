@@ -1595,6 +1595,282 @@ li { margin-bottom: 0.3em; }
 }
 
 /* =============================================
+   DESIGN P — Rymd 2 Center (rymd_2 but centered)
+   ============================================= */
+.hero--space2-center {
+  background: url('/rymd_2.webp') center center / cover no-repeat;
+  min-height: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero--space2-center::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(0,0,0,0.6) 0%, rgba(0,0,0,0.45) 50%, rgba(0,0,0,0.15) 100%);
+}
+
+.hero--space2-center .hero-content {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+
+.hero--space2-center h1 {
+  color: #fff;
+  max-width: none;
+  font-size: 3rem;
+}
+
+.hero--space2-center .subtitle {
+  color: rgba(255,255,255,0.7);
+  max-width: 580px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero--space2-center .hero-tag {
+  background: rgba(167,139,250,0.2);
+  color: #c4b5fd;
+  border: 1px solid rgba(167,139,250,0.25);
+}
+
+.hero--space2-center .hero-stats {
+  justify-content: center;
+}
+
+.hero--space2-center .hero-stat .number {
+  color: #a78bfa;
+}
+
+.hero--space2-center .hero-stat .label {
+  color: rgba(255,255,255,0.45);
+}
+
+.hero--space2-center .hero-buttons {
+  justify-content: center;
+}
+
+.hero--space2-center .btn-primary {
+  background: linear-gradient(135deg, #7c3aed 0%, #a78bfa 100%);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(124,58,237,0.3);
+}
+
+.hero--space2-center .btn-primary:hover {
+  box-shadow: 0 0 35px rgba(124,58,237,0.5);
+}
+
+.hero--space2-center .btn-outline {
+  border-color: rgba(167,139,250,0.4);
+  color: #c4b5fd;
+}
+
+.hero--space2-center .btn-outline:hover {
+  background: rgba(139,92,246,0.15);
+  border-color: #a78bfa;
+}
+
+.hero--space2-center .design-switcher {
+  background: rgba(0,0,0,0.5);
+  border-color: rgba(167,139,250,0.2);
+  color: #fff;
+}
+
+.hero--space2-center .design-switcher-icon {
+  background: #7c3aed;
+}
+
+/* =============================================
+   DESIGN Q — Neon + Rymd 2 (cyan tech on rymd_2)
+   ============================================= */
+.hero--neon-space2 {
+  background: url('/rymd_2.webp') center center / cover no-repeat;
+  min-height: 560px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero--neon-space2::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 50% 50%, rgba(2,6,23,0.65) 0%, rgba(2,6,23,0.5) 50%, rgba(2,6,23,0.2) 100%);
+}
+
+.hero--neon-space2 .hero-content {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+
+.hero--neon-space2 h1 {
+  color: #fff;
+  max-width: none;
+  font-size: 3rem;
+  text-shadow: 0 0 40px rgba(56,189,248,0.3);
+}
+
+.hero--neon-space2 .subtitle {
+  color: rgba(255,255,255,0.65);
+  max-width: 600px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero--neon-space2 .hero-tag {
+  background: rgba(56,189,248,0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56,189,248,0.3);
+}
+
+.hero--neon-space2 .hero-stats {
+  justify-content: center;
+}
+
+.hero--neon-space2 .hero-stat .number {
+  color: #38bdf8;
+  text-shadow: 0 0 20px rgba(56,189,248,0.4);
+}
+
+.hero--neon-space2 .hero-stat .label {
+  color: rgba(255,255,255,0.5);
+}
+
+.hero--neon-space2 .hero-buttons {
+  justify-content: center;
+}
+
+.hero--neon-space2 .btn-primary {
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(56,189,248,0.3);
+}
+
+.hero--neon-space2 .btn-primary:hover {
+  box-shadow: 0 0 30px rgba(56,189,248,0.5);
+  transform: translateY(-1px);
+}
+
+.hero--neon-space2 .btn-outline {
+  border-color: rgba(56,189,248,0.5);
+  color: #38bdf8;
+}
+
+.hero--neon-space2 .btn-outline:hover {
+  background: rgba(56,189,248,0.1);
+  border-color: #38bdf8;
+}
+
+.hero--neon-space2 .design-switcher {
+  background: rgba(0,0,0,0.5);
+  border-color: rgba(56,189,248,0.2);
+  color: #fff;
+}
+
+.hero--neon-space2 .design-switcher-icon {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+}
+
+/* =============================================
+   DESIGN R — Neon + Rymd 3 (cyan tech on rymd_3)
+   ============================================= */
+.hero--neon-space3 {
+  background: url('/rymd_3.webp') center center / cover no-repeat;
+  min-height: 540px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.hero--neon-space3::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at 40% 50%, rgba(2,6,23,0.6) 0%, rgba(2,6,23,0.45) 50%, rgba(2,6,23,0.15) 100%);
+}
+
+.hero--neon-space3 .hero-content {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 3.5rem 1.5rem;
+  text-align: center;
+}
+
+.hero--neon-space3 h1 {
+  color: #fff;
+  max-width: none;
+  font-size: 3rem;
+  text-shadow: 0 0 40px rgba(56,189,248,0.3);
+}
+
+.hero--neon-space3 .subtitle {
+  color: rgba(255,255,255,0.65);
+  max-width: 580px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.hero--neon-space3 .hero-tag {
+  background: rgba(56,189,248,0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56,189,248,0.3);
+}
+
+.hero--neon-space3 .hero-stats {
+  justify-content: center;
+}
+
+.hero--neon-space3 .hero-stat .number {
+  color: #38bdf8;
+  text-shadow: 0 0 20px rgba(56,189,248,0.4);
+}
+
+.hero--neon-space3 .hero-stat .label {
+  color: rgba(255,255,255,0.5);
+}
+
+.hero--neon-space3 .hero-buttons {
+  justify-content: center;
+}
+
+.hero--neon-space3 .btn-primary {
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(56,189,248,0.3);
+}
+
+.hero--neon-space3 .btn-primary:hover {
+  box-shadow: 0 0 30px rgba(56,189,248,0.5);
+  transform: translateY(-1px);
+}
+
+.hero--neon-space3 .btn-outline {
+  border-color: rgba(56,189,248,0.5);
+  color: #38bdf8;
+}
+
+.hero--neon-space3 .btn-outline:hover {
+  background: rgba(56,189,248,0.1);
+  border-color: #38bdf8;
+}
+
+.hero--neon-space3 .design-switcher {
+  background: rgba(0,0,0,0.5);
+  border-color: rgba(56,189,248,0.2);
+  color: #fff;
+}
+
+.hero--neon-space3 .design-switcher-icon {
+  background: linear-gradient(135deg, #38bdf8, #818cf8);
+}
+
+/* =============================================
    Mobile — all designs
    ============================================= */
 @media (max-width: 768px) {
@@ -1795,26 +2071,38 @@ li { margin-bottom: 0.3em; }
     justify-content: center;
   }
 
-  /* Space 2 & 3 mobile */
+  /* Space designs mobile */
   .hero--space2,
-  .hero--space3 {
+  .hero--space3,
+  .hero--space2-center,
+  .hero--neon-space2,
+  .hero--neon-space3 {
     min-height: auto;
   }
 
   .hero--space2 .hero-content,
-  .hero--space3 .hero-content {
+  .hero--space3 .hero-content,
+  .hero--space2-center .hero-content,
+  .hero--neon-space2 .hero-content,
+  .hero--neon-space3 .hero-content {
     text-align: center;
     padding: 3rem 1.5rem;
   }
 
   .hero--space2 h1,
-  .hero--space3 h1 {
+  .hero--space3 h1,
+  .hero--space2-center h1,
+  .hero--neon-space2 h1,
+  .hero--neon-space3 h1 {
     max-width: none;
     font-size: 2.2rem;
   }
 
   .hero--space2 .subtitle,
-  .hero--space3 .subtitle {
+  .hero--space3 .subtitle,
+  .hero--space2-center .subtitle,
+  .hero--neon-space2 .subtitle,
+  .hero--neon-space3 .subtitle {
     max-width: none;
     margin-left: auto;
     margin-right: auto;
@@ -1823,7 +2111,13 @@ li { margin-bottom: 0.3em; }
   .hero--space2 .hero-stats,
   .hero--space2 .hero-buttons,
   .hero--space3 .hero-stats,
-  .hero--space3 .hero-buttons {
+  .hero--space3 .hero-buttons,
+  .hero--space2-center .hero-stats,
+  .hero--space2-center .hero-buttons,
+  .hero--neon-space2 .hero-stats,
+  .hero--neon-space2 .hero-buttons,
+  .hero--neon-space3 .hero-stats,
+  .hero--neon-space3 .hero-buttons {
     justify-content: center;
   }
 

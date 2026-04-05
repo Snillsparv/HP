@@ -1296,12 +1296,13 @@ li { margin-bottom: 0.3em; }
   height: auto;
   z-index: 3;
   filter: drop-shadow(0 0 30px rgba(139,92,246,0.3));
-  animation: peek-bob 3s ease-in-out infinite;
+  animation: peek-up 0.8s ease-out forwards;
+  transform: translateY(80%);
 }
 
-@keyframes peek-bob {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(-6px); }
+@keyframes peek-up {
+  0% { transform: translateY(80%); }
+  100% { transform: translateY(0); }
 }
 
 .hero--cosmos-peek .hero-content {

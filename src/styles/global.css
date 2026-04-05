@@ -170,26 +170,46 @@ li { margin-bottom: 0.3em; }
 
 /* === Hero === */
 .hero {
-  padding: 4rem 0 3rem;
-  text-align: center;
+  background: url('/hero.webp') center right / cover no-repeat;
+  min-height: 520px;
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 40%, rgba(255,255,255,0.2) 70%, transparent 100%);
+}
+
+.hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: var(--max-width-wide);
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  width: 100%;
+  text-align: left;
 }
 
 .hero h1 {
   font-size: 2.8rem;
   margin-bottom: 0.3em;
+  max-width: 500px;
 }
 
 .hero .subtitle {
-  font-size: 1.2rem;
+  font-size: 1.15rem;
   color: var(--color-muted);
-  max-width: 600px;
-  margin: 0 auto 2rem;
+  max-width: 480px;
+  margin: 0 0 2rem;
 }
 
 .hero-stats {
   display: flex;
-  justify-content: center;
-  gap: 2.5rem;
+  gap: 2rem;
   margin-bottom: 2rem;
   flex-wrap: wrap;
 }
@@ -210,6 +230,49 @@ li { margin-bottom: 0.3em; }
   color: var(--color-muted);
   text-transform: uppercase;
   letter-spacing: 0.05em;
+}
+
+.hero-buttons {
+  display: flex;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+/* Mobile hero */
+@media (max-width: 768px) {
+  .hero {
+    background-image: url('/hero_mobil.webp');
+    background-position: center bottom;
+    min-height: 85vh;
+    align-items: flex-start;
+  }
+
+  .hero::before {
+    background: linear-gradient(to bottom, rgba(255,255,255,0.95) 0%, rgba(255,255,255,0.85) 40%, rgba(255,255,255,0.1) 65%, transparent 100%);
+  }
+
+  .hero-content {
+    text-align: center;
+    padding-top: 2rem;
+  }
+
+  .hero h1 {
+    max-width: none;
+  }
+
+  .hero .subtitle {
+    max-width: none;
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero-stats {
+    justify-content: center;
+  }
+
+  .hero-buttons {
+    justify-content: center;
+  }
 }
 
 /* === Buttons === */
@@ -456,8 +519,20 @@ tr:hover {
 }
 
 @media (max-width: 480px) {
-  .hero h1 { font-size: 2rem; }
+  .hero h1 { font-size: 1.9rem; }
   h1 { font-size: 1.8rem; }
   h2 { font-size: 1.4rem; }
   body { font-size: 16px; }
+
+  .hero {
+    min-height: 90vh;
+  }
+
+  .hero-stats {
+    gap: 1.2rem;
+  }
+
+  .hero-stat .number {
+    font-size: 1.6rem;
+  }
 }

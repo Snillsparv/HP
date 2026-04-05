@@ -466,11 +466,386 @@ li { margin-bottom: 0.3em; }
 }
 
 /* =============================================
+   DESIGN D — Magazine (editorial, big typography)
+   ============================================= */
+.hero--magazine {
+  display: grid;
+  grid-template-columns: 1.2fr 0.8fr;
+  min-height: 520px;
+  background: #fff;
+}
+
+.hero--magazine::before {
+  display: none;
+}
+
+.hero--magazine .hero-image-side {
+  display: block;
+  order: 2;
+  position: relative;
+  background: #0f172a;
+}
+
+.hero--magazine .hero-image-side img {
+  opacity: 0.85;
+}
+
+.hero--magazine .hero-content {
+  order: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem 2.5rem 3rem 2rem;
+  max-width: 650px;
+  margin-left: auto;
+  text-align: left;
+  border-right: 4px solid var(--color-primary);
+}
+
+.hero--magazine h1 {
+  font-size: 3.2rem;
+  max-width: none;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+}
+
+.hero--magazine .subtitle {
+  font-size: 1.1rem;
+  max-width: none;
+  border-top: 1px solid var(--color-border);
+  padding-top: 1rem;
+  margin-top: 0.5rem;
+}
+
+.hero--magazine .hero-tag {
+  background: none;
+  padding: 0;
+  color: var(--color-primary);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+}
+
+.hero--magazine .hero-stat .number {
+  font-size: 1.8rem;
+}
+
+/* =============================================
+   DESIGN E — Warm (earthy tones, inviting)
+   ============================================= */
+.hero--warm {
+  background: url('/hero.webp') center right / cover no-repeat;
+  min-height: 540px;
+  display: flex;
+  align-items: center;
+}
+
+.hero--warm::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to right, rgba(254,243,199,0.95) 0%, rgba(254,243,199,0.85) 35%, rgba(254,243,199,0.2) 65%, transparent 100%);
+}
+
+.hero--warm .hero-content {
+  max-width: var(--max-width-wide);
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  width: 100%;
+  text-align: left;
+}
+
+.hero--warm h1 {
+  max-width: 520px;
+  color: #78350f;
+}
+
+.hero--warm .subtitle {
+  color: #92400e;
+  max-width: 480px;
+}
+
+.hero--warm .hero-tag {
+  background: #f59e0b;
+  color: #fff;
+}
+
+.hero--warm .hero-stat .number {
+  color: #d97706;
+}
+
+.hero--warm .hero-stat .label {
+  color: #92400e;
+}
+
+.hero--warm .btn-primary {
+  background: #d97706;
+  color: #fff;
+}
+
+.hero--warm .btn-primary:hover {
+  background: #b45309;
+}
+
+.hero--warm .btn-outline {
+  border-color: #d97706;
+  color: #92400e;
+}
+
+.hero--warm .btn-outline:hover {
+  background: #d97706;
+  color: #fff;
+}
+
+/* =============================================
+   DESIGN F — Neon (dark tech, glowing accents)
+   ============================================= */
+.hero--neon {
+  background: url('/hero.webp') center center / cover no-repeat;
+  min-height: 560px;
+  display: flex;
+  align-items: center;
+}
+
+.hero--neon::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(2,6,23,0.94) 0%, rgba(15,23,42,0.85) 40%, rgba(15,23,42,0.5) 70%, rgba(2,6,23,0.7) 100%);
+}
+
+.hero--neon .hero-content {
+  max-width: var(--max-width-wide);
+  margin: 0 auto;
+  padding: 3rem 1.5rem;
+  width: 100%;
+  text-align: left;
+}
+
+.hero--neon h1 {
+  color: #fff;
+  max-width: 550px;
+  font-size: 2.8rem;
+  text-shadow: 0 0 40px rgba(56,189,248,0.3);
+}
+
+.hero--neon .subtitle {
+  color: rgba(255,255,255,0.65);
+  max-width: 480px;
+}
+
+.hero--neon .hero-tag {
+  background: rgba(56,189,248,0.15);
+  color: #38bdf8;
+  border: 1px solid rgba(56,189,248,0.3);
+}
+
+.hero--neon .hero-stat .number {
+  color: #38bdf8;
+  text-shadow: 0 0 20px rgba(56,189,248,0.4);
+}
+
+.hero--neon .hero-stat .label {
+  color: rgba(255,255,255,0.5);
+}
+
+.hero--neon .btn-primary {
+  background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+  color: #fff;
+  box-shadow: 0 0 20px rgba(56,189,248,0.3);
+}
+
+.hero--neon .btn-primary:hover {
+  box-shadow: 0 0 30px rgba(56,189,248,0.5);
+  transform: translateY(-1px);
+}
+
+.hero--neon .btn-outline {
+  border-color: rgba(56,189,248,0.5);
+  color: #38bdf8;
+}
+
+.hero--neon .btn-outline:hover {
+  background: rgba(56,189,248,0.1);
+  border-color: #38bdf8;
+}
+
+.hero--neon .design-switcher {
+  background: rgba(0,0,0,0.5);
+  border-color: rgba(56,189,248,0.2);
+  color: #fff;
+}
+
+/* =============================================
+   DESIGN G — Ocean (blue gradient, fresh)
+   ============================================= */
+.hero--ocean {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 520px;
+  background: linear-gradient(160deg, #0c4a6e 0%, #0369a1 40%, #0ea5e9 100%);
+}
+
+.hero--ocean::before {
+  display: none;
+}
+
+.hero--ocean .hero-image-side {
+  display: block;
+  order: 2;
+  position: relative;
+  mask-image: linear-gradient(to right, transparent 0%, black 20%);
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 20%);
+}
+
+.hero--ocean .hero-content {
+  order: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 3rem 2rem 3rem 2rem;
+  max-width: 600px;
+  margin-left: auto;
+  text-align: left;
+}
+
+.hero--ocean h1 {
+  color: #fff;
+  max-width: none;
+}
+
+.hero--ocean .subtitle {
+  color: rgba(255,255,255,0.75);
+  max-width: none;
+}
+
+.hero--ocean .hero-tag {
+  background: rgba(255,255,255,0.15);
+  color: #bae6fd;
+}
+
+.hero--ocean .hero-stat .number {
+  color: #bae6fd;
+}
+
+.hero--ocean .hero-stat .label {
+  color: rgba(255,255,255,0.55);
+}
+
+.hero--ocean .btn-primary {
+  background: #fff;
+  color: #0369a1;
+  font-weight: 700;
+}
+
+.hero--ocean .btn-primary:hover {
+  background: #e0f2fe;
+}
+
+.hero--ocean .btn-outline {
+  border-color: rgba(255,255,255,0.5);
+  color: #fff;
+}
+
+.hero--ocean .btn-outline:hover {
+  background: rgba(255,255,255,0.15);
+  border-color: #fff;
+}
+
+.hero--ocean .design-switcher {
+  background: rgba(0,0,0,0.3);
+  border-color: rgba(255,255,255,0.15);
+  color: #fff;
+}
+
+/* =============================================
+   DESIGN H — Minimal (clean whitespace, understated)
+   ============================================= */
+.hero--minimal {
+  display: flex;
+  align-items: center;
+  min-height: 480px;
+  background: #fff;
+}
+
+.hero--minimal::before {
+  display: none;
+}
+
+.hero--minimal .hero-content {
+  max-width: 700px;
+  margin: 0 auto;
+  padding: 4rem 1.5rem;
+  width: 100%;
+  text-align: center;
+}
+
+.hero--minimal h1 {
+  max-width: none;
+  font-size: 3rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--color-text) 0%, var(--color-primary) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero--minimal .subtitle {
+  max-width: 550px;
+  margin-left: auto;
+  margin-right: auto;
+  font-size: 1.2rem;
+}
+
+.hero--minimal .hero-tag {
+  background: none;
+  border: 1px solid var(--color-border);
+  color: var(--color-muted);
+  font-size: 0.75rem;
+}
+
+.hero--minimal .hero-stats {
+  justify-content: center;
+  gap: 3rem;
+}
+
+.hero--minimal .hero-stat {
+  position: relative;
+}
+
+.hero--minimal .hero-stat + .hero-stat::before {
+  content: '';
+  position: absolute;
+  left: -1.5rem;
+  top: 15%;
+  height: 70%;
+  width: 1px;
+  background: var(--color-border);
+}
+
+.hero--minimal .hero-buttons {
+  justify-content: center;
+}
+
+.hero--minimal .btn-primary {
+  border-radius: 50px;
+  padding: 0.8rem 2.2rem;
+}
+
+.hero--minimal .btn-outline {
+  border-radius: 50px;
+  padding: 0.8rem 2.2rem;
+}
+
+/* =============================================
    Mobile — all designs
    ============================================= */
 @media (max-width: 768px) {
+  /* Bg-image designs: switch to mobile photo */
   .hero--elegant,
-  .hero--bold {
+  .hero--bold,
+  .hero--warm,
+  .hero--neon {
     background-image: url('/hero_mobil.webp');
     background-position: center bottom;
     min-height: 85vh;
@@ -485,20 +860,34 @@ li { margin-bottom: 0.3em; }
     background: linear-gradient(to bottom, rgba(15,23,42,0.92) 0%, rgba(30,58,138,0.8) 35%, rgba(15,23,42,0.3) 65%, transparent 100%);
   }
 
+  .hero--warm::before {
+    background: linear-gradient(to bottom, rgba(254,243,199,0.97) 0%, rgba(254,243,199,0.9) 38%, rgba(254,243,199,0.15) 60%, transparent 100%);
+  }
+
+  .hero--neon::before {
+    background: linear-gradient(to bottom, rgba(2,6,23,0.96) 0%, rgba(15,23,42,0.88) 35%, rgba(15,23,42,0.3) 65%, transparent 100%);
+  }
+
   .hero--elegant .hero-content,
-  .hero--bold .hero-content {
+  .hero--bold .hero-content,
+  .hero--warm .hero-content,
+  .hero--neon .hero-content {
     text-align: center;
     padding-top: 2rem;
   }
 
   .hero--elegant h1,
-  .hero--bold h1 {
+  .hero--bold h1,
+  .hero--warm h1,
+  .hero--neon h1 {
     max-width: none;
     font-size: 2.2rem;
   }
 
   .hero--elegant .subtitle,
-  .hero--bold .subtitle {
+  .hero--bold .subtitle,
+  .hero--warm .subtitle,
+  .hero--neon .subtitle {
     max-width: none;
     margin-left: auto;
     margin-right: auto;
@@ -506,18 +895,26 @@ li { margin-bottom: 0.3em; }
 
   .hero--elegant .hero-stats,
   .hero--bold .hero-stats,
+  .hero--warm .hero-stats,
+  .hero--neon .hero-stats,
   .hero--elegant .hero-buttons,
-  .hero--bold .hero-buttons {
+  .hero--bold .hero-buttons,
+  .hero--warm .hero-buttons,
+  .hero--neon .hero-buttons {
     justify-content: center;
   }
 
-  /* Split becomes stacked on mobile */
-  .hero--split {
+  /* Grid designs become stacked */
+  .hero--split,
+  .hero--magazine,
+  .hero--ocean {
     grid-template-columns: 1fr;
     min-height: auto;
   }
 
-  .hero--split .hero-content {
+  .hero--split .hero-content,
+  .hero--magazine .hero-content,
+  .hero--ocean .hero-content {
     order: 1;
     padding: 2.5rem 1.5rem 2rem;
     text-align: center;
@@ -525,18 +922,49 @@ li { margin-bottom: 0.3em; }
     margin: 0;
   }
 
-  .hero--split .hero-image-side {
+  .hero--magazine .hero-content {
+    border-right: none;
+    border-bottom: 4px solid var(--color-primary);
+  }
+
+  .hero--split .hero-image-side,
+  .hero--magazine .hero-image-side,
+  .hero--ocean .hero-image-side {
     order: 2;
     max-height: 50vh;
   }
 
-  .hero--split h1 {
+  .hero--ocean .hero-image-side {
+    mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, black 70%, transparent 100%);
+  }
+
+  .hero--split h1,
+  .hero--magazine h1,
+  .hero--ocean h1 {
     font-size: 2.2rem;
   }
 
   .hero--split .hero-stats,
-  .hero--split .hero-buttons {
+  .hero--split .hero-buttons,
+  .hero--magazine .hero-stats,
+  .hero--magazine .hero-buttons,
+  .hero--ocean .hero-stats,
+  .hero--ocean .hero-buttons {
     justify-content: center;
+  }
+
+  /* Minimal adjustments */
+  .hero--minimal h1 {
+    font-size: 2.2rem;
+  }
+
+  .hero--minimal .hero-stats {
+    gap: 1.5rem;
+  }
+
+  .hero--minimal .hero-stat + .hero-stat::before {
+    left: -0.75rem;
   }
 
   .design-switcher {

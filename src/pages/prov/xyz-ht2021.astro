@@ -8,16 +8,14 @@ import Base from '../../layouts/Base.astro';
 
       <div class="prov-header">
         <h1>XYZ — Matematisk problemlösning</h1>
-        <p class="prov-meta">Högskoleprov HT 2021 &middot; Delprov 1 &middot; 12 uppgifter &middot; Rekommenderad tid: 12 minuter</p>
-        <div class="prov-timer" id="prov-timer">
+        <p class="prov-meta">Högskoleprov HT 2021 · Delprov 1 · 12 uppgifter · Rekommenderad tid: 12 minuter</p>
+        <div class="prov-timer">
           <button class="btn btn-outline btn-sm" id="timer-btn">Starta timer (12:00)</button>
-          <span class="timer-display" id="timer-display" style="display:none;">⏱ <span id="timer-value">12:00</span></span>
+          <span class="timer-display" id="timer-display">⏱ <span id="timer-value">12:00</span></span>
         </div>
       </div>
 
-      <div id="prov-app">
-        <!-- Question navigation rendered by script -->
-      </div>
+      <div id="prov-app"></div>
 
     </div>
   </div>
@@ -26,7 +24,7 @@ import Base from '../../layouts/Base.astro';
     const questions = [
       {
         num: 1,
-        text: 'Vilket värde har <i>x</i> om <span class="math"><sup>1</sup>&frasl;<sub>2</sub> + <sup>1</sup>&frasl;<sub>3</sub> + <i>x</i> = 1</span>?',
+        text: '<b>Vilket värde har <i>x</i></b> om &nbsp;<sup>1</sup>&frasl;<sub>2</sub> + <sup>1</sup>&frasl;<sub>3</sub> + <i>x</i> = 1?',
         options: [
           '<sup>1</sup>&frasl;<sub>6</sub>',
           '<sup>1</sup>&frasl;<sub>5</sub>',
@@ -43,46 +41,46 @@ import Base from '../../layouts/Base.astro';
       },
       {
         num: 3,
-        text: 'Vad är 5 + 3 &middot; 5 &minus; 4 + 8 &middot; 2?',
+        text: '<b>Vad är</b> 5 + 3 · 5 − 4 + 8 · 2?',
         options: ['0', '16', '32', '88'],
         correct: 2
       },
       {
         num: 4,
-        text: 'Vilket svarsalternativ motsvarar ekvationen <i>y</i> = 4<i>x</i> &minus; 5?',
+        text: '<b>Vilket svarsalternativ motsvarar ekvationen</b> <i>y</i> = 4<i>x</i> − 5?',
         options: [
           '<i>x</i> = <i>y</i> + <sup>5</sup>&frasl;<sub>4</sub>',
           '<i>x</i> = <sup><i>y</i></sup>&frasl;<sub>4</sub> + 5',
-          '<i>x</i> = <sup>5 &minus; <i>y</i></sup>&frasl;<sub>4</sub>',
+          '<i>x</i> = <sup>5 − <i>y</i></sup>&frasl;<sub>4</sub>',
           '<i>x</i> = <sup><i>y</i> + 5</sup>&frasl;<sub>4</sub>'
         ],
         correct: 3
       },
       {
         num: 5,
-        text: 'Fyra linjer skär varandra i samma punkt. <b>Vad är <i>x</i>?</b><br><br><em>(Vinklarna runt punkten är: x, 2x, 3x, 2x och resterande vertikalvinklar.)</em>',
+        text: 'Fyra linjer skär varandra i samma punkt. <b>Vad är <i>x</i>?</b><br><br><em style="color: var(--color-muted);">(Vinklarna runt punkten är: <i>x</i>, 2<i>x</i>, 3<i>x</i>, 2<i>x</i> och resterande vertikalvinklar.)</em>',
         options: ['15°', '20°', '22,5°', '25°'],
         correct: 2
       },
       {
         num: 6,
-        text: 'Vilket svarsalternativ är lika med 3<i>x</i>(2 &minus; 5<i>y</i>)?',
+        text: '<b>Vilket svarsalternativ är lika med</b> 3<i>x</i>(2 − 5<i>y</i>)?',
         options: [
-          '6<i>x</i> &minus; 5<i>y</i>',
-          '(6<i>x</i> &minus; 15)<i>y</i>',
-          '&minus;5<i>x</i>(2 + 3<i>y</i>)',
-          '&minus;(15<i>y</i> &minus; 6)<i>x</i>'
+          '6<i>x</i> − 5<i>y</i>',
+          '(6<i>x</i> − 15)<i>y</i>',
+          '−5<i>x</i>(2 + 3<i>y</i>)',
+          '−(15<i>y</i> − 6)<i>x</i>'
         ],
         correct: 3
       },
       {
         num: 7,
-        text: 'Vilket svarsalternativ är ett intervall där <i>g</i>(<i>x</i>) > <i>f</i>(<i>x</i>) för alla <i>x</i> i intervallet?<br><br><em>(Se grafen i provhäftet med funktionerna y = f(x) och y = g(x), med punkter a, b, c, d, e markerade på x-axeln.)</em>',
+        text: '<b>Vilket svarsalternativ är ett intervall där <i>g</i>(<i>x</i>) &gt; <i>f</i>(<i>x</i>) för alla <i>x</i> i intervallet?</b><br><br><em style="color: var(--color-muted);">(Se grafen i provhäftet med funktionerna y = f(x) och y = g(x), med punkter a, b, c, d, e markerade på x-axeln.)</em>',
         options: [
-          '<i>x</i> > <i>a</i>',
-          '<i>b</i> < <i>x</i> < <i>e</i>',
-          '<i>c</i> < <i>x</i> < <i>e</i>',
-          '<i>a</i> < <i>x</i> < <i>d</i>'
+          '<i>x</i> &gt; <i>a</i>',
+          '<i>b</i> &lt; <i>x</i> &lt; <i>e</i>',
+          '<i>c</i> &lt; <i>x</i> &lt; <i>e</i>',
+          '<i>a</i> &lt; <i>x</i> &lt; <i>d</i>'
         ],
         correct: 3
       },
@@ -99,13 +97,13 @@ import Base from '../../layouts/Base.astro';
       },
       {
         num: 9,
-        text: 'Vilket svarsalternativ är lika med <span class="math"><sup>0,36</sup>&frasl;<sub>3 &middot; 0,024</sub></span>?',
+        text: '<b>Vilket svarsalternativ är lika med</b> &nbsp;<sup>0,36</sup>&frasl;<sub>3 · 0,024</sub> ?',
         options: ['0,05', '0,5', '5', '50'],
         correct: 2
       },
       {
         num: 10,
-        text: 'Rektangeln ABCD är sammansatt av 12 lika stora kvadrater, enligt figuren. Rektangelns area är 300 cm². <b>Hur lång är sidan AB?</b><br><br><em>(Rektangeln är 4 kvadrater bred och 3 kvadrater hög.)</em>',
+        text: 'Rektangeln ABCD är sammansatt av 12 lika stora kvadrater, enligt figuren. Rektangelns area är 300 cm². <b>Hur lång är sidan AB?</b><br><br><em style="color: var(--color-muted);">(Rektangeln är 4 kvadrater bred och 3 kvadrater hög.)</em>',
         options: [
           '√300 cm',
           '20 cm',
@@ -135,51 +133,49 @@ import Base from '../../layouts/Base.astro';
     const app = document.getElementById('prov-app')!;
 
     function render() {
-      if (submitted) {
-        renderResults();
-        return;
-      }
+      if (submitted) { renderResults(); return; }
       const q = questions[current];
       const labels = ['A', 'B', 'C', 'D'];
       app.innerHTML = `
-        <div class="prov-progress">Uppgift ${q.num} av ${questions.length}</div>
-        <div class="prov-question">
-          <div class="prov-question-num">${q.num}.</div>
-          <div class="prov-question-text">${q.text}</div>
+        <div class="pq-progress">Uppgift ${q.num} av ${questions.length}</div>
+        <div class="pq-card">
+          <div class="pq-question">
+            <span class="pq-num">${q.num}.</span>
+            <span class="pq-text">${q.text}</span>
+          </div>
+          <div class="pq-options">
+            ${q.options.map((opt, i) => `
+              <label class="pq-opt ${answers[current] === i ? 'pq-opt--sel' : ''}">
+                <input type="radio" name="q${current}" value="${i}" ${answers[current] === i ? 'checked' : ''} />
+                <span class="pq-letter">${labels[i]}</span>
+                <span class="pq-opt-text">${opt}</span>
+              </label>
+            `).join('')}
+          </div>
         </div>
-        <div class="prov-options">
-          ${q.options.map((opt, i) => `
-            <label class="prov-option ${answers[current] === i ? 'selected' : ''}">
-              <input type="radio" name="q${current}" value="${i}" ${answers[current] === i ? 'checked' : ''} />
-              <span class="prov-option-letter">${labels[i]}</span>
-              <span class="prov-option-text">${opt}</span>
-            </label>
-          `).join('')}
-        </div>
-        <div class="prov-nav">
+        <div class="pq-nav">
           <button class="btn btn-outline btn-sm" id="btn-prev" ${current === 0 ? 'disabled' : ''}>Föregående</button>
           <button class="btn btn-outline btn-sm" id="btn-overview">Översikt</button>
           ${current === questions.length - 1
             ? '<button class="btn btn-primary btn-sm" id="btn-submit">Rätta provet</button>'
             : '<button class="btn btn-primary btn-sm" id="btn-next">Nästa</button>'}
         </div>
-        <div class="prov-dots">
-          ${questions.map((_, i) => `<span class="prov-dot ${i === current ? 'active' : ''} ${answers[i] !== null ? 'answered' : ''}" data-i="${i}">${i + 1}</span>`).join('')}
+        <div class="pq-dots">
+          ${questions.map((_, i) => `<span class="pq-dot ${i === current ? 'pq-dot--cur' : ''} ${answers[i] !== null ? 'pq-dot--ans' : ''}" data-i="${i}">${i + 1}</span>`).join('')}
         </div>
       `;
+      bindEvents();
+    }
 
-      // Event listeners
+    function bindEvents() {
       app.querySelectorAll('input[type="radio"]').forEach(el => {
-        el.addEventListener('change', (e) => {
-          answers[current] = Number((e.target as HTMLInputElement).value);
-          render();
-        });
+        el.addEventListener('change', (e) => { answers[current] = Number((e.target as HTMLInputElement).value); render(); });
       });
       document.getElementById('btn-prev')?.addEventListener('click', () => { current--; render(); });
       document.getElementById('btn-next')?.addEventListener('click', () => { current++; render(); });
       document.getElementById('btn-submit')?.addEventListener('click', () => { submitted = true; render(); });
-      document.getElementById('btn-overview')?.addEventListener('click', () => { renderOverview(); });
-      app.querySelectorAll('.prov-dot').forEach(el => {
+      document.getElementById('btn-overview')?.addEventListener('click', renderOverview);
+      app.querySelectorAll('.pq-dot').forEach(el => {
         el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
       });
     }
@@ -188,22 +184,20 @@ import Base from '../../layouts/Base.astro';
       const labels = ['A', 'B', 'C', 'D'];
       const answered = answers.filter(a => a !== null).length;
       app.innerHTML = `
-        <h2 style="text-align:center; margin-top:0;">Översikt</h2>
-        <p style="text-align:center; color: var(--color-muted);">${answered} av ${questions.length} besvarade</p>
-        <div class="prov-overview-grid">
-          ${questions.map((q, i) => `
-            <button class="prov-overview-item ${answers[i] !== null ? 'answered' : ''}" data-i="${i}">
-              <span class="prov-overview-num">${q.num}</span>
-              <span class="prov-overview-ans">${answers[i] !== null ? labels[answers[i]!] : '—'}</span>
-            </button>
-          `).join('')}
-        </div>
-        <div class="prov-nav" style="margin-top: 1.5rem;">
+        <h2 style="text-align:center;margin-top:0;">Översikt</h2>
+        <p style="text-align:center;color:var(--color-muted);">${answered} av ${questions.length} besvarade</p>
+        <div class="pq-overview">${questions.map((q, i) => `
+          <button class="pq-ov-btn ${answers[i] !== null ? 'pq-ov-btn--ans' : ''}" data-i="${i}">
+            <span class="pq-ov-num">${q.num}</span>
+            <span class="pq-ov-val">${answers[i] !== null ? labels[answers[i]!] : '—'}</span>
+          </button>
+        `).join('')}</div>
+        <div class="pq-nav" style="margin-top:1.5rem;">
           <button class="btn btn-outline btn-sm" id="btn-back-first">Tillbaka till fråga 1</button>
           <button class="btn btn-primary btn-sm" id="btn-submit-overview">Rätta provet</button>
         </div>
       `;
-      app.querySelectorAll('.prov-overview-item').forEach(el => {
+      app.querySelectorAll('.pq-ov-btn').forEach(el => {
         el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
       });
       document.getElementById('btn-back-first')?.addEventListener('click', () => { current = 0; render(); });
@@ -214,39 +208,23 @@ import Base from '../../layouts/Base.astro';
       const labels = ['A', 'B', 'C', 'D'];
       let score = 0;
       questions.forEach((q, i) => { if (answers[i] === q.correct) score++; });
-
       app.innerHTML = `
-        <div class="prov-result-header">
-          <h2>Resultat</h2>
-          <div class="prov-score">${score} / ${questions.length}</div>
-          <p style="color: var(--color-muted);">rätt svar</p>
-        </div>
-        <div class="prov-result-list">
-          ${questions.map((q, i) => {
-            const isCorrect = answers[i] === q.correct;
-            const icon = isCorrect ? '✓' : '✗';
-            const cls = isCorrect ? 'correct' : 'wrong';
-            return `
-              <div class="prov-result-item ${cls}">
-                <span class="prov-result-icon">${icon}</span>
-                <span class="prov-result-num">${q.num}.</span>
-                <span>Ditt svar: <strong>${answers[i] !== null ? labels[answers[i]!] : '—'}</strong></span>
-                ${!isCorrect ? `<span class="prov-result-correct">Rätt: <strong>${labels[q.correct]}</strong></span>` : ''}
-              </div>
-            `;
-          }).join('')}
-        </div>
-        <div class="prov-nav" style="margin-top: 2rem;">
+        <div class="pq-result-head"><h2>Resultat</h2><div class="pq-score">${score}/${questions.length}</div><p style="color:var(--color-muted)">rätt svar</p></div>
+        <div class="pq-results">${questions.map((q, i) => {
+          const ok = answers[i] === q.correct;
+          return `<div class="pq-res ${ok ? 'pq-res--ok' : 'pq-res--no'}">
+            <span class="pq-res-icon">${ok ? '✓' : '✗'}</span>
+            <span class="pq-res-num">${q.num}.</span>
+            <span>Ditt svar: <b>${answers[i] !== null ? labels[answers[i]!] : '—'}</b></span>
+            ${!ok ? `<span class="pq-res-right">Rätt: <b>${labels[q.correct]}</b></span>` : ''}
+          </div>`;
+        }).join('')}</div>
+        <div class="pq-nav" style="margin-top:2rem;">
           <button class="btn btn-outline btn-sm" id="btn-retry">Gör om provet</button>
           <a href="/trana" class="btn btn-primary btn-sm">Tillbaka</a>
         </div>
       `;
-      document.getElementById('btn-retry')?.addEventListener('click', () => {
-        answers.fill(null);
-        current = 0;
-        submitted = false;
-        render();
-      });
+      document.getElementById('btn-retry')?.addEventListener('click', () => { answers.fill(null); current = 0; submitted = false; render(); });
     }
 
     render();
@@ -256,295 +234,201 @@ import Base from '../../layouts/Base.astro';
     let timerSeconds = 12 * 60;
     let timerInterval: number;
     const timerBtn = document.getElementById('timer-btn')!;
-    const timerDisplay = document.getElementById('timer-display')!;
-    const timerValue = document.getElementById('timer-value')!;
-
-    function formatTime(s: number) {
-      const m = Math.floor(s / 60);
-      const sec = s % 60;
-      return `${m}:${sec.toString().padStart(2, '0')}`;
-    }
-
+    const timerDisp = document.getElementById('timer-display')!;
+    const timerVal = document.getElementById('timer-value')!;
+    function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
     timerBtn.addEventListener('click', () => {
-      if (!timerRunning) {
-        timerRunning = true;
-        timerBtn.style.display = 'none';
-        timerDisplay.style.display = 'inline';
-        timerInterval = setInterval(() => {
-          timerSeconds--;
-          timerValue.textContent = formatTime(timerSeconds);
-          if (timerSeconds <= 0) {
-            clearInterval(timerInterval);
-            timerValue.textContent = 'Tiden är slut!';
-          }
-        }, 1000) as unknown as number;
-      }
+      timerRunning = true;
+      timerBtn.style.display = 'none';
+      timerDisp.style.display = 'inline';
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        timerVal.textContent = fmt(timerSeconds);
+        if (timerSeconds <= 0) { clearInterval(timerInterval); timerVal.textContent = 'Tiden är slut!'; }
+      }, 1000) as unknown as number;
     });
   </script>
 </Base>
 
-<style>
-  .prov-header {
-    text-align: center;
+<style is:global>
+  /* === Prov page === */
+  .prov-header { text-align: center; margin-bottom: 2rem; }
+  .prov-header h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .prov-meta { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1rem; }
+  .prov-timer { margin-bottom: 0.5rem; }
+  .timer-display { font-size: 1.3rem; font-weight: 700; color: var(--color-primary); display: none; }
+  .btn-sm { padding: 0.5rem 1.2rem; font-size: 0.9rem; }
+
+  /* Progress */
+  .pq-progress { text-align: center; font-size: 0.8rem; color: var(--color-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  /* Question card */
+  .pq-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 2rem 2rem 1.5rem;
+    box-shadow: var(--shadow);
     margin-bottom: 2rem;
   }
 
-  .prov-header h1 {
-    font-size: 1.6rem;
-    margin-bottom: 0.3rem;
-  }
-
-  .prov-meta {
-    color: var(--color-muted);
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-  }
-
-  .prov-timer {
-    margin-bottom: 1rem;
-  }
-
-  .timer-display {
-    font-size: 1.3rem;
-    font-weight: 700;
-    color: var(--color-primary);
-  }
-
-  .btn-sm {
-    padding: 0.5rem 1.2rem;
-    font-size: 0.9rem;
-  }
-
-  .prov-progress {
-    text-align: center;
-    font-size: 0.85rem;
-    color: var(--color-muted);
-    margin-bottom: 1.5rem;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .prov-question {
-    display: flex;
-    gap: 0.6rem;
-    margin-bottom: 1.5rem;
-  }
-
-  .prov-question-num {
-    font-weight: 700;
-    font-size: 1.1rem;
-    flex-shrink: 0;
-    min-width: 2rem;
-  }
-
-  .prov-question-text {
+  .pq-question {
+    margin-bottom: 1.8rem;
     font-size: 1.05rem;
-    line-height: 1.6;
+    line-height: 1.7;
   }
 
-  .prov-options {
+  .pq-num {
+    font-weight: 700;
+    margin-right: 0.5rem;
+  }
+
+  .pq-text { }
+
+  /* Options — each on its own line like the real exam */
+  .pq-options {
     display: flex;
     flex-direction: column;
-    gap: 0.6rem;
-    margin-bottom: 2rem;
-    padding-left: 2.6rem;
+    gap: 0;
+    margin-left: 1.2rem;
   }
 
-  .prov-option {
+  .pq-opt {
     display: flex;
     align-items: center;
     gap: 0.8rem;
-    padding: 0.7rem 1rem;
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
+    padding: 0.65rem 1rem;
     cursor: pointer;
-    transition: all 0.15s;
-    background: var(--color-surface);
+    border-radius: var(--radius);
+    transition: background 0.12s;
+    border: 2px solid transparent;
   }
 
-  .prov-option:hover {
+  .pq-opt:hover { background: #f5f7ff; }
+
+  .pq-opt--sel {
+    background: #eef2ff;
     border-color: var(--color-primary);
-    background: #f0f4ff;
   }
 
-  .prov-option.selected {
-    border-color: var(--color-primary);
-    background: #eff3ff;
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
-  }
+  .pq-opt input { display: none; }
 
-  .prov-option input {
-    display: none;
-  }
-
-  .prov-option-letter {
-    width: 28px;
-    height: 28px;
+  .pq-letter {
+    width: 30px;
+    height: 30px;
     border-radius: 50%;
-    background: var(--color-bg);
-    border: 1px solid var(--color-border);
+    background: #f1f5f9;
+    border: 1.5px solid var(--color-border);
     display: flex;
     align-items: center;
     justify-content: center;
     font-weight: 700;
     font-size: 0.85rem;
     flex-shrink: 0;
+    transition: all 0.12s;
   }
 
-  .prov-option.selected .prov-option-letter {
+  .pq-opt--sel .pq-letter {
     background: var(--color-primary);
     color: #fff;
     border-color: var(--color-primary);
   }
 
-  .prov-option-text {
-    font-size: 1rem;
-    line-height: 1.4;
+  .pq-opt-text {
+    font-size: 1.05rem;
+    line-height: 1.5;
   }
 
-  .prov-nav {
+  /* Navigation */
+  .pq-nav {
     display: flex;
     justify-content: center;
     gap: 0.8rem;
     flex-wrap: wrap;
   }
 
-  .prov-dots {
+  /* Dots */
+  .pq-dots {
     display: flex;
     justify-content: center;
-    gap: 0.4rem;
+    gap: 0.35rem;
     margin-top: 1.5rem;
     flex-wrap: wrap;
   }
 
-  .prov-dot {
-    width: 30px;
-    height: 30px;
+  .pq-dot {
+    width: 32px;
+    height: 32px;
     border-radius: 50%;
-    border: 1px solid var(--color-border);
+    border: 1.5px solid var(--color-border);
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 0.75rem;
+    font-size: 0.78rem;
     font-weight: 600;
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.12s;
     background: var(--color-surface);
+    color: var(--color-text);
   }
 
-  .prov-dot.active {
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2);
-  }
-
-  .prov-dot.answered {
-    background: var(--color-primary);
-    color: #fff;
-    border-color: var(--color-primary);
-  }
+  .pq-dot:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .pq-dot--cur { border-color: var(--color-primary); color: var(--color-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  .pq-dot--ans { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
 
   /* Overview */
-  .prov-overview-grid {
+  .pq-overview {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 0.8rem;
-    max-width: 400px;
+    gap: 0.7rem;
+    max-width: 360px;
     margin: 1.5rem auto;
   }
 
-  .prov-overview-item {
+  .pq-ov-btn {
     display: flex;
     flex-direction: column;
     align-items: center;
-    gap: 0.2rem;
-    padding: 0.8rem;
-    border: 1px solid var(--color-border);
+    gap: 0.15rem;
+    padding: 0.7rem;
+    border: 1.5px solid var(--color-border);
     border-radius: var(--radius);
     background: var(--color-surface);
     cursor: pointer;
-    transition: all 0.15s;
+    transition: all 0.12s;
+    font-family: var(--font-sans);
   }
 
-  .prov-overview-item:hover {
-    border-color: var(--color-primary);
-  }
-
-  .prov-overview-item.answered {
-    border-color: var(--color-primary);
-    background: #eff3ff;
-  }
-
-  .prov-overview-num {
-    font-weight: 700;
-    font-size: 0.9rem;
-  }
-
-  .prov-overview-ans {
-    color: var(--color-muted);
-    font-size: 0.85rem;
-  }
+  .pq-ov-btn:hover { border-color: var(--color-primary); }
+  .pq-ov-btn--ans { border-color: var(--color-primary); background: #eef2ff; }
+  .pq-ov-num { font-weight: 700; font-size: 0.9rem; }
+  .pq-ov-val { color: var(--color-muted); font-size: 0.8rem; }
 
   /* Results */
-  .prov-result-header {
-    text-align: center;
-    margin-bottom: 2rem;
-  }
+  .pq-result-head { text-align: center; margin-bottom: 2rem; }
+  .pq-result-head h2 { margin-top: 0; }
+  .pq-score { font-size: 3rem; font-weight: 800; color: var(--color-primary); line-height: 1; }
+  .pq-results { display: flex; flex-direction: column; gap: 0.4rem; }
 
-  .prov-result-header h2 {
-    margin-top: 0;
-  }
-
-  .prov-score {
-    font-size: 3rem;
-    font-weight: 800;
-    color: var(--color-primary);
-    line-height: 1;
-  }
-
-  .prov-result-list {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
-
-  .prov-result-item {
+  .pq-res {
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    padding: 0.6rem 1rem;
+    padding: 0.55rem 1rem;
     border-radius: var(--radius);
     font-size: 0.95rem;
   }
 
-  .prov-result-item.correct {
-    background: #ecfdf5;
-  }
+  .pq-res--ok { background: #ecfdf5; }
+  .pq-res--no { background: #fef2f2; }
+  .pq-res-icon { font-weight: 700; font-size: 1.1rem; }
+  .pq-res--ok .pq-res-icon { color: var(--color-success); }
+  .pq-res--no .pq-res-icon { color: #ef4444; }
+  .pq-res-num { font-weight: 600; min-width: 1.5rem; }
+  .pq-res-right { margin-left: auto; color: var(--color-success); }
 
-  .prov-result-item.wrong {
-    background: #fef2f2;
-  }
-
-  .prov-result-icon {
-    font-weight: 700;
-    font-size: 1.1rem;
-  }
-
-  .prov-result-item.correct .prov-result-icon {
-    color: var(--color-success);
-  }
-
-  .prov-result-item.wrong .prov-result-icon {
-    color: #ef4444;
-  }
-
-  .prov-result-num {
-    font-weight: 600;
-    min-width: 1.5rem;
-  }
-
-  .prov-result-correct {
-    margin-left: auto;
-    color: var(--color-success);
+  @media (max-width: 480px) {
+    .pq-card { padding: 1.2rem; }
+    .pq-options { margin-left: 0; }
   }
 </style>

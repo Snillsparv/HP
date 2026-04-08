@@ -3,7 +3,7 @@ import { getSessionFromCookies } from '../../../lib/auth.js';
 import { createThread } from '../../../lib/forum.js';
 
 export const POST: APIRoute = async ({ request }) => {
-  const user = getSessionFromCookies(request.headers.get('cookie'));
+  const user = await getSessionFromCookies(request.headers.get('cookie'));
   if (!user) {
     return new Response(null, { status: 302, headers: { Location: '/konto/login' } });
   }
@@ -17,6 +17,6 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(null, { status: 302, headers: { Location: '/forum?error=Fyll+i+alla+fält' } });
   }
 
-  const id = createThread(user.id, category, title, body);
+  const id = await createThread(user.id, category, title, body);
   return new Response(null, { status: 302, headers: { Location: `/forum/${id}` } });
 };

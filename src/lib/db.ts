@@ -1,44 +1,43 @@
-import Database from 'better-sqlite3';
-import { join } from 'path';
+import pg from 'pg';
 
-const dbPath = join(process.cwd(), 'data.db');
-const db = new Database(dbPath);
+const pool = new pg.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes('railway') ? { rejectUnauthorized: false } : undefined,
+});
 
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
-
-db.exec(`
+// Create tables on startup
+await pool.query(`
   CREATE TABLE IF NOT EXISTS users (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT,
     google_id TEXT UNIQUE,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TIMESTAMPTZ DEFAULT NOW()
   );
 
   CREATE TABLE IF NOT EXISTS sessions (
     token TEXT PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    expires_at TEXT NOT NULL
+    expires_at TIMESTAMPTZ NOT NULL
   );
 
   CREATE TABLE IF NOT EXISTS threads (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     category TEXT NOT NULL,
     title TEXT NOT NULL,
     body TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TIMESTAMPTZ DEFAULT NOW()
   );
 
   CREATE TABLE IF NOT EXISTS replies (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    id SERIAL PRIMARY KEY,
     thread_id INTEGER NOT NULL REFERENCES threads(id) ON DELETE CASCADE,
     user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
     body TEXT NOT NULL,
-    created_at TEXT DEFAULT (datetime('now'))
+    created_at TIMESTAMPTZ DEFAULT NOW()
   );
 `);
 
-export default db;
+export default pool;

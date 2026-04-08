@@ -3,15 +3,15 @@ import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
 import { getThread, getReplies } from '../../lib/forum.js';
 
-const user = getSessionFromCookies(Astro.request.headers.get('cookie'));
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const id = Number(Astro.params.id);
-const thread = getThread(id);
+const thread = await getThread(id);
 
 if (!thread) {
   return Astro.redirect('/forum?error=Tråden+finns+inte');
 }
 
-const replies = getReplies(id);
+const replies = await getReplies(id);
 
 const categoryLabels: Record<string, string> = {
   allmant: 'Allmänt om HP',

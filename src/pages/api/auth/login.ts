@@ -10,12 +10,12 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(null, { status: 302, headers: { Location: '/konto/login?error=Fyll+i+alla+fält' } });
   }
 
-  const user = findUserByEmail(email);
+  const user = await findUserByEmail(email);
   if (!user || !user.password_hash || !verifyPassword(password, user.password_hash)) {
     return new Response(null, { status: 302, headers: { Location: '/konto/login?error=Fel+e-post+eller+lösenord' } });
   }
 
-  const token = createSession(user.id);
+  const token = await createSession(user.id);
 
   return new Response(null, {
     status: 302,

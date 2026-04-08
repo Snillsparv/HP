@@ -3,9 +3,9 @@ import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
 import { getThreads } from '../../lib/forum.js';
 
-const user = getSessionFromCookies(Astro.request.headers.get('cookie'));
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const category = Astro.url.searchParams.get('kategori') || '';
-const threads = getThreads(category || undefined);
+const threads = await getThreads(category || undefined);
 const error = Astro.url.searchParams.get('error');
 
 const categories = [

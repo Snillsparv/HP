@@ -8,7 +8,7 @@ interface Props {
 
 const { title, description = 'Jonas von Essen hjälper dig nå ditt drömresultat på högskoleprovet. Strategier, minnestekniker och studieplanering från Sveriges mest framgångsrika HP-skrivare.' } = Astro.props;
 const currentPath = Astro.url.pathname;
-const user = getSessionFromCookies(Astro.request.headers.get('cookie'));
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 ---
 
 <!DOCTYPE html>

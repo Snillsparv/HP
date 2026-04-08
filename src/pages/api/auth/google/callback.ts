@@ -1,6 +1,6 @@
 import type { APIRoute } from 'astro';
 import { findUserByGoogleId, findUserByEmail, createGoogleUser, createSession } from '../../../../lib/auth.js';
-import db from '../../../../lib/db.js';
+import pool from '../../../../lib/db.js';
 
 const GOOGLE_CLIENT_ID = import.meta.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = import.meta.env.GOOGLE_CLIENT_SECRET || '';
@@ -15,7 +15,6 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   try {
-    // Exchange code for tokens
     const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
       method: 'POST',
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -31,26 +30,23 @@ export const GET: APIRoute = async ({ request }) => {
     const tokens = await tokenRes.json();
     if (!tokens.access_token) throw new Error('No access token');
 
-    // Get user info
     const userRes = await fetch('https://www.googleapis.com/oauth2/v2/userinfo', {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const profile = await userRes.json();
 
-    // Find or create user
-    let user = findUserByGoogleId(profile.id);
+    let user = await findUserByGoogleId(profile.id);
     if (!user) {
-      const existing = findUserByEmail(profile.email);
+      const existing = await findUserByEmail(profile.email);
       if (existing) {
-        // Link Google to existing account
-        db.prepare('UPDATE users SET google_id = ? WHERE id = ?').run(profile.id, existing.id);
+        await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [profile.id, existing.id]);
         user = { ...existing, google_id: profile.id };
       } else {
-        user = createGoogleUser(profile.name || profile.email, profile.email, profile.id);
+        user = await createGoogleUser(profile.name || profile.email, profile.email, profile.id);
       }
     }
 
-    const token = createSession(user.id);
+    const token = await createSession(user.id);
 
     return new Response(null, {
       status: 302,

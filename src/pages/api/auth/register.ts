@@ -18,12 +18,12 @@ export const POST: APIRoute = async ({ request }) => {
     if (password !== password2) {
       return new Response(null, { status: 302, headers: { Location: '/konto/registrera?error=Lösenorden+matchar+inte' } });
     }
-    if (findUserByEmail(email)) {
+    if (await findUserByEmail(email)) {
       return new Response(null, { status: 302, headers: { Location: '/konto/registrera?error=E-postadressen+används+redan' } });
     }
 
-    const user = createUser(name, email, password);
-    const token = createSession(user.id);
+    const user = await createUser(name, email, password);
+    const token = await createSession(user.id);
 
     return new Response(null, {
       status: 302,

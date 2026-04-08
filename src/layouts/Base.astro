@@ -4,10 +4,12 @@ import { getSessionFromCookies } from '../lib/auth.js';
 interface Props {
   title: string;
   description?: string;
+  ogImage?: string;
 }
 
-const { title, description = 'Jonas von Essen hjälper dig nå ditt drömresultat på högskoleprovet. Strategier, minnestekniker och studieplanering från Sveriges mest framgångsrika HP-skrivare.' } = Astro.props;
+const { title, description = 'Jonas von Essen hjälper dig nå ditt drömresultat på högskoleprovet. Strategier, minnestekniker och studieplanering från Sveriges mest framgångsrika HP-skrivare.', ogImage = '/jonas_hp.webp' } = Astro.props;
 const currentPath = Astro.url.pathname;
+const canonicalUrl = new URL(currentPath, 'https://www.hpakuten.se').href;
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 ---
 
@@ -17,8 +19,24 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta name="description" content={description} />
+  <link rel="canonical" href={canonicalUrl} />
   <title>{title}</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Open Graph -->
+  <meta property="og:type" content="website" />
+  <meta property="og:title" content={title} />
+  <meta property="og:description" content={description} />
+  <meta property="og:url" content={canonicalUrl} />
+  <meta property="og:image" content={`https://www.hpakuten.se${ogImage}`} />
+  <meta property="og:locale" content="sv_SE" />
+  <meta property="og:site_name" content="HPAkuten" />
+
+  <!-- Twitter -->
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content={title} />
+  <meta name="twitter:description" content={description} />
+  <meta name="twitter:image" content={`https://www.hpakuten.se${ogImage}`} />
 </head>
 <body>
   <header class="site-header">

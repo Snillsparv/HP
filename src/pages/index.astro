@@ -9,7 +9,25 @@ import Base from '../layouts/Base.astro';
         <img src="/jonas_hp.webp" alt="Jonas von Essen kikar upp" class="hero-peek-img" />
       </div>
       <span class="hero-tag">Från Sveriges mest framgångsrika HP-skrivare</span>
-      <h1>Högskoleprovet närmar sig!</h1>
+      <h1>Nå ditt drömresultat på&nbsp;HP</h1>
+      <p class="subtitle">
+        Strategier och minnestekniker från Jonas von Essen — tvåfaldig världsmästare i minne med 2.0 på HP tolv gånger i rad.
+      </p>
+
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="number">15</span>
+          <span class="label">Gånger skrivit HP</span>
+        </div>
+        <div class="hero-stat">
+          <span class="number">2.0</span>
+          <span class="label">12 gånger i rad</span>
+        </div>
+        <div class="hero-stat">
+          <span class="number">160/160</span>
+          <span class="label">Alla rätt — ensam i landet</span>
+        </div>
+      </div>
 
       <div class="countdown" id="countdown">
         <div class="countdown-item">
@@ -30,21 +48,6 @@ import Base from '../layouts/Base.astro';
         </div>
       </div>
       <p class="countdown-date" id="countdown-date"></p>
-
-      <div class="hero-stats">
-        <div class="hero-stat">
-          <span class="number">15</span>
-          <span class="label">Gånger skrivit HP</span>
-        </div>
-        <div class="hero-stat">
-          <span class="number">12</span>
-          <span class="label">2.0 tolv gånger i rad</span>
-        </div>
-        <div class="hero-stat">
-          <span class="number">160/160</span>
-          <span class="label">Alla rätt — ensam i landet</span>
-        </div>
-      </div>
 
       <a href="#guide" class="btn btn-primary">Visa planen</a>
     </div>
@@ -144,7 +147,7 @@ import Base from '../layouts/Base.astro';
         </div>
       </div>
 
-      <div class="guide-text" style="margin-top: 2rem;">
+      <div class="guide-text" style="margin-top: 2rem; text-align: center;">
         <p>
           Se i övrigt till att du har <strong>sovit bra</strong> inför provet och kom ihåg att du kan skriva det flera gånger! Se detta som ett övningstillfälle, inte som din enda chans att avgöra hela din framtid!
         </p>
@@ -162,46 +165,41 @@ import Base from '../layouts/Base.astro';
       <p class="section-subtitle">Jonas von Essen har delat sina HP-tips i Sveriges största medier.</p>
       <div class="video-grid">
         <div class="video-card">
-          <div class="video-embed"><iframe src="https://www.youtube.com/embed/YMfvx2pxXkU" title="Expressen" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
           <p class="video-label">Expressen</p>
+          <div class="video-embed"><iframe src="https://www.youtube.com/embed/YMfvx2pxXkU" title="Expressen" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
         </div>
         <div class="video-card">
-          <div class="video-embed"><iframe src="https://www.youtube.com/embed/yG5YIMd71wk" title="TV4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
           <p class="video-label">TV4</p>
+          <div class="video-embed"><iframe src="https://www.youtube.com/embed/yG5YIMd71wk" title="TV4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
         </div>
         <div class="video-card">
-          <div class="video-embed"><iframe src="https://www.youtube.com/embed/WZwQ-zKBBaA" title="Talang" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
           <p class="video-label">Talang</p>
+          <div class="video-embed"><iframe src="https://www.youtube.com/embed/WZwQ-zKBBaA" title="Talang" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
         </div>
       </div>
     </div>
   </section>
 
   <script>
-    // HP exam dates: typically first Sunday in April + last Saturday in October
+    // Known upcoming HP exam dates (update as needed)
+    // Spring 2026: April 12, Fall 2026: October 25
+    const examDates = [
+      new Date(2026, 3, 12, 9, 0, 0),  // 12 april 2026
+      new Date(2026, 9, 25, 9, 0, 0),  // 25 oktober 2026
+      new Date(2027, 3, 11, 9, 0, 0),  // 11 april 2027
+      new Date(2027, 9, 24, 9, 0, 0),  // 24 oktober 2027
+    ];
+
     function getNextExamDate() {
       const now = new Date();
-      const year = now.getFullYear();
-
-      // Generate candidate dates for this year and next
-      const candidates: Date[] = [];
-      for (const y of [year, year + 1]) {
-        // Spring: first Sunday in April
-        const april1 = new Date(y, 3, 1);
-        const springDay = 1 + ((7 - april1.getDay()) % 7);
-        candidates.push(new Date(y, 3, springDay, 9, 0, 0));
-
-        // Fall: last Saturday in October
-        const oct31 = new Date(y, 9, 31);
-        const fallDay = 31 - ((oct31.getDay() + 1) % 7);
-        candidates.push(new Date(y, 9, fallDay, 9, 0, 0));
-      }
-
-      // Return the next future date
-      for (const d of candidates.sort((a, b) => a.getTime() - b.getTime())) {
+      for (const d of examDates) {
         if (d.getTime() > now.getTime()) return d;
       }
-      return candidates[candidates.length - 1];
+      // Fallback: calculate next spring
+      const y = new Date().getFullYear() + 1;
+      const april1 = new Date(y, 3, 1);
+      const springDay = 1 + ((7 - april1.getDay()) % 7) + 7;
+      return new Date(y, 3, springDay, 9, 0, 0);
     }
 
     const target = getNextExamDate();

@@ -255,9 +255,21 @@ li { margin-bottom: 0.3em; }
 .hero--minimal .hero-content {
   max-width: 700px;
   margin: 0 auto;
-  padding: 4rem 1.5rem;
+  padding: 2rem 1.5rem 4rem;
   width: 100%;
   text-align: center;
+}
+
+.hero-peek-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: -0.5rem;
+}
+
+.hero-peek-img {
+  width: 220px;
+  height: auto;
+  filter: drop-shadow(0 4px 12px rgba(0,0,0,0.1));
 }
 
 .hero--minimal h1 {

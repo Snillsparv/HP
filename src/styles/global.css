@@ -658,7 +658,7 @@ tr:hover {
 }
 
 .contact-form .btn {
-  align-self: flex-start;
+  align-self: center;
 }
 
 @media (max-width: 480px) {

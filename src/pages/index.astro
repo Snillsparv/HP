@@ -2,17 +2,34 @@
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="HPAkuten – Nå 2.0 på Högskoleprovet" description="Gratis HP-tips, strategier och minnestekniker från Jonas von Essen — tvåfaldig världsmästare i minne med 2.0 på högskoleprovet tolv gånger i rad. Börja höja ditt resultat idag.">
+<Base title="HPAkuten – Förbered dig snabbt inför Högskoleprovet" description="Bara några dagar kvar till HP? Jonas von Essen — 2.0 tolv gånger i rad — visar exakt vad du ska göra för att höja ditt resultat snabbt. Helt gratis.">
   <div class="hero hero--minimal">
     <div class="hero-content">
       <div class="hero-peek-wrapper">
         <img src="/jonas_hp.webp" alt="Jonas von Essen kikar upp" class="hero-peek-img" />
       </div>
       <span class="hero-tag">Från Sveriges mest framgångsrika HP-skrivare</span>
-      <h1>Nå ditt drömresultat på&nbsp;HP</h1>
-      <p class="subtitle">
-        Strategier och minnestekniker från Jonas von Essen — tvåfaldig världsmästare i minne med 2.0 på HP tolv gånger i rad.
-      </p>
+      <h1>Högskoleprovet närmar sig!</h1>
+
+      <div class="countdown" id="countdown">
+        <div class="countdown-item">
+          <span class="countdown-number" id="cd-days">--</span>
+          <span class="countdown-label">dagar</span>
+        </div>
+        <div class="countdown-item">
+          <span class="countdown-number" id="cd-hours">--</span>
+          <span class="countdown-label">timmar</span>
+        </div>
+        <div class="countdown-item">
+          <span class="countdown-number" id="cd-mins">--</span>
+          <span class="countdown-label">minuter</span>
+        </div>
+        <div class="countdown-item">
+          <span class="countdown-number" id="cd-secs">--</span>
+          <span class="countdown-label">sekunder</span>
+        </div>
+      </div>
+      <p class="countdown-date" id="countdown-date"></p>
 
       <div class="hero-stats">
         <div class="hero-stat">
@@ -29,58 +46,117 @@ import Base from '../layouts/Base.astro';
         </div>
       </div>
 
-      <div class="hero-buttons">
-        <a href="/snabbguiden" class="btn btn-primary">Börja här — Snabbguiden</a>
-      </div>
+      <a href="#guide" class="btn btn-primary">Visa planen</a>
     </div>
   </div>
 
-  <section class="section">
-    <div class="container container--wide">
-      <h2 class="section-title">Allt du behöver — inget du inte behöver</h2>
-      <p class="section-subtitle">Fokuserat, personligt och baserat på vad som faktiskt fungerar.</p>
+  <!-- Intro -->
+  <section class="section" id="guide">
+    <div class="container">
+      <h2 class="section-title">Bara några dagar kvar och du är helt oförberedd?</h2>
+      <p class="section-subtitle" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+        Lugn, följ stegen nedan och du kommer att vara betydligt mer redo än du är just nu!
+      </p>
 
-      <div class="card-grid">
-        <div class="card">
-          <span class="card-icon">🎯</span>
-          <h3><a href="/snabbguiden">Snabbguiden</a></h3>
-          <p>Allt om HP på 10 minuter. Vad provet testar, hur det funkar, och de viktigaste tipsen.</p>
-        </div>
-
-        <div class="card">
-          <span class="card-icon">📊</span>
-          <h3><a href="/delprov">Strategier per delprov</a></h3>
-          <p>Detaljerade genomgångar av alla åtta delprov med mina personliga strategier.</p>
-        </div>
-
-        <div class="card">
-          <span class="card-icon">🧠</span>
-          <h3><a href="/minnestekniker">Minnestekniker</a></h3>
-          <p>Min hemliga fördel. Lär dig minnespalats, associationer och visualisering för HP.</p>
-        </div>
-
-        <div class="card">
-          <span class="card-icon">✍️</span>
-          <h3><a href="/trana">Träna på prov</a></h3>
-          <p>Öva på exempeluppgifter för alla åtta delprov. Välj delprov och kör!</p>
-        </div>
-
-        <div class="card">
-          <span class="card-icon">📅</span>
-          <h3><a href="/ovning">Studieplan &amp; övning</a></h3>
-          <p>8-veckorsplan, checklista inför provdagen och länkar till gamla prov.</p>
-        </div>
-
-        <div class="card">
-          <span class="card-icon">💬</span>
-          <h3><a href="/forum">Forum</a></h3>
-          <p>Diskutera, ställ frågor och hjälp varandra. Berätta hur det gick!</p>
+      <div class="guide-text">
+        <p>
+          Det som snabbast kan göra en bättre på högskoleprovet är ironiskt nog just att <strong>göra högskoleprovet!</strong> I snitt höjer man sitt resultat med 0,3 enheter mellan första och andra gången man skriver det. Det här beror förstås på att man andra gången vet hur provet går till och vad man kan förvänta sig. Om du dessutom tränar på ett strategiskt sätt så kan du ganska lätt höja dig ännu mer!
+        </p>
+        <p>
+          Innebär det här att du måste vänta ett halvår till nästa prov för att få ett bra resultat? <strong>Absolut inte!</strong> Högskoleverket har publicerat prov från många tidigare år, så du kan helt enkelt skriva ut ett sådant och <strong>simulera</strong> ett högskoleprov för att direkt ge dig själv fördelarna med att ha gjort provet tidigare!
+        </p>
+        <div class="tip-box success">
+          <strong>Allt är helt gratis</strong>
+          På den här hemsidan har jag lagt upp en perfekt guide för vad jag skulle göra med bara några dagar kvar till provet. Jag försöker inte sälja någon premium-grej eller så utan vill bara hjälpa så många som möjligt så snabbt som möjligt.
         </div>
       </div>
     </div>
   </section>
 
+  <!-- Steps -->
   <section class="section" style="background: #f1f5f9;">
+    <div class="container">
+      <h2 class="section-title">Följ de här stegen</h2>
+
+      <div class="steps">
+        <div class="step">
+          <div class="step-number">1</div>
+          <div class="step-content">
+            <h3>Gå till test-sidan</h3>
+            <p>
+              Där har jag lagt upp provet från höstterminen 2021. Jag har också spelat in en förklaring till hur man löser varje uppgift. Jag var den enda i hela landet som lyckades få alla rätt den gången, dvs 160 av 160 poäng. Jag säger detta för att du ska kunna lita på att jag vet vad jag pratar om.
+            </p>
+            <p>
+              Jag har spelat in en förklaring av hur själva provdelarna går till. <strong>Titta på den först.</strong>
+            </p>
+            <a href="/trana" class="btn btn-primary">Till test-sidan</a>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">2</div>
+          <div class="step-content">
+            <h3>Gör första kvantitativa delen</h3>
+            <p>
+              Det finns fyra delprov, två kvantitativa och två verbala. Börja med den första kvantitativa. Gör uppgifterna på tid som om det vore skarpt läge.
+            </p>
+            <p>
+              Rätta sedan och kolla på förklaringarna för de uppgifter du inte klarade eller de där du var osäker på lösningen, så att du lär dig hur du ska tänka. Notera även vilket område det handlar om så att du kan läsa på mer om det ifall du har tid över senare.
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">3</div>
+          <div class="step-content">
+            <h3>Gör första verbala delen</h3>
+            <p>
+              Gör samma sak med den första verbala delen. Delarna är ganska lika inom sig själva — har du gjort första kvantitativa delen så har du koll på upplägget i alla andra kvantitativa delar. Så om du inte har tid kan du nu fokusera på de områden du klarade sämst.
+            </p>
+            <p>
+              Det är framför allt <strong>matte-delen</strong> du snabbt kan fylla igen kunskapsluckor i.
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">4</div>
+          <div class="step-content">
+            <h3>Titta på mattgenomgången</h3>
+            <p>
+              Titta på min video med en genomgång om all matte du behöver kunna inför högskoleprovet.
+            </p>
+            <a href="/delprov/xyz" class="btn btn-outline">Till mattgenomgången</a>
+          </div>
+        </div>
+
+        <div class="step">
+          <div class="step-number">5</div>
+          <div class="step-content">
+            <h3>Gör de andra delarna och jämför</h3>
+            <p>
+              Gör sedan den andra kvantitativa delen och den andra verbala delen från 2021 och jämför dina resultat. Dra lärdomar av var du fick tidsbrist första gången du skrev dem för att planera din tid optimalt.
+            </p>
+            <div class="tip-box success">
+              <strong>Du är nu i ett mycket bättre läge än du var i tidigare! :)</strong>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="guide-text" style="margin-top: 2rem;">
+        <p>
+          Se i övrigt till att du har <strong>sovit bra</strong> inför provet och kom ihåg att du kan skriva det flera gånger! Se detta som ett övningstillfälle, inte som din enda chans att avgöra hela din framtid!
+        </p>
+        <div class="tip-box warning" style="margin-top: 1.5rem;">
+          <strong>Kom ihåg:</strong> Att inte plugga inför provet är som att försöka köra upp utan att ha tagit körlektioner.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Videos -->
+  <section class="section">
     <div class="container container--wide">
       <h2 class="section-title">Sett i media</h2>
       <p class="section-subtitle">Jonas von Essen har delat sina HP-tips i Sveriges största medier.</p>
@@ -101,19 +177,60 @@ import Base from '../layouts/Base.astro';
     </div>
   </section>
 
-  <section class="section">
-    <div class="container">
-      <h2 class="section-title">Varför den här sidan?</h2>
-      <div class="tip-box success">
-        <strong>Personligt och beprövat</strong>
-        Det här är inte generiska tips från anonyma skribenter. Allt innehåll kommer direkt från min erfarenhet av att skriva HP 15 gånger och nå 2.0 de senaste 12 gångerna — inklusive 160 av 160 poäng, som enda person i landet.
-      </div>
-      <p>
-        Jag har märkt att de flesta HP-sajter antingen är röriga, fulla av reklam, eller gömmer det viktigaste
-        bakom betalväggar. Den här sidan är annorlunda: allt kärninnehåll är gratis, strukturen är enkel,
-        och fokus ligger på det som faktiskt höjer ditt resultat — särskilt minnestekniker, som de flesta
-        HP-sajter helt ignorerar.
-      </p>
-    </div>
-  </section>
+  <script>
+    // HP exam dates: typically first Sunday in April + last Saturday in October
+    function getNextExamDate() {
+      const now = new Date();
+      const year = now.getFullYear();
+
+      // Generate candidate dates for this year and next
+      const candidates: Date[] = [];
+      for (const y of [year, year + 1]) {
+        // Spring: first Sunday in April
+        const april1 = new Date(y, 3, 1);
+        const springDay = 1 + ((7 - april1.getDay()) % 7);
+        candidates.push(new Date(y, 3, springDay, 9, 0, 0));
+
+        // Fall: last Saturday in October
+        const oct31 = new Date(y, 9, 31);
+        const fallDay = 31 - ((oct31.getDay() + 1) % 7);
+        candidates.push(new Date(y, 9, fallDay, 9, 0, 0));
+      }
+
+      // Return the next future date
+      for (const d of candidates.sort((a, b) => a.getTime() - b.getTime())) {
+        if (d.getTime() > now.getTime()) return d;
+      }
+      return candidates[candidates.length - 1];
+    }
+
+    const target = getNextExamDate();
+    const months = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
+    const dateEl = document.getElementById('countdown-date');
+    if (dateEl) {
+      dateEl.textContent = `Nästa högskoleprov: ${target.getDate()} ${months[target.getMonth()]} ${target.getFullYear()}`;
+    }
+
+    function updateCountdown() {
+      const diff = target.getTime() - Date.now();
+      if (diff <= 0) {
+        document.getElementById('cd-days')!.textContent = '0';
+        document.getElementById('cd-hours')!.textContent = '0';
+        document.getElementById('cd-mins')!.textContent = '0';
+        document.getElementById('cd-secs')!.textContent = '0';
+        return;
+      }
+      const days = Math.floor(diff / 86400000);
+      const hours = Math.floor((diff % 86400000) / 3600000);
+      const mins = Math.floor((diff % 3600000) / 60000);
+      const secs = Math.floor((diff % 60000) / 1000);
+      document.getElementById('cd-days')!.textContent = String(days);
+      document.getElementById('cd-hours')!.textContent = String(hours);
+      document.getElementById('cd-mins')!.textContent = String(mins);
+      document.getElementById('cd-secs')!.textContent = String(secs);
+    }
+
+    updateCountdown();
+    setInterval(updateCountdown, 1000);
+  </script>
 </Base>

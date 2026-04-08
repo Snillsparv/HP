@@ -331,6 +331,113 @@ li { margin-bottom: 0.3em; }
   padding: 0.8rem 2.2rem;
 }
 
+/* === Countdown === */
+.countdown {
+  display: flex;
+  justify-content: center;
+  gap: 1.5rem;
+  margin: 1.5rem 0 0.5rem;
+}
+
+.countdown-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.countdown-number {
+  font-size: 2.8rem;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.countdown-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--color-muted);
+  margin-top: 0.3rem;
+}
+
+.countdown-date {
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-muted);
+  margin-bottom: 1.5rem;
+}
+
+/* === Guide text === */
+.guide-text {
+  max-width: 700px;
+  margin: 0 auto;
+  font-size: 1.05rem;
+}
+
+/* === Steps === */
+.steps {
+  max-width: 700px;
+  margin: 2rem auto;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.step {
+  display: flex;
+  gap: 1.2rem;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  box-shadow: var(--shadow);
+}
+
+.step-number {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  font-weight: 800;
+  flex-shrink: 0;
+}
+
+.step-content h3 {
+  margin: 0 0 0.5rem;
+}
+
+.step-content p {
+  margin-bottom: 0.8rem;
+}
+
+.step-content p:last-child {
+  margin-bottom: 0;
+}
+
+.step-content .btn {
+  margin-top: 0.5rem;
+}
+
+@media (max-width: 480px) {
+  .countdown {
+    gap: 1rem;
+  }
+
+  .countdown-number {
+    font-size: 2rem;
+  }
+
+  .step {
+    flex-direction: column;
+    gap: 0.8rem;
+  }
+}
+
 @media (max-width: 768px) {
   .hero--minimal h1 {
     font-size: 2.2rem;

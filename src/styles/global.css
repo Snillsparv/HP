@@ -469,10 +469,11 @@ li { margin-bottom: 0.3em; }
 
 /* === Media section === */
 .video-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 1.5rem;
-  margin: 2rem 0;
+  margin: 2rem auto;
+  max-width: 700px;
 }
 
 .video-card {
@@ -505,11 +506,6 @@ li { margin-bottom: 0.3em; }
   color: var(--color-muted);
 }
 
-@media (max-width: 768px) {
-  .video-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* === Table === */
 table {

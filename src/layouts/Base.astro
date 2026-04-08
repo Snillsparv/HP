@@ -48,12 +48,20 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 
   <footer class="site-footer">
     <div class="container">
-      <div class="footer-swish">
-        <p>
-          Allt på den här sidan är gratis — inga premiumplaner, inga dolda kostnader.
-          <br />Om du vill tacka kan du <strong>swisha en kaffe</strong> eller ännu hellre:
-          <strong>skriv och berätta hur det gick!</strong>
-        </p>
+      <div class="footer-contact">
+        <h3>Hör av dig!</h3>
+        <p>Berätta hur det gick på provet, eller vad du tycker om sidan.</p>
+        <form class="contact-form" action="https://formsubmit.co/info@jonasvonessen.se" method="POST">
+          <input type="hidden" name="_subject" value="Meddelande från HPAkuten" />
+          <input type="hidden" name="_captcha" value="false" />
+          <input type="hidden" name="_next" value="https://www.hpakuten.se/?tack=1" />
+          <div class="contact-row">
+            <input type="text" name="name" placeholder="Ditt namn" required />
+            <input type="email" name="email" placeholder="Din e-post" required />
+          </div>
+          <textarea name="message" rows="3" placeholder="Skriv ditt meddelande..." required></textarea>
+          <button type="submit" class="btn btn-primary">Skicka</button>
+        </form>
       </div>
       <p>&copy; {new Date().getFullYear()} Jonas von Essen · HPAkuten</p>
     </div>

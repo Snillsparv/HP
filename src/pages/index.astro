@@ -29,26 +29,6 @@ import Base from '../layouts/Base.astro';
         </div>
       </div>
 
-      <div class="countdown" id="countdown">
-        <div class="countdown-item">
-          <span class="countdown-number" id="cd-days">--</span>
-          <span class="countdown-label">dagar</span>
-        </div>
-        <div class="countdown-item">
-          <span class="countdown-number" id="cd-hours">--</span>
-          <span class="countdown-label">timmar</span>
-        </div>
-        <div class="countdown-item">
-          <span class="countdown-number" id="cd-mins">--</span>
-          <span class="countdown-label">minuter</span>
-        </div>
-        <div class="countdown-item">
-          <span class="countdown-number" id="cd-secs">--</span>
-          <span class="countdown-label">sekunder</span>
-        </div>
-      </div>
-      <p class="countdown-date" id="countdown-date"></p>
-
       <a href="#guide" class="btn btn-primary">Visa planen</a>
     </div>
   </div>
@@ -56,7 +36,7 @@ import Base from '../layouts/Base.astro';
   <!-- Intro -->
   <section class="section" id="guide">
     <div class="container">
-      <h2 class="section-title">Bara några dagar kvar och du är helt oförberedd?</h2>
+      <h2 class="section-title">Bara <span id="cd-inline" class="countdown-inline">--</span> kvar och du är helt oförberedd?</h2>
       <p class="section-subtitle" style="max-width: 700px; margin-left: auto; margin-right: auto;">
         Lugn, följ stegen nedan och du kommer att vara betydligt mer redo än du är just nu!
       </p>
@@ -181,13 +161,11 @@ import Base from '../layouts/Base.astro';
   </section>
 
   <script>
-    // Known upcoming HP exam dates (update as needed)
-    // Spring 2026: April 12, Fall 2026: October 25
     const examDates = [
-      new Date(2026, 3, 12, 9, 0, 0),  // 12 april 2026
-      new Date(2026, 9, 25, 9, 0, 0),  // 25 oktober 2026
-      new Date(2027, 3, 11, 9, 0, 0),  // 11 april 2027
-      new Date(2027, 9, 24, 9, 0, 0),  // 24 oktober 2027
+      new Date(2026, 3, 18, 9, 0, 0),  // 18 april 2026
+      new Date(2026, 9, 18, 9, 0, 0),  // 18 oktober 2026
+      new Date(2027, 3, 18, 9, 0, 0),  // april 2027 (uppdatera)
+      new Date(2027, 9, 17, 9, 0, 0),  // oktober 2027 (uppdatera)
     ];
 
     function getNextExamDate() {
@@ -195,40 +173,32 @@ import Base from '../layouts/Base.astro';
       for (const d of examDates) {
         if (d.getTime() > now.getTime()) return d;
       }
-      // Fallback: calculate next spring
-      const y = new Date().getFullYear() + 1;
-      const april1 = new Date(y, 3, 1);
-      const springDay = 1 + ((7 - april1.getDay()) % 7) + 7;
-      return new Date(y, 3, springDay, 9, 0, 0);
+      return examDates[examDates.length - 1];
     }
 
     const target = getNextExamDate();
-    const months = ['januari','februari','mars','april','maj','juni','juli','augusti','september','oktober','november','december'];
-    const dateEl = document.getElementById('countdown-date');
-    if (dateEl) {
-      dateEl.textContent = `Nästa högskoleprov: ${target.getDate()} ${months[target.getMonth()]} ${target.getFullYear()}`;
-    }
 
     function updateCountdown() {
       const diff = target.getTime() - Date.now();
+      const el = document.getElementById('cd-inline');
+      if (!el) return;
+
       if (diff <= 0) {
-        document.getElementById('cd-days')!.textContent = '0';
-        document.getElementById('cd-hours')!.textContent = '0';
-        document.getElementById('cd-mins')!.textContent = '0';
-        document.getElementById('cd-secs')!.textContent = '0';
+        el.textContent = 'idag';
         return;
       }
+
       const days = Math.floor(diff / 86400000);
       const hours = Math.floor((diff % 86400000) / 3600000);
-      const mins = Math.floor((diff % 3600000) / 60000);
-      const secs = Math.floor((diff % 60000) / 1000);
-      document.getElementById('cd-days')!.textContent = String(days);
-      document.getElementById('cd-hours')!.textContent = String(hours);
-      document.getElementById('cd-mins')!.textContent = String(mins);
-      document.getElementById('cd-secs')!.textContent = String(secs);
+
+      if (days > 0) {
+        el.textContent = `${days} dagar`;
+      } else {
+        el.textContent = `${hours} timmar`;
+      }
     }
 
     updateCountdown();
-    setInterval(updateCountdown, 1000);
+    setInterval(updateCountdown, 60000);
   </script>
 </Base>

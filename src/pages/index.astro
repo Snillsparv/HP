@@ -81,13 +81,22 @@ import Base from '../layouts/Base.astro';
   </section>
 
   <section class="section" style="background: #f1f5f9;">
-    <div class="container">
+    <div class="container container--wide">
       <h2 class="section-title">Sett i media</h2>
       <p class="section-subtitle">Jonas von Essen har delat sina HP-tips i Sveriges största medier.</p>
-      <div class="media-logos">
-        <a href="https://www.youtube.com/watch?v=YMfvx2pxXkU" target="_blank" rel="noopener">Expressen</a>
-        <a href="https://www.youtube.com/watch?v=yG5YIMd71wk" target="_blank" rel="noopener">TV4</a>
-        <a href="https://www.youtube.com/watch?v=WZwQ-zKBBaA" target="_blank" rel="noopener">Talang</a>
+      <div class="video-grid">
+        <div class="video-card">
+          <div class="video-embed"><iframe src="https://www.youtube.com/embed/YMfvx2pxXkU" title="Expressen" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+          <p class="video-label">Expressen</p>
+        </div>
+        <div class="video-card">
+          <div class="video-embed"><iframe src="https://www.youtube.com/embed/yG5YIMd71wk" title="TV4" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+          <p class="video-label">TV4</p>
+        </div>
+        <div class="video-card">
+          <div class="video-embed"><iframe src="https://www.youtube.com/embed/WZwQ-zKBBaA" title="Talang" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
+          <p class="video-label">Talang</p>
+        </div>
       </div>
     </div>
   </section>

@@ -27,6 +27,7 @@ import Base from '../../layouts/Base.astro';
       {
         diagram: '/prov-dtk1-diagram1.png',
         diagramAlt: 'Diagram: Betalningsförelägganden',
+        rotate: true,
         questions: [
           {
             num: 29,
@@ -51,6 +52,7 @@ import Base from '../../layouts/Base.astro';
       {
         diagram: '/prov-dtk1-diagram2.png',
         diagramAlt: 'Diagram: Flöden av hushållsavfall',
+        rotate: false,
         questions: [
           {
             num: 32,
@@ -78,6 +80,7 @@ import Base from '../../layouts/Base.astro';
       {
         diagram: '/prov-dtk1-diagram3.png',
         diagramAlt: 'Tabell: Elever i ungdomsvårdsskolor 1965-1968',
+        rotate: true,
         questions: [
           {
             num: 35,
@@ -108,6 +111,7 @@ import Base from '../../layouts/Base.astro';
       {
         diagram: '/prov-dtk1-diagram4.png',
         diagramAlt: 'Diagram: Bibliotekens bestånd av medier',
+        rotate: true,
         questions: [
           {
             num: 39,
@@ -126,7 +130,7 @@ import Base from '../../layouts/Base.astro';
     ];
 
     // Flatten for navigation
-    const allQuestions = diagramGroups.flatMap(g => g.questions.map(q => ({ ...q, diagram: g.diagram, diagramAlt: g.diagramAlt })));
+    const allQuestions = diagramGroups.flatMap(g => g.questions.map(q => ({ ...q, diagram: g.diagram, diagramAlt: g.diagramAlt, rotate: g.rotate })));
 
     const answers: (number | null)[] = new Array(allQuestions.length).fill(null);
     let current = 0;
@@ -148,7 +152,7 @@ import Base from '../../layouts/Base.astro';
         <div class="pq-progress">Uppgift ${current + 1} av ${allQuestions.length}</div>
         <div class="dtk-diagram">
           <p class="dtk-diagram-label">Studera diagrammet/tabellen och besvara frågan.</p>
-          <img src="${q.diagram}" alt="${q.diagramAlt}" class="pq-fig dtk-diagram-img" style="aspect-ratio:3/4;" />
+          <img src="${q.diagram}" alt="${q.diagramAlt}" class="pq-fig dtk-diagram-img ${q.rotate ? 'dtk-rotated' : ''}" />
         </div>
         <div class="pq-card">
           <div class="pq-question">
@@ -294,6 +298,12 @@ import Base from '../../layouts/Base.astro';
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     background: #fff;
+  }
+
+  .dtk-rotated {
+    transform: rotate(90deg);
+    transform-origin: center center;
+    margin: 15% 0;
   }
 
   .pq-card {

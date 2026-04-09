@@ -297,19 +297,27 @@ import Base from '../../layouts/Base.astro';
 
       if (imgEl.complete) imgEl.onload(null as any);
 
-      // Scroll to zoom
+      // Zoom toward cursor position
+      function zoomAt(cx: number, cy: number, factor: number) {
+        const newScale = Math.min(Math.max(scale * factor, 0.2), 8);
+        // Adjust pan so the point under cursor stays fixed
+        panX = cx - (cx - panX) * (newScale / scale);
+        panY = cy - (cy - panY) * (newScale / scale);
+        scale = newScale;
+        updateTransform();
+      }
+
+      // Scroll to zoom toward cursor
       overlay.addEventListener('wheel', (e) => {
         e.preventDefault();
-        const delta = e.deltaY > 0 ? 0.9 : 1.1;
-        scale = Math.min(Math.max(scale * delta, 0.2), 8);
-        updateTransform();
+        const factor = e.deltaY > 0 ? 0.9 : 1.1;
+        zoomAt(e.clientX, e.clientY, factor);
       }, { passive: false });
 
-      // Double-click to zoom in
+      // Double-click to zoom in toward cursor
       overlay.addEventListener('dblclick', (e) => {
         if ((e.target as Element).closest('.dtk-zoom-close')) return;
-        scale = Math.min(scale * 1.8, 8);
-        updateTransform();
+        zoomAt(e.clientX, e.clientY, 1.8);
       });
 
       // Mouse drag
@@ -364,9 +372,10 @@ import Base from '../../layouts/Base.astro';
           updateTransform();
         } else if (t.length === 2) {
           const dist = Math.hypot(t[1].clientX - t[0].clientX, t[1].clientY - t[0].clientY);
+          const cx = (t[0].clientX + t[1].clientX) / 2;
+          const cy = (t[0].clientY + t[1].clientY) / 2;
           if (lastDist > 0) {
-            scale = Math.min(Math.max(scale * (dist / lastDist), 0.2), 8);
-            updateTransform();
+            zoomAt(cx, cy, dist / lastDist);
           }
           lastDist = dist;
         }

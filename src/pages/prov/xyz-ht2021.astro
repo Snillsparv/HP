@@ -23,6 +23,7 @@ import Base from '../../layouts/Base.astro';
   <script>
     // Helper: render fraction as stacked numerator/denominator
     const f = (top: string, bot: string) => `<span class="frac"><span class="frac-top">${top}</span><span class="frac-bot">${bot}</span></span>`;
+    const sqrt = (inner: string) => `<span class="sqrt">√<span class="sqrt-inner">${inner}</span></span>`;
 
     const questions = [
       {
@@ -106,7 +107,7 @@ import Base from '../../layouts/Base.astro';
           <div style="text-align:center;margin:1.2rem 0;">
             <img src="/prov-xyz1-10.png" alt="Rektangel ABCD med 12 kvadrater" class="pq-fig" style="max-width:200px;aspect-ratio:372/160;" />
           </div>`,
-        options: ['√300 cm', '20 cm', `${f('4','3')}√300 cm`, '25 cm'],
+        options: [`${sqrt('300')} cm`, '20 cm', `${f('4','3')}${sqrt('300')} cm`, '25 cm'],
         correct: 1
       },
       {
@@ -114,9 +115,9 @@ import Base from '../../layouts/Base.astro';
         text: `5<i>x</i>² + 3<i>x</i> = 0<br><br><b>Vilket av svarsalternativen är ett möjligt värde på <i>x</i>?</b>`,
         options: [
           `−${f('3','5')}`,
-          `√${f('3','5')}`,
+          `${sqrt(f('3','5'))}`,
           `−${f('5','3')}`,
-          `√${f('5','3')}`
+          `${sqrt(f('5','3'))}`
         ],
         correct: 0
       },
@@ -461,6 +462,19 @@ import Base from '../../layouts/Base.astro';
 
   .frac-bot {
     padding: 0.1em 0.2em 0;
+  }
+
+  /* Square root with overline */
+  .sqrt {
+    display: inline-flex;
+    align-items: baseline;
+    vertical-align: middle;
+  }
+
+  .sqrt-inner {
+    border-top: 1.5px solid currentColor;
+    padding: 0 0.15em;
+    margin-left: 0.05em;
   }
 
   /* Figure images — reserve space and fade in */

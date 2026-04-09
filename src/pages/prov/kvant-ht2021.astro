@@ -150,11 +150,13 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
           </div>
         </div>
         <div class="pq-nav">
-          <button class="btn btn-outline btn-sm" id="btn-prev" ${current === 0 ? 'disabled' : ''}>Föregående</button>
-          <button class="btn btn-outline btn-sm" id="btn-overview">Översikt</button>
-          ${current === allQuestions.length - 1
-            ? '<button class="btn btn-primary btn-sm" id="btn-submit">Rätta provet</button>'
-            : '<button class="btn btn-primary btn-sm" id="btn-next">Nästa</button>'}
+          <div class="pq-nav-main">
+            <button class="btn btn-outline btn-sm" id="btn-prev" ${current === 0 ? 'disabled' : ''}>Föregående</button>
+            ${current === allQuestions.length - 1
+              ? '<button class="btn btn-primary btn-sm" id="btn-submit">Rätta provet</button>'
+              : '<button class="btn btn-primary btn-sm" id="btn-next">Nästa</button>'}
+          </div>
+          <button class="btn btn-sm btn-overview-link" id="btn-overview">Översikt</button>
         </div>
         <div class="pq-dots">${allQuestions.map((_, i) => `<span class="pq-dot ${i === current ? 'pq-dot--cur' : ''} ${answers[i] !== null ? 'pq-dot--ans' : ''}" data-i="${i}">${i+1}</span>`).join('')}</div>
       `;
@@ -317,7 +319,10 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
   .pq-letter { width: 30px; height: 30px; border-radius: 50%; background: #f1f5f9; border: 1.5px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
   .pq-opt--sel .pq-letter { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
   .pq-opt-text { font-size: 1.05rem; line-height: 1.5; }
-  .pq-nav { display: flex; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
+  .pq-nav { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; }
+  .pq-nav-main { display: flex; gap: 0.8rem; }
+  .btn-overview-link { background: none; border: none; color: var(--color-muted); text-decoration: underline; font-size: 0.85rem; cursor: pointer; padding: 0.4rem 0.6rem; }
+  .btn-overview-link:hover { color: var(--color-primary); }
   .pq-dots { display: flex; justify-content: center; gap: 0.25rem; margin-top: 1.5rem; flex-wrap: wrap; }
   .pq-dot { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; cursor: pointer; background: var(--color-surface); }
   .pq-dot:hover { border-color: var(--color-primary); color: var(--color-primary); }
@@ -350,7 +355,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
   .nog-stmt { display: flex; gap: 0.6rem; font-size: 1rem; line-height: 1.6; }
   .nog-stmt-num { font-weight: 600; flex-shrink: 0; min-width: 1.8rem; }
   .nog-header { margin: 1.2rem 0 0.8rem 1.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); font-size: 0.95rem; }
-  .dtk-diagram { margin-bottom: 1.5rem; text-align: center; }
+  .dtk-diagram { margin-bottom: 1.5rem; text-align: center; min-height: 300px; display: flex; align-items: center; justify-content: center; }
   .dtk-diagram-img { max-width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius); background: #fff; cursor: zoom-in; }
   .dtk-rotated { transform: rotate(90deg); transform-origin: center center; margin: -10% 0; }
   .dtk-zoom-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; cursor: pointer; }

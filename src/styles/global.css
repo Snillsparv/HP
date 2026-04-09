@@ -52,6 +52,9 @@ img {
 /* Fade-in images globally when loaded */
 img[data-fadein] {
   opacity: 0;
+}
+
+img[data-fadein]:not(.hero-peek-img) {
   transition: opacity 0.4s ease;
 }
 

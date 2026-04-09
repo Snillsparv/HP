@@ -22,10 +22,8 @@ import Base from '../../layouts/Base.astro';
 
   <script>
     // Helper: render fraction as stacked numerator/denominator
-    const f = (top: string, bot: string) => `<math><mfrac><mrow>${top}</mrow><mrow>${bot}</mrow></mfrac></math>`;
-    const mf = (top: string, bot: string) => `<mfrac><mrow>${top}</mrow><mrow>${bot}</mrow></mfrac>`;
-    const sqrt = (inner: string) => `<math><msqrt>${inner}</msqrt></math>`;
-    const sqrtfrac = (top: string, bot: string) => `<math><msqrt><mfrac><mrow>${top}</mrow><mrow>${bot}</mrow></mfrac></msqrt></math>`;
+    const f = (top: string, bot: string) => `<span class="fr"><span class="fr-t">${top}</span><span class="fr-b">${bot}</span></span>`;
+    const sr = (inner: string) => `<span class="sr"><span class="sr-sign">√</span><span class="sr-body">${inner}</span></span>`;
 
     const questions = [
       {
@@ -50,10 +48,10 @@ import Base from '../../layouts/Base.astro';
         num: 4,
         text: '<b>Vilket svarsalternativ motsvarar ekvationen</b> <i>y</i> = 4<i>x</i> − 5?',
         options: [
-          `<math><mi>x</mi><mo>=</mo><mi>y</mi><mo>+</mo>${mf('<mn>5</mn>','<mn>4</mn>')}</math>`,
-          `<math><mi>x</mi><mo>=</mo>${mf('<mi>y</mi>','<mn>4</mn>')}<mo>+</mo><mn>5</mn></math>`,
-          `<math><mi>x</mi><mo>=</mo>${mf('<mn>5</mn><mo>−</mo><mi>y</mi>','<mn>4</mn>')}</math>`,
-          `<math><mi>x</mi><mo>=</mo>${mf('<mi>y</mi><mo>+</mo><mn>5</mn>','<mn>4</mn>')}</math>`
+          `<i>x</i> = <i>y</i> + ${f('5','4')}`,
+          `<i>x</i> = ${f('<i>y</i>','4')} + 5`,
+          `<i>x</i> = ${f('5 − <i>y</i>','4')}`,
+          `<i>x</i> = ${f('<i>y</i> + 5','4')}`
         ],
         correct: 3
       },
@@ -99,7 +97,7 @@ import Base from '../../layouts/Base.astro';
       },
       {
         num: 9,
-        text: `<b>Vilket svarsalternativ är lika med</b> ${f('<mn>0,36</mn>','<mn>3</mn><mo>·</mo><mn>0,024</mn>')} ?`,
+        text: `<b>Vilket svarsalternativ är lika med</b> ${f('0,36','3 · 0,024')} ?`,
         options: ['0,05', '0,5', '5', '50'],
         correct: 2
       },
@@ -110,9 +108,9 @@ import Base from '../../layouts/Base.astro';
             <img src="/prov-xyz1-10.png" alt="Rektangel ABCD med 12 kvadrater" class="pq-fig" style="max-width:200px;aspect-ratio:372/160;" />
           </div>`,
         options: [
-          `<math><msqrt><mn>300</mn></msqrt></math> cm`,
+          `${sr('300')} cm`,
           '20 cm',
-          `<math>${mf('<mn>4</mn>','<mn>3</mn>')}<msqrt><mn>300</mn></msqrt></math> cm`,
+          `${f('4','3')}${sr('300')} cm`,
           '25 cm'
         ],
         correct: 1
@@ -121,10 +119,10 @@ import Base from '../../layouts/Base.astro';
         num: 11,
         text: `5<i>x</i>² + 3<i>x</i> = 0<br><br><b>Vilket av svarsalternativen är ett möjligt värde på <i>x</i>?</b>`,
         options: [
-          `<math><mo>−</mo>${mf('<mn>3</mn>','<mn>5</mn>')}</math>`,
-          `${sqrtfrac('<mn>3</mn>','<mn>5</mn>')}`,
-          `<math><mo>−</mo>${mf('<mn>5</mn>','<mn>3</mn>')}</math>`,
-          `${sqrtfrac('<mn>5</mn>','<mn>3</mn>')}`
+          `−${f('3','5')}`,
+          `${sr(f('3','5'))}`,
+          `−${f('5','3')}`,
+          `${sr(f('5','3'))}`
         ],
         correct: 0
       },
@@ -451,8 +449,46 @@ import Base from '../../layouts/Base.astro';
   .pq-res-num { font-weight: 600; min-width: 1.5rem; }
   .pq-res-right { margin-left: auto; color: var(--color-success); }
 
-  /* MathML sizing */
-  math { font-size: 1.1em; vertical-align: middle; }
+  /* Fractions */
+  .fr {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    vertical-align: middle;
+    margin: 0 0.12em;
+    line-height: 1.15;
+  }
+
+  .fr-t {
+    border-bottom: 1.2px solid currentColor;
+    padding: 0 0.18em 0.08em;
+    text-align: center;
+  }
+
+  .fr-b {
+    padding: 0.08em 0.18em 0;
+    text-align: center;
+  }
+
+  /* Square root */
+  .sr {
+    display: inline-flex;
+    align-items: stretch;
+    vertical-align: middle;
+  }
+
+  .sr-sign {
+    font-size: 1.3em;
+    line-height: 1;
+    margin-right: -0.05em;
+    align-self: flex-end;
+  }
+
+  .sr-body {
+    border-top: 1.2px solid currentColor;
+    padding: 0.05em 0.15em 0;
+    margin-top: 0.15em;
+  }
 
   /* Figure images — reserve space and fade in */
   .pq-fig {

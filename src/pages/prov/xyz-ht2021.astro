@@ -58,7 +58,7 @@ import Base from '../../layouts/Base.astro';
         num: 5,
         text: `Fyra linjer skär varandra i samma punkt. <b>Vad är <i>x</i>?</b>
           <div style="text-align:center;margin:1.2rem 0;">
-            <img src="/prov-xyz1-5.png" alt="Fyra linjer med vinklar x, 2x, 3x, 2x" style="max-width:280px;width:100%;" />
+            <img src="/prov-xyz1-5.png" alt="Fyra linjer med vinklar x, 2x, 3x, 2x" class="pq-fig" style="max-width:280px;aspect-ratio:371/396;" />
           </div>`,
         options: ['15°', '20°', '22,5°', '25°'],
         correct: 2
@@ -78,7 +78,7 @@ import Base from '../../layouts/Base.astro';
         num: 7,
         text: `<b>Vilket svarsalternativ är ett intervall där <i>g</i>(<i>x</i>) &gt; <i>f</i>(<i>x</i>) för alla <i>x</i> i intervallet?</b>
           <div style="text-align:center;margin:1.2rem 0;">
-            <img src="/prov-xyz1-7.png" alt="Graf med f(x) och g(x)" style="max-width:300px;width:100%;" />
+            <img src="/prov-xyz1-7.png" alt="Graf med f(x) och g(x)" class="pq-fig" style="max-width:300px;aspect-ratio:335/300;" />
           </div>`,
         options: [
           '<i>x</i> &gt; <i>a</i>',
@@ -104,7 +104,7 @@ import Base from '../../layouts/Base.astro';
         num: 10,
         text: `Rektangeln ABCD är sammansatt av 12 lika stora kvadrater, enligt figuren. Rektangelns area är 300 cm². <b>Hur lång är sidan AB?</b>
           <div style="text-align:center;margin:1.2rem 0;">
-            <img src="/prov-xyz1-10.png" alt="Rektangel ABCD med 12 kvadrater" style="max-width:200px;width:100%;" />
+            <img src="/prov-xyz1-10.png" alt="Rektangel ABCD med 12 kvadrater" class="pq-fig" style="max-width:200px;aspect-ratio:372/160;" />
           </div>`,
         options: ['√300 cm', '20 cm', `${f('4','3')}√300 cm`, '25 cm'],
         correct: 1
@@ -124,7 +124,7 @@ import Base from '../../layouts/Base.astro';
         num: 12,
         text: `En rektangel är inritad i ett koordinatsystem som figuren visar. <b>Vilket svarsalternativ är en linje som delar rektangeln i två lika stora delar?</b>
           <div style="text-align:center;margin:1.2rem 0;">
-            <img src="/prov-xyz1-12.png" alt="Rektangel i koordinatsystem med hörn vid (6,4)" style="max-width:240px;width:100%;" />
+            <img src="/prov-xyz1-12.png" alt="Rektangel i koordinatsystem med hörn vid (6,4)" class="pq-fig" style="max-width:240px;aspect-ratio:301/345;" />
           </div>`,
         options: [
           '<i>y</i> = −<i>x</i> + 6',
@@ -187,6 +187,12 @@ import Base from '../../layouts/Base.astro';
       document.getElementById('btn-overview')?.addEventListener('click', renderOverview);
       app.querySelectorAll('.pq-dot').forEach(el => {
         el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
+      });
+      // Fade in figures when loaded
+      app.querySelectorAll('.pq-fig').forEach(img => {
+        const el = img as HTMLImageElement;
+        if (el.complete) { el.classList.add('loaded'); }
+        else { el.addEventListener('load', () => el.classList.add('loaded')); }
       });
     }
 
@@ -455,6 +461,17 @@ import Base from '../../layouts/Base.astro';
 
   .frac-bot {
     padding: 0.1em 0.2em 0;
+  }
+
+  /* Figure images — reserve space and fade in */
+  .pq-fig {
+    width: 100%;
+    opacity: 0;
+    transition: opacity 0.4s ease;
+  }
+
+  .pq-fig.loaded {
+    opacity: 1;
   }
 
   @media (max-width: 480px) {

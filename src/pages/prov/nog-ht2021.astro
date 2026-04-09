@@ -72,7 +72,7 @@ import Base from '../../layouts/Base.astro';
         num: 27,
         text: `M är cirkelns medelpunkt. <b>Vilken radie har cirkeln?</b>
           <div style="text-align:center;margin:1.2rem 0;">
-            <img src="/prov-nog1-27.png" alt="Cirkel med medelpunkt M, punkt B och A" class="pq-fig" style="max-width:250px;aspect-ratio:226/177;" />
+            <img src="/prov-nog1-27.png" alt="Cirkel med medelpunkt M, punkt B och A" data-fadein style="max-width:250px;aspect-ratio:226/177;" />
           </div>`,
         s1: `Längden av den markerade cirkelbågen AB är ${tex('\\pi')} cm.`,
         s2: `Längden av sträckan AB är ${tex('2\\sqrt{2}')} cm.`,
@@ -168,10 +168,10 @@ import Base from '../../layouts/Base.astro';
         el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
       });
       // Fade in figures
-      app.querySelectorAll('.pq-fig').forEach(img => {
+      app.querySelectorAll('img[data-fadein]').forEach(img => {
         const el = img as HTMLImageElement;
-        if (el.complete) { el.classList.add('loaded'); }
-        else { el.addEventListener('load', () => el.classList.add('loaded')); }
+        if (el.complete && el.naturalHeight > 0) el.classList.add('loaded');
+        else el.addEventListener('load', () => el.classList.add('loaded'));
       });
       renderTex();
     }
@@ -356,8 +356,6 @@ import Base from '../../layouts/Base.astro';
   .pq-res-num { font-weight: 600; min-width: 2rem; }
   .pq-res-right { margin-left: auto; color: var(--color-success); }
 
-  .pq-fig { width: 100%; opacity: 0; transition: opacity 0.4s ease; }
-  .pq-fig.loaded { opacity: 1; }
   .tex { font-size: 1.05em; }
 
   @media (max-width: 480px) {

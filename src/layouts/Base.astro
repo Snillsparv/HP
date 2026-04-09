@@ -89,6 +89,22 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     document.getElementById('nav-toggle')?.addEventListener('click', () => {
       document.getElementById('site-nav')?.classList.toggle('open');
     });
+
+    // Global: fade in images with data-fadein attribute
+    function initFadeImages() {
+      document.querySelectorAll('img[data-fadein]').forEach(img => {
+        const el = img as HTMLImageElement;
+        if (el.complete && el.naturalHeight > 0) {
+          el.classList.add('loaded');
+        } else {
+          el.addEventListener('load', () => el.classList.add('loaded'));
+        }
+      });
+    }
+    initFadeImages();
+
+    // Also observe dynamically added images (for SPA-like pages)
+    new MutationObserver(() => initFadeImages()).observe(document.body, { childList: true, subtree: true });
   </script>
 </body>
 </html>

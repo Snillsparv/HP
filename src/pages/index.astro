@@ -6,7 +6,7 @@ import Base from '../layouts/Base.astro';
   <div class="hero hero--minimal">
     <div class="hero-content">
       <div class="hero-peek-wrapper">
-        <img src="/jonas_hp.webp" alt="Jonas von Essen kikar upp" class="hero-peek-img" />
+        <img src="/jonas_hp.webp" alt="Jonas von Essen kikar upp" class="hero-peek-img" data-fadein />
       </div>
       <span class="hero-tag">Från Sveriges mest framgångsrika HP-skrivare</span>
       <h1>Nå ditt drömresultat på&nbsp;HP</h1>
@@ -216,15 +216,5 @@ import Base from '../layouts/Base.astro';
 
     updateCountdown();
     setInterval(updateCountdown, 30000);
-
-    // Fade in hero image when loaded
-    const heroImg = document.querySelector('.hero-peek-img') as HTMLImageElement;
-    if (heroImg) {
-      if (heroImg.complete) {
-        heroImg.classList.add('loaded');
-      } else {
-        heroImg.addEventListener('load', () => heroImg.classList.add('loaded'));
-      }
-    }
   </script>
 </Base>

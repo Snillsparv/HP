@@ -203,9 +203,10 @@ import Base from '../../layouts/Base.astro';
       app.querySelectorAll('.dtk-diagram-img').forEach(img => {
         img.addEventListener('click', () => {
           const src = (img as HTMLImageElement).src;
+          const isRotated = img.classList.contains('dtk-rotated');
           const overlay = document.createElement('div');
           overlay.className = 'dtk-zoom-overlay';
-          overlay.innerHTML = `<img src="${src}" />`;
+          overlay.innerHTML = `<img src="${src}" class="${isRotated ? 'dtk-zoom-rotated' : ''}" />`;
           overlay.addEventListener('click', () => overlay.remove());
           document.body.appendChild(overlay);
         });
@@ -316,7 +317,7 @@ import Base from '../../layouts/Base.astro';
   .dtk-rotated {
     transform: rotate(90deg);
     transform-origin: center center;
-    margin: 5% 0;
+    margin: -10% 0;
   }
 
   /* Zoom overlay */
@@ -338,6 +339,12 @@ import Base from '../../layouts/Base.astro';
     border-radius: var(--radius);
     background: #fff;
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+  }
+
+  .dtk-zoom-overlay img.dtk-zoom-rotated {
+    transform: rotate(90deg);
+    max-width: 95vh;
+    max-height: 95vw;
   }
 
   .pq-card {

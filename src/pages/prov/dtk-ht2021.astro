@@ -199,16 +199,12 @@ import Base from '../../layouts/Base.astro';
         if (el.complete) { el.classList.add('loaded'); }
         else { el.addEventListener('load', () => el.classList.add('loaded')); }
       });
-      // Zoom on diagram click
+      // Zoom on diagram click — full pan/zoom viewer
       app.querySelectorAll('.dtk-diagram-img').forEach(img => {
         img.addEventListener('click', () => {
           const src = (img as HTMLImageElement).src;
           const isRotated = img.classList.contains('dtk-rotated');
-          const overlay = document.createElement('div');
-          overlay.className = 'dtk-zoom-overlay';
-          overlay.innerHTML = `<img src="${src}" class="${isRotated ? 'dtk-zoom-rotated' : ''}" />`;
-          overlay.addEventListener('click', () => overlay.remove());
-          document.body.appendChild(overlay);
+          openZoomViewer(src, isRotated);
         });
       });
     }
@@ -258,6 +254,134 @@ import Base from '../../layouts/Base.astro';
         </div>
       `;
       document.getElementById('btn-retry')?.addEventListener('click', () => { answers.fill(null); current = 0; submitted = false; render(); });
+    }
+
+    function openZoomViewer(src: string, isRotated: boolean) {
+      const overlay = document.createElement('div');
+      overlay.className = 'dtk-zoom-overlay';
+      overlay.innerHTML = `
+        <button class="dtk-zoom-close">✕</button>
+        <img src="${src}" />
+        <div class="dtk-zoom-hint">Scrolla/nyp för att zooma · Dra för att panorera · Dubbelklicka för att zooma in</div>
+      `;
+      document.body.appendChild(overlay);
+
+      const imgEl = overlay.querySelector('img') as HTMLImageElement;
+      const closeBtn = overlay.querySelector('.dtk-zoom-close') as HTMLButtonElement;
+
+      let scale = 1;
+      let panX = 0;
+      let panY = 0;
+      let dragging = false;
+      let dragStartX = 0;
+      let dragStartY = 0;
+      let lastPanX = 0;
+      let lastPanY = 0;
+
+      function updateTransform() {
+        const rot = isRotated ? 'rotate(90deg)' : '';
+        imgEl.style.transform = `translate(${panX}px, ${panY}px) translate(-50%, -50%) scale(${scale}) ${rot}`;
+      }
+
+      imgEl.onload = () => {
+        // Fit image to viewport
+        const vw = window.innerWidth * 0.9;
+        const vh = window.innerHeight * 0.9;
+        const iw = isRotated ? imgEl.naturalHeight : imgEl.naturalWidth;
+        const ih = isRotated ? imgEl.naturalWidth : imgEl.naturalHeight;
+        scale = Math.min(vw / iw, vh / ih);
+        panX = window.innerWidth / 2;
+        panY = window.innerHeight / 2;
+        updateTransform();
+      };
+
+      if (imgEl.complete) imgEl.onload(null as any);
+
+      // Scroll to zoom
+      overlay.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const delta = e.deltaY > 0 ? 0.9 : 1.1;
+        scale = Math.min(Math.max(scale * delta, 0.2), 8);
+        updateTransform();
+      }, { passive: false });
+
+      // Double-click to zoom in
+      overlay.addEventListener('dblclick', (e) => {
+        if ((e.target as Element).closest('.dtk-zoom-close')) return;
+        scale = Math.min(scale * 1.8, 8);
+        updateTransform();
+      });
+
+      // Mouse drag
+      overlay.addEventListener('mousedown', (e) => {
+        if ((e.target as Element).closest('.dtk-zoom-close')) return;
+        dragging = true;
+        dragStartX = e.clientX;
+        dragStartY = e.clientY;
+        lastPanX = panX;
+        lastPanY = panY;
+      });
+
+      window.addEventListener('mousemove', onMouseMove);
+      window.addEventListener('mouseup', onMouseUp);
+
+      function onMouseMove(e: MouseEvent) {
+        if (!dragging) return;
+        panX = lastPanX + (e.clientX - dragStartX);
+        panY = lastPanY + (e.clientY - dragStartY);
+        updateTransform();
+      }
+
+      function onMouseUp() {
+        dragging = false;
+      }
+
+      // Touch: pinch zoom + drag
+      let touches: Touch[] = [];
+      let lastDist = 0;
+      let lastTouchX = 0;
+      let lastTouchY = 0;
+
+      overlay.addEventListener('touchstart', (e) => {
+        if ((e.target as Element).closest('.dtk-zoom-close')) return;
+        touches = Array.from(e.touches);
+        if (touches.length === 1) {
+          lastTouchX = touches[0].clientX;
+          lastTouchY = touches[0].clientY;
+          lastPanX = panX;
+          lastPanY = panY;
+        } else if (touches.length === 2) {
+          lastDist = Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY);
+        }
+      }, { passive: true });
+
+      overlay.addEventListener('touchmove', (e) => {
+        e.preventDefault();
+        const t = Array.from(e.touches);
+        if (t.length === 1) {
+          panX = lastPanX + (t[0].clientX - lastTouchX);
+          panY = lastPanY + (t[0].clientY - lastTouchY);
+          updateTransform();
+        } else if (t.length === 2) {
+          const dist = Math.hypot(t[1].clientX - t[0].clientX, t[1].clientY - t[0].clientY);
+          if (lastDist > 0) {
+            scale = Math.min(Math.max(scale * (dist / lastDist), 0.2), 8);
+            updateTransform();
+          }
+          lastDist = dist;
+        }
+      }, { passive: false });
+
+      function close() {
+        window.removeEventListener('mousemove', onMouseMove);
+        window.removeEventListener('mouseup', onMouseUp);
+        overlay.remove();
+      }
+
+      closeBtn.addEventListener('click', close);
+      // Close on Escape
+      const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { close(); window.removeEventListener('keydown', onKey); } };
+      window.addEventListener('keydown', onKey);
     }
 
     render();
@@ -320,31 +444,73 @@ import Base from '../../layouts/Base.astro';
     margin: -10% 0;
   }
 
-  /* Zoom overlay */
+  /* Zoom overlay — pannable and zoomable */
   .dtk-zoom-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.8);
+    background: rgba(0,0,0,0.85);
     z-index: 1000;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: zoom-out;
-    padding: 1rem;
+    overflow: hidden;
+    touch-action: none;
   }
 
   .dtk-zoom-overlay img {
-    max-width: 95vw;
-    max-height: 95vh;
-    border-radius: var(--radius);
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform-origin: 0 0;
     background: #fff;
+    border-radius: var(--radius);
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
   }
 
-  .dtk-zoom-overlay img.dtk-zoom-rotated {
-    transform: rotate(90deg);
-    max-width: 95vh;
-    max-height: 95vw;
+  .dtk-zoom-overlay img:active {
+    cursor: grabbing;
+  }
+
+  .dtk-zoom-close {
+    position: absolute;
+    top: 1rem;
+    right: 1rem;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.15);
+    border: none;
+    color: #fff;
+    font-size: 1.5rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1001;
+    backdrop-filter: blur(4px);
+  }
+
+  .dtk-zoom-close:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  .dtk-zoom-hint {
+    position: absolute;
+    bottom: 1.2rem;
+    left: 50%;
+    transform: translateX(-50%);
+    color: rgba(255,255,255,0.6);
+    font-size: 0.8rem;
+    z-index: 1001;
+    pointer-events: none;
+  }
+
+  /* Mobile: rotated diagrams need to fit in viewport */
+  @media (max-width: 768px) {
+    .dtk-rotated {
+      max-width: 70%;
+      margin: -5% auto;
+    }
   }
 
   .pq-card {

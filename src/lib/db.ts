@@ -38,6 +38,17 @@ await pool.query(`
     body TEXT NOT NULL,
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
+
+  CREATE TABLE IF NOT EXISTS test_results (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    test_id TEXT NOT NULL,
+    score INTEGER NOT NULL,
+    total INTEGER NOT NULL,
+    answers JSONB NOT NULL,
+    time_seconds INTEGER,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
 `);
 
 export default pool;

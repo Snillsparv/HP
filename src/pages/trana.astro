@@ -8,8 +8,22 @@ import Base from '../layouts/Base.astro';
       <h1>Träna på Högskoleprovet</h1>
       <p class="page-intro">Gör riktiga provuppgifter från HT 2021 — det prov där Jonas fick 160 av 160 poäng.</p>
 
-      <h2 style="margin-top: 2rem;">Kvantitativa delprov</h2>
-      <p style="color: var(--color-muted); margin-bottom: 1rem;">Börja med dessa — gör dem på tid som om det vore skarpt läge.</p>
+      <a href="/prov/kvant-ht2021" class="prov-hero-link">
+        <div class="prov-hero-card">
+          <div class="prov-hero-badge">Rekommenderat</div>
+          <h2>Kvantitativt prov — HT 2021</h2>
+          <p>Alla 4 delprov ihop, precis som på riktigt.</p>
+          <div class="prov-hero-stats">
+            <span><strong>40</strong> uppgifter</span>
+            <span><strong>55</strong> minuter</span>
+            <span>XYZ + KVA + NOG + DTK</span>
+          </div>
+          <span class="btn btn-primary" style="margin-top:1rem;">Starta provet</span>
+        </div>
+      </a>
+
+      <h2 style="margin-top: 2.5rem;">Eller gör ett delprov i taget</h2>
+      <p style="color: var(--color-muted); margin-bottom: 1rem;">Kvantitativa delprov</p>
 
       <div class="prov-list">
         <a href="/prov/xyz-ht2021" class="prov-list-item">
@@ -81,6 +95,51 @@ import Base from '../layouts/Base.astro';
 </Base>
 
 <style>
+  .prov-hero-link { text-decoration: none; color: inherit; display: block; }
+  .prov-hero-link:hover { text-decoration: none; }
+
+  .prov-hero-card {
+    text-align: center;
+    padding: 2rem;
+    background: linear-gradient(135deg, #eff3ff 0%, #e0e7ff 100%);
+    border: 2px solid var(--color-primary);
+    border-radius: var(--radius);
+    margin: 1.5rem 0;
+    position: relative;
+    transition: box-shadow 0.15s, transform 0.15s;
+  }
+
+  .prov-hero-link:hover .prov-hero-card {
+    box-shadow: 0 8px 24px rgba(37,99,235,0.15);
+    transform: translateY(-2px);
+  }
+
+  .prov-hero-badge {
+    position: absolute;
+    top: -0.7rem;
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--color-primary);
+    color: #fff;
+    font-size: 0.75rem;
+    font-weight: 700;
+    padding: 0.2rem 0.8rem;
+    border-radius: 50px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .prov-hero-card h2 { margin: 0.5rem 0 0.3rem; font-size: 1.3rem; }
+  .prov-hero-card > p { color: var(--color-muted); margin-bottom: 1rem; }
+
+  .prov-hero-stats {
+    display: flex;
+    justify-content: center;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+  }
+
   .prov-list {
     display: flex;
     flex-direction: column;

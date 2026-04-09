@@ -199,6 +199,17 @@ import Base from '../../layouts/Base.astro';
         if (el.complete) { el.classList.add('loaded'); }
         else { el.addEventListener('load', () => el.classList.add('loaded')); }
       });
+      // Zoom on diagram click
+      app.querySelectorAll('.dtk-diagram-img').forEach(img => {
+        img.addEventListener('click', () => {
+          const src = (img as HTMLImageElement).src;
+          const overlay = document.createElement('div');
+          overlay.className = 'dtk-zoom-overlay';
+          overlay.innerHTML = `<img src="${src}" />`;
+          overlay.addEventListener('click', () => overlay.remove());
+          document.body.appendChild(overlay);
+        });
+      });
     }
 
     function renderOverview() {
@@ -298,12 +309,35 @@ import Base from '../../layouts/Base.astro';
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
     background: #fff;
+    cursor: zoom-in;
+    transition: opacity 0.4s ease;
   }
 
   .dtk-rotated {
     transform: rotate(90deg);
     transform-origin: center center;
-    margin: 15% 0;
+    margin: 5% 0;
+  }
+
+  /* Zoom overlay */
+  .dtk-zoom-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.8);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: zoom-out;
+    padding: 1rem;
+  }
+
+  .dtk-zoom-overlay img {
+    max-width: 95vw;
+    max-height: 95vh;
+    border-radius: var(--radius);
+    background: #fff;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
   }
 
   .pq-card {

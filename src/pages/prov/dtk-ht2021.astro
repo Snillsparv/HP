@@ -344,14 +344,11 @@ import Base from '../../layouts/Base.astro';
     background: rgba(0,0,0,0.9);
     z-index: 1000;
     cursor: pointer;
-    padding: 0;
   }
 
   .dtk-zoom-inner {
     width: 100%;
     height: 100%;
-    overflow: auto;
-    -webkit-overflow-scrolling: touch;
     display: flex;
     align-items: center;
     justify-content: center;
@@ -364,33 +361,12 @@ import Base from '../../layouts/Base.astro';
     background: #fff;
     border-radius: var(--radius);
     box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-    flex-shrink: 0;
   }
 
   .dtk-zoom-inner img.dtk-zoom-rotated {
     transform: rotate(90deg);
     max-width: 95vh;
     max-height: 95vw;
-  }
-
-  /* On mobile: make image large enough to scroll/pinch */
-  @media (max-width: 768px) {
-    .dtk-zoom-inner {
-      align-items: flex-start;
-      justify-content: flex-start;
-    }
-
-    .dtk-zoom-inner img {
-      max-width: none;
-      max-height: none;
-      width: 150vw;
-    }
-
-    .dtk-zoom-inner img.dtk-zoom-rotated {
-      width: 150vh;
-      max-width: none;
-      max-height: none;
-    }
   }
 
   /* Mobile: rotated diagrams need to fit in viewport */

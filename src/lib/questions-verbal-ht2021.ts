@@ -26,7 +26,7 @@ export const verbalSubTests: VSubTest[] = [
       { num: 2, word: 'reklamera', text: '<b>reklamera</b>', options: ['prata om', 'intyga', 'märka ut', 'återvinna', 'anmärka på'], correct: 4 },
       { num: 3, word: 'avsevärt', text: '<b>avsevärt</b>', options: ['ganska', 'korrekt', 'betydligt', 'välriktat', 'fullständigt'], correct: 2 },
       { num: 4, word: 'koffert', text: '<b>koffert</b>', options: ['sybord', 'lång rock', 'lastpall', 'klädförråd', 'stor resväska'], correct: 4 },
-      { num: 5, word: 'gastkramande', text: '<b>gastkramande</b>', options: ['farlig', 'smärtsam', 'kallsinnig', 'spännande', 'livrädd'], correct: 0 },
+      { num: 5, word: 'gastkramande', text: '<b>gastkramande</b>', options: ['farlig', 'smärtsam', 'kallsinnig', 'spännande', 'livrädd'], correct: 3 },
       { num: 6, word: 'korrespondens', text: '<b>korrespondens</b>', options: ['inbjudan', 'brevväxling', 'enkätsvar', 'summering', 'överenskommelse'], correct: 1 },
       { num: 7, word: 'sargad', text: '<b>sargad</b>', options: ['lurad', 'straffad', 'upprörd', 'skadad', 'trängd'], correct: 3 },
       { num: 8, word: 'affekt', text: '<b>affekt</b>', options: ['stor glädje', 'nyfikenhet', 'stark sinnesrörelse', 'känslokyla', 'total förvirring'], correct: 2 },

@@ -1,0 +1,369 @@
+---
+import Base from '../../layouts/Base.astro';
+---
+
+<Base title="NOG — Kvantitativa resonemang (HT 2021) – HPAkuten" description="Öva på NOG-delen från högskoleprovet HT 2021. 6 uppgifter med kvantitativa resonemang, rätta direkt.">
+  <div class="page-content">
+    <div class="container" style="max-width: 700px;">
+
+      <div class="prov-header">
+        <h1>NOG — Kvantitativa resonemang</h1>
+        <p class="prov-meta">Högskoleprov HT 2021 · Delprov 3 · 6 uppgifter · Rekommenderad tid: 12 minuter</p>
+        <div class="prov-timer">
+          <button class="btn btn-outline btn-sm" id="timer-btn">Starta timer (12:00)</button>
+          <span class="timer-display" id="timer-display">⏱ <span id="timer-value">12:00</span></span>
+        </div>
+      </div>
+
+      <div class="prov-info" style="margin-bottom:2rem; padding:1rem 1.2rem; background:#f8fafc; border:1px solid var(--color-border); border-radius:var(--radius); font-size:0.9rem; color:var(--color-muted);">
+        Varje uppgift innehåller en fråga och två påståenden, (1) och (2). Avgör om informationen i påståendena räcker för att besvara frågan. Svarsalternativen är alltid desamma.
+      </div>
+
+      <div id="prov-app"></div>
+
+    </div>
+  </div>
+
+  <script>
+    const tex = (latex: string) => `<span class="tex">${latex}</span>`;
+
+    const stdOpts = [
+      'i (1) men ej i (2)',
+      'i (2) men ej i (1)',
+      'i (1) tillsammans med (2)',
+      'i (1) och (2) var för sig',
+      'ej genom de båda påståendena'
+    ];
+
+    const questions = [
+      {
+        num: 23,
+        text: 'I ett pennskrin finns det endast blyertspennor och tuschpennor. <b>Hur många tuschpennor finns det i pennskrinet?</b>',
+        s1: 'Hälften av antalet tuschpennor är lika med en tredjedel av antalet blyertspennor.',
+        s2: 'Det finns sammanlagt 15 pennor i pennskrinet.',
+        options: stdOpts,
+        correct: 2
+      },
+      {
+        num: 24,
+        text: `<i>x</i>, <i>y</i>, <i>z</i> och <i>w</i> är positiva tal. <b>Vilket av talen är störst?</b>`,
+        s1: tex('x + y = w'),
+        s2: tex('\\frac{x + y}{2} = z'),
+        options: stdOpts,
+        correct: 2
+      },
+      {
+        num: 25,
+        text: 'Anna och Berit springer den kortaste vägen från sina respektive hem till mötesplatsen C. De startar samtidigt, och var och en springer med sin egen konstanta hastighet. <b>Vem springer fortast?</b>',
+        s1: 'Berit anländer till C före Anna.',
+        s2: 'C ligger närmare Annas hem än Berits.',
+        options: stdOpts,
+        correct: 2
+      },
+      {
+        num: 26,
+        text: 'I en låda finns det enfärgade kulor: vita, svarta och gula. <b>Hur många svarta kulor finns det i lådan?</b>',
+        s1: 'I lådan finns det 100 vita kulor, vilket är en tredjedel av det sammanlagda antalet svarta och gula kulor.',
+        s2: 'I lådan finns det 100 gula kulor, vilket är hälften så många som antalet svarta kulor.',
+        options: stdOpts,
+        correct: 3
+      },
+      {
+        num: 27,
+        text: `M är cirkelns medelpunkt. <b>Vilken radie har cirkeln?</b>
+          <div style="text-align:center;margin:1.2rem 0;">
+            <img src="/prov-nog1-27.png" alt="Cirkel med medelpunkt M, punkt B och A" class="pq-fig" style="max-width:220px;aspect-ratio:1/1;" />
+          </div>`,
+        s1: `Längden av den markerade cirkelbågen AB är ${tex('\\pi')} cm.`,
+        s2: `Längden av sträckan AB är ${tex('2\\sqrt{2}')} cm.`,
+        options: stdOpts,
+        correct: 3
+      },
+      {
+        num: 28,
+        text: '<i>x</i> och <i>y</i> är heltal. <b>Är <i>x</i> mindre än 25?</b>',
+        s1: '<i>y</i> är mindre än 25.',
+        s2: '<i>x</i> + <i>y</i> är mindre än 25.',
+        options: stdOpts,
+        correct: 4
+      }
+    ];
+
+    const answers: (number | null)[] = new Array(questions.length).fill(null);
+    let current = 0;
+    let submitted = false;
+
+    const app = document.getElementById('prov-app')!;
+
+    // Load KaTeX
+    const katexCSS = document.createElement('link');
+    katexCSS.rel = 'stylesheet';
+    katexCSS.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css';
+    document.head.appendChild(katexCSS);
+
+    const katexJS = document.createElement('script');
+    katexJS.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js';
+    document.head.appendChild(katexJS);
+
+    function renderTex() {
+      if (typeof (window as any).katex === 'undefined') {
+        setTimeout(renderTex, 50);
+        return;
+      }
+      document.querySelectorAll('.tex').forEach(el => {
+        const latex = el.textContent || '';
+        (window as any).katex.render(latex, el, { throwOnError: false, displayMode: false });
+      });
+    }
+
+    function render() {
+      if (submitted) { renderResults(); return; }
+      const q = questions[current];
+      const labels = ['A', 'B', 'C', 'D', 'E'];
+      app.innerHTML = `
+        <div class="pq-progress">Uppgift ${q.num - 22} av ${questions.length}</div>
+        <div class="pq-card">
+          <div class="pq-question">
+            <span class="pq-num">${q.num}.</span>
+            <span class="pq-text">${q.text}</span>
+          </div>
+          <div class="nog-statements">
+            <div class="nog-stmt"><span class="nog-stmt-num">(1)</span><span>${q.s1}</span></div>
+            <div class="nog-stmt"><span class="nog-stmt-num">(2)</span><span>${q.s2}</span></div>
+          </div>
+          <div class="nog-header"><b>Tillräcklig information för lösningen erhålls</b></div>
+          <div class="pq-options">
+            ${q.options.map((opt, i) => `
+              <label class="pq-opt ${answers[current] === i ? 'pq-opt--sel' : ''}">
+                <input type="radio" name="q${current}" value="${i}" ${answers[current] === i ? 'checked' : ''} />
+                <span class="pq-letter">${labels[i]}</span>
+                <span class="pq-opt-text">${opt}</span>
+              </label>
+            `).join('')}
+          </div>
+        </div>
+        <div class="pq-nav">
+          <button class="btn btn-outline btn-sm" id="btn-prev" ${current === 0 ? 'disabled' : ''}>Föregående</button>
+          <button class="btn btn-outline btn-sm" id="btn-overview">Översikt</button>
+          ${current === questions.length - 1
+            ? '<button class="btn btn-primary btn-sm" id="btn-submit">Rätta provet</button>'
+            : '<button class="btn btn-primary btn-sm" id="btn-next">Nästa</button>'}
+        </div>
+        <div class="pq-dots">
+          ${questions.map((_, i) => `<span class="pq-dot ${i === current ? 'pq-dot--cur' : ''} ${answers[i] !== null ? 'pq-dot--ans' : ''}" data-i="${i}">${i + 1}</span>`).join('')}
+        </div>
+      `;
+      bindEvents();
+    }
+
+    function bindEvents() {
+      app.querySelectorAll('input[type="radio"]').forEach(el => {
+        el.addEventListener('change', (e) => { answers[current] = Number((e.target as HTMLInputElement).value); render(); });
+      });
+      document.getElementById('btn-prev')?.addEventListener('click', () => { current--; render(); });
+      document.getElementById('btn-next')?.addEventListener('click', () => { current++; render(); });
+      document.getElementById('btn-submit')?.addEventListener('click', () => { submitted = true; render(); });
+      document.getElementById('btn-overview')?.addEventListener('click', renderOverview);
+      app.querySelectorAll('.pq-dot').forEach(el => {
+        el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
+      });
+      // Fade in figures
+      app.querySelectorAll('.pq-fig').forEach(img => {
+        const el = img as HTMLImageElement;
+        if (el.complete) { el.classList.add('loaded'); }
+        else { el.addEventListener('load', () => el.classList.add('loaded')); }
+      });
+      renderTex();
+    }
+
+    function renderOverview() {
+      const labels = ['A', 'B', 'C', 'D', 'E'];
+      const answered = answers.filter(a => a !== null).length;
+      app.innerHTML = `
+        <h2 style="text-align:center;margin-top:0;">Översikt</h2>
+        <p style="text-align:center;color:var(--color-muted);">${answered} av ${questions.length} besvarade</p>
+        <div class="pq-overview" style="grid-template-columns:repeat(3,1fr);">${questions.map((q, i) => `
+          <button class="pq-ov-btn ${answers[i] !== null ? 'pq-ov-btn--ans' : ''}" data-i="${i}">
+            <span class="pq-ov-num">${q.num}</span>
+            <span class="pq-ov-val">${answers[i] !== null ? labels[answers[i]!] : '—'}</span>
+          </button>
+        `).join('')}</div>
+        <div class="pq-nav" style="margin-top:1.5rem;">
+          <button class="btn btn-outline btn-sm" id="btn-back-first">Tillbaka till fråga 23</button>
+          <button class="btn btn-primary btn-sm" id="btn-submit-overview">Rätta provet</button>
+        </div>
+      `;
+      app.querySelectorAll('.pq-ov-btn').forEach(el => {
+        el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
+      });
+      document.getElementById('btn-back-first')?.addEventListener('click', () => { current = 0; render(); });
+      document.getElementById('btn-submit-overview')?.addEventListener('click', () => { submitted = true; render(); });
+    }
+
+    function renderResults() {
+      const labels = ['A', 'B', 'C', 'D', 'E'];
+      let score = 0;
+      questions.forEach((q, i) => { if (answers[i] === q.correct) score++; });
+      app.innerHTML = `
+        <div class="pq-result-head"><h2>Resultat</h2><div class="pq-score">${score}/${questions.length}</div><p style="color:var(--color-muted)">rätt svar</p></div>
+        <div class="pq-results">${questions.map((q, i) => {
+          const ok = answers[i] === q.correct;
+          return `<div class="pq-res ${ok ? 'pq-res--ok' : 'pq-res--no'}">
+            <span class="pq-res-icon">${ok ? '✓' : '✗'}</span>
+            <span class="pq-res-num">${q.num}.</span>
+            <span>Ditt svar: <b>${answers[i] !== null ? labels[answers[i]!] : '—'}</b></span>
+            ${!ok ? `<span class="pq-res-right">Rätt: <b>${labels[q.correct]}</b></span>` : ''}
+          </div>`;
+        }).join('')}</div>
+        <div class="pq-nav" style="margin-top:2rem;">
+          <button class="btn btn-outline btn-sm" id="btn-retry">Gör om provet</button>
+          <a href="/trana" class="btn btn-primary btn-sm">Tillbaka</a>
+        </div>
+      `;
+      document.getElementById('btn-retry')?.addEventListener('click', () => { answers.fill(null); current = 0; submitted = false; render(); });
+    }
+
+    render();
+
+    // Timer
+    let timerRunning = false;
+    let timerSeconds = 12 * 60;
+    let timerInterval: number;
+    const timerBtn = document.getElementById('timer-btn')!;
+    const timerDisp = document.getElementById('timer-display')!;
+    const timerVal = document.getElementById('timer-value')!;
+    function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
+    timerBtn.addEventListener('click', () => {
+      timerRunning = true;
+      timerBtn.style.display = 'none';
+      timerDisp.style.display = 'inline';
+      timerInterval = setInterval(() => {
+        timerSeconds--;
+        timerVal.textContent = fmt(timerSeconds);
+        if (timerSeconds <= 0) { clearInterval(timerInterval); timerVal.textContent = 'Tiden är slut!'; }
+      }, 1000) as unknown as number;
+    });
+  </script>
+</Base>
+
+<style is:global>
+  .prov-header { text-align: center; margin-bottom: 2rem; }
+  .prov-header h1 { font-size: 1.5rem; margin-bottom: 0.3rem; }
+  .prov-meta { color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1rem; }
+  .prov-timer { margin-bottom: 0.5rem; }
+  .timer-display { font-size: 1.3rem; font-weight: 700; color: var(--color-primary); display: none; }
+  .btn-sm { padding: 0.5rem 1.2rem; font-size: 0.9rem; }
+
+  .pq-progress { text-align: center; font-size: 0.8rem; color: var(--color-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; }
+
+  .pq-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 2rem 2rem 1.5rem;
+    box-shadow: var(--shadow);
+    margin-bottom: 2rem;
+  }
+
+  .pq-question { margin-bottom: 1.2rem; font-size: 1.05rem; line-height: 1.7; }
+  .pq-num { font-weight: 700; margin-right: 0.5rem; }
+
+  /* NOG-specific: statements */
+  .nog-statements {
+    margin: 1rem 0 1.2rem 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .nog-stmt {
+    display: flex;
+    gap: 0.6rem;
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  .nog-stmt-num {
+    font-weight: 600;
+    flex-shrink: 0;
+    min-width: 1.8rem;
+  }
+
+  .nog-header {
+    margin: 1.2rem 0 0.8rem 1.5rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--color-border);
+    font-size: 0.95rem;
+  }
+
+  .pq-options {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    margin-left: 1.2rem;
+  }
+
+  .pq-opt {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    padding: 0.65rem 1rem;
+    cursor: pointer;
+    border-radius: var(--radius);
+    transition: background 0.12s;
+    border: 2px solid transparent;
+  }
+
+  .pq-opt:hover { background: #f5f7ff; }
+  .pq-opt--sel { background: #eef2ff; border-color: var(--color-primary); }
+  .pq-opt input { display: none; }
+
+  .pq-letter {
+    width: 30px; height: 30px; border-radius: 50%;
+    background: #f1f5f9; border: 1.5px solid var(--color-border);
+    display: flex; align-items: center; justify-content: center;
+    font-weight: 700; font-size: 0.85rem; flex-shrink: 0; transition: all 0.12s;
+  }
+
+  .pq-opt--sel .pq-letter { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .pq-opt-text { font-size: 1.05rem; line-height: 1.5; }
+
+  .pq-nav { display: flex; justify-content: center; gap: 0.8rem; flex-wrap: wrap; }
+
+  .pq-dots { display: flex; justify-content: center; gap: 0.35rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .pq-dot { width: 32px; height: 32px; border-radius: 50%; border: 1.5px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-size: 0.78rem; font-weight: 600; cursor: pointer; transition: all 0.12s; background: var(--color-surface); color: var(--color-text); }
+  .pq-dot:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .pq-dot--cur { border-color: var(--color-primary); color: var(--color-primary); box-shadow: 0 0 0 3px rgba(37,99,235,0.15); }
+  .pq-dot--ans { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+
+  .pq-overview { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.7rem; max-width: 300px; margin: 1.5rem auto; }
+  .pq-ov-btn { display: flex; flex-direction: column; align-items: center; gap: 0.15rem; padding: 0.7rem; border: 1.5px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); cursor: pointer; transition: all 0.12s; font-family: var(--font-sans); }
+  .pq-ov-btn:hover { border-color: var(--color-primary); }
+  .pq-ov-btn--ans { border-color: var(--color-primary); background: #eef2ff; }
+  .pq-ov-num { font-weight: 700; font-size: 0.9rem; }
+  .pq-ov-val { color: var(--color-muted); font-size: 0.8rem; }
+
+  .pq-result-head { text-align: center; margin-bottom: 2rem; }
+  .pq-result-head h2 { margin-top: 0; }
+  .pq-score { font-size: 3rem; font-weight: 800; color: var(--color-primary); line-height: 1; }
+  .pq-results { display: flex; flex-direction: column; gap: 0.4rem; }
+  .pq-res { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1rem; border-radius: var(--radius); font-size: 0.95rem; }
+  .pq-res--ok { background: #ecfdf5; }
+  .pq-res--no { background: #fef2f2; }
+  .pq-res-icon { font-weight: 700; font-size: 1.1rem; }
+  .pq-res--ok .pq-res-icon { color: var(--color-success); }
+  .pq-res--no .pq-res-icon { color: #ef4444; }
+  .pq-res-num { font-weight: 600; min-width: 2rem; }
+  .pq-res-right { margin-left: auto; color: var(--color-success); }
+
+  .pq-fig { width: 100%; opacity: 0; transition: opacity 0.4s ease; }
+  .pq-fig.loaded { opacity: 1; }
+  .tex { font-size: 1.05em; }
+
+  @media (max-width: 480px) {
+    .pq-card { padding: 1.2rem; }
+    .pq-options { margin-left: 0; }
+    .nog-statements { margin-left: 0.5rem; }
+    .nog-header { margin-left: 0.5rem; }
+  }
+</style>

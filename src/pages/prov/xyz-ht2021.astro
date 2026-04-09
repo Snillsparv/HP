@@ -470,24 +470,23 @@ import Base from '../../layouts/Base.astro';
     text-align: center;
   }
 
-  /* Square root */
+  /* Square root — use the actual unicode radical character properly */
   .sr {
     display: inline-flex;
-    align-items: stretch;
+    align-items: flex-end;
     vertical-align: middle;
+    line-height: 1;
   }
 
   .sr-sign {
-    font-size: 1.3em;
-    line-height: 1;
-    margin-right: -0.05em;
-    align-self: flex-end;
+    font-size: 1.15em;
+    line-height: 0.9;
   }
 
   .sr-body {
     border-top: 1.2px solid currentColor;
-    padding: 0.05em 0.15em 0;
-    margin-top: 0.15em;
+    padding: 0 0.12em;
+    margin-left: -0.08em;
   }
 
   /* Figure images — reserve space and fade in */

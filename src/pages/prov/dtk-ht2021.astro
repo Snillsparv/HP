@@ -261,134 +261,74 @@ import Base from '../../layouts/Base.astro';
       overlay.className = 'dtk-zoom-overlay';
       overlay.innerHTML = `
         <button class="dtk-zoom-close">✕</button>
-        <img src="${src}" />
-        <div class="dtk-zoom-hint">Scrolla/nyp för att zooma · Dra för att panorera · Dubbelklicka för att zooma in</div>
+        <div class="dtk-zoom-scroll">
+          <img src="${src}" class="${isRotated ? 'dtk-zoom-rotated' : ''}" draggable="false" />
+        </div>
+        <div class="dtk-zoom-controls">
+          <button class="dtk-zoom-btn" id="zoom-out">−</button>
+          <span class="dtk-zoom-level" id="zoom-level">100%</span>
+          <button class="dtk-zoom-btn" id="zoom-in">+</button>
+        </div>
       `;
       document.body.appendChild(overlay);
 
-      const imgEl = overlay.querySelector('img') as HTMLImageElement;
+      const scrollEl = overlay.querySelector('.dtk-zoom-scroll') as HTMLDivElement;
+      const imgEl = scrollEl.querySelector('img') as HTMLImageElement;
       const closeBtn = overlay.querySelector('.dtk-zoom-close') as HTMLButtonElement;
+      const zoomInBtn = overlay.querySelector('#zoom-in') as HTMLButtonElement;
+      const zoomOutBtn = overlay.querySelector('#zoom-out') as HTMLButtonElement;
+      const zoomLevel = overlay.querySelector('#zoom-level') as HTMLSpanElement;
 
       let scale = 1;
-      let panX = 0;
-      let panY = 0;
-      let dragging = false;
-      let dragStartX = 0;
-      let dragStartY = 0;
-      let lastPanX = 0;
-      let lastPanY = 0;
 
-      function updateTransform() {
-        const rot = isRotated ? 'rotate(90deg)' : '';
-        imgEl.style.transform = `translate(${panX}px, ${panY}px) translate(-50%, -50%) scale(${scale}) ${rot}`;
+      function applyZoom() {
+        imgEl.style.width = `${scale * 100}%`;
+        zoomLevel.textContent = `${Math.round(scale * 100)}%`;
+      }
+
+      function doZoom(factor: number) {
+        const oldScale = scale;
+        scale = Math.min(Math.max(scale * factor, 0.3), 5);
+        // Keep scroll centered
+        const cx = scrollEl.scrollLeft + scrollEl.clientWidth / 2;
+        const cy = scrollEl.scrollTop + scrollEl.clientHeight / 2;
+        applyZoom();
+        scrollEl.scrollLeft = cx * (scale / oldScale) - scrollEl.clientWidth / 2;
+        scrollEl.scrollTop = cy * (scale / oldScale) - scrollEl.clientHeight / 2;
       }
 
       imgEl.onload = () => {
-        // Fit image to viewport
-        const vw = window.innerWidth * 0.9;
-        const vh = window.innerHeight * 0.9;
+        // Fit to viewport initially
+        const vw = scrollEl.clientWidth;
+        const vh = scrollEl.clientHeight;
         const iw = isRotated ? imgEl.naturalHeight : imgEl.naturalWidth;
         const ih = isRotated ? imgEl.naturalWidth : imgEl.naturalHeight;
-        scale = Math.min(vw / iw, vh / ih);
-        panX = window.innerWidth / 2;
-        panY = window.innerHeight / 2;
-        updateTransform();
+        scale = Math.min(vw / iw, vh / ih, 1);
+        applyZoom();
+        // Center scroll
+        scrollEl.scrollLeft = (imgEl.offsetWidth - scrollEl.clientWidth) / 2;
+        scrollEl.scrollTop = (imgEl.offsetHeight - scrollEl.clientHeight) / 2;
       };
 
-      if (imgEl.complete) imgEl.onload(null as any);
+      if (imgEl.complete && imgEl.naturalWidth) imgEl.onload(null as any);
 
-      // Zoom toward cursor position
-      function zoomAt(cx: number, cy: number, factor: number) {
-        const newScale = Math.min(Math.max(scale * factor, 0.2), 8);
-        // Adjust pan so the point under cursor stays fixed
-        panX = cx - (cx - panX) * (newScale / scale);
-        panY = cy - (cy - panY) * (newScale / scale);
-        scale = newScale;
-        updateTransform();
-      }
+      zoomInBtn.addEventListener('click', () => doZoom(1.4));
+      zoomOutBtn.addEventListener('click', () => doZoom(0.7));
 
-      // Scroll to zoom toward cursor
-      overlay.addEventListener('wheel', (e) => {
-        e.preventDefault();
-        const factor = e.deltaY > 0 ? 0.9 : 1.1;
-        zoomAt(e.clientX, e.clientY, factor);
-      }, { passive: false });
-
-      // Double-click to zoom in toward cursor
-      overlay.addEventListener('dblclick', (e) => {
-        if ((e.target as Element).closest('.dtk-zoom-close')) return;
-        zoomAt(e.clientX, e.clientY, 1.8);
-      });
-
-      // Mouse drag
-      overlay.addEventListener('mousedown', (e) => {
-        if ((e.target as Element).closest('.dtk-zoom-close')) return;
-        dragging = true;
-        dragStartX = e.clientX;
-        dragStartY = e.clientY;
-        lastPanX = panX;
-        lastPanY = panY;
-      });
-
-      window.addEventListener('mousemove', onMouseMove);
-      window.addEventListener('mouseup', onMouseUp);
-
-      function onMouseMove(e: MouseEvent) {
-        if (!dragging) return;
-        panX = lastPanX + (e.clientX - dragStartX);
-        panY = lastPanY + (e.clientY - dragStartY);
-        updateTransform();
-      }
-
-      function onMouseUp() {
-        dragging = false;
-      }
-
-      // Touch: pinch zoom + drag
-      let touches: Touch[] = [];
-      let lastDist = 0;
-      let lastTouchX = 0;
-      let lastTouchY = 0;
-
-      overlay.addEventListener('touchstart', (e) => {
-        if ((e.target as Element).closest('.dtk-zoom-close')) return;
-        touches = Array.from(e.touches);
-        if (touches.length === 1) {
-          lastTouchX = touches[0].clientX;
-          lastTouchY = touches[0].clientY;
-          lastPanX = panX;
-          lastPanY = panY;
-        } else if (touches.length === 2) {
-          lastDist = Math.hypot(touches[1].clientX - touches[0].clientX, touches[1].clientY - touches[0].clientY);
-        }
-      }, { passive: true });
-
-      overlay.addEventListener('touchmove', (e) => {
-        e.preventDefault();
-        const t = Array.from(e.touches);
-        if (t.length === 1) {
-          panX = lastPanX + (t[0].clientX - lastTouchX);
-          panY = lastPanY + (t[0].clientY - lastTouchY);
-          updateTransform();
-        } else if (t.length === 2) {
-          const dist = Math.hypot(t[1].clientX - t[0].clientX, t[1].clientY - t[0].clientY);
-          const cx = (t[0].clientX + t[1].clientX) / 2;
-          const cy = (t[0].clientY + t[1].clientY) / 2;
-          if (lastDist > 0) {
-            zoomAt(cx, cy, dist / lastDist);
-          }
-          lastDist = dist;
+      // Scroll wheel zoom
+      scrollEl.addEventListener('wheel', (e) => {
+        if (e.ctrlKey || e.metaKey) {
+          e.preventDefault();
+          doZoom(e.deltaY > 0 ? 0.85 : 1.18);
         }
       }, { passive: false });
 
-      function close() {
-        window.removeEventListener('mousemove', onMouseMove);
-        window.removeEventListener('mouseup', onMouseUp);
-        overlay.remove();
-      }
+      // Double-click to zoom in
+      scrollEl.addEventListener('dblclick', () => doZoom(1.5));
 
+      function close() { overlay.remove(); }
       closeBtn.addEventListener('click', close);
-      // Close on Escape
+      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
       const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { close(); window.removeEventListener('keydown', onKey); } };
       window.addEventListener('keydown', onKey);
     }
@@ -453,31 +393,37 @@ import Base from '../../layouts/Base.astro';
     margin: -10% 0;
   }
 
-  /* Zoom overlay — pannable and zoomable */
+  /* Zoom overlay — scrollable container */
   .dtk-zoom-overlay {
     position: fixed;
     inset: 0;
     background: rgba(0,0,0,0.85);
     z-index: 1000;
-    overflow: hidden;
-    touch-action: none;
   }
 
-  .dtk-zoom-overlay img {
+  .dtk-zoom-scroll {
     position: absolute;
-    top: 50%;
-    left: 50%;
-    transform-origin: 0 0;
+    inset: 0;
+    overflow: auto;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  .dtk-zoom-scroll img {
+    max-width: none;
+    width: 100%;
+    flex-shrink: 0;
     background: #fff;
     border-radius: var(--radius);
     box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    cursor: grab;
     user-select: none;
     -webkit-user-select: none;
   }
 
-  .dtk-zoom-overlay img:active {
-    cursor: grabbing;
+  .dtk-zoom-scroll img.dtk-zoom-rotated {
+    transform: rotate(90deg);
   }
 
   .dtk-zoom-close {
@@ -495,7 +441,7 @@ import Base from '../../layouts/Base.astro';
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1001;
+    z-index: 1002;
     backdrop-filter: blur(4px);
   }
 
@@ -503,15 +449,45 @@ import Base from '../../layouts/Base.astro';
     background: rgba(255,255,255,0.3);
   }
 
-  .dtk-zoom-hint {
+  .dtk-zoom-controls {
     position: absolute;
     bottom: 1.2rem;
     left: 50%;
     transform: translateX(-50%);
-    color: rgba(255,255,255,0.6);
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    z-index: 1002;
+    background: rgba(0,0,0,0.5);
+    backdrop-filter: blur(8px);
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+  }
+
+  .dtk-zoom-btn {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .dtk-zoom-btn:hover {
+    background: rgba(255,255,255,0.3);
+  }
+
+  .dtk-zoom-level {
+    color: rgba(255,255,255,0.7);
     font-size: 0.8rem;
-    z-index: 1001;
-    pointer-events: none;
+    min-width: 3rem;
+    text-align: center;
+    font-weight: 600;
   }
 
   /* Mobile: rotated diagrams need to fit in viewport */

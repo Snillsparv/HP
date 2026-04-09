@@ -259,77 +259,14 @@ import Base from '../../layouts/Base.astro';
     function openZoomViewer(src: string, isRotated: boolean) {
       const overlay = document.createElement('div');
       overlay.className = 'dtk-zoom-overlay';
-      overlay.innerHTML = `
-        <button class="dtk-zoom-close">✕</button>
-        <div class="dtk-zoom-scroll">
-          <img src="${src}" class="${isRotated ? 'dtk-zoom-rotated' : ''}" draggable="false" />
-        </div>
-        <div class="dtk-zoom-controls">
-          <button class="dtk-zoom-btn" id="zoom-out">−</button>
-          <span class="dtk-zoom-level" id="zoom-level">100%</span>
-          <button class="dtk-zoom-btn" id="zoom-in">+</button>
-        </div>
-      `;
+      overlay.innerHTML = `<img src="${src}" class="${isRotated ? 'dtk-zoom-rotated' : ''}" />`;
       document.body.appendChild(overlay);
 
-      const scrollEl = overlay.querySelector('.dtk-zoom-scroll') as HTMLDivElement;
-      const imgEl = scrollEl.querySelector('img') as HTMLImageElement;
-      const closeBtn = overlay.querySelector('.dtk-zoom-close') as HTMLButtonElement;
-      const zoomInBtn = overlay.querySelector('#zoom-in') as HTMLButtonElement;
-      const zoomOutBtn = overlay.querySelector('#zoom-out') as HTMLButtonElement;
-      const zoomLevel = overlay.querySelector('#zoom-level') as HTMLSpanElement;
+      // Close on click anywhere
+      overlay.addEventListener('click', () => overlay.remove());
 
-      let scale = 1;
-
-      function applyZoom() {
-        imgEl.style.width = `${scale * 100}%`;
-        zoomLevel.textContent = `${Math.round(scale * 100)}%`;
-      }
-
-      function doZoom(factor: number) {
-        const oldScale = scale;
-        scale = Math.min(Math.max(scale * factor, 0.3), 5);
-        // Keep scroll centered
-        const cx = scrollEl.scrollLeft + scrollEl.clientWidth / 2;
-        const cy = scrollEl.scrollTop + scrollEl.clientHeight / 2;
-        applyZoom();
-        scrollEl.scrollLeft = cx * (scale / oldScale) - scrollEl.clientWidth / 2;
-        scrollEl.scrollTop = cy * (scale / oldScale) - scrollEl.clientHeight / 2;
-      }
-
-      imgEl.onload = () => {
-        // Fit to viewport initially
-        const vw = scrollEl.clientWidth;
-        const vh = scrollEl.clientHeight;
-        const iw = isRotated ? imgEl.naturalHeight : imgEl.naturalWidth;
-        const ih = isRotated ? imgEl.naturalWidth : imgEl.naturalHeight;
-        scale = Math.min(vw / iw, vh / ih, 1);
-        applyZoom();
-        // Center scroll
-        scrollEl.scrollLeft = (imgEl.offsetWidth - scrollEl.clientWidth) / 2;
-        scrollEl.scrollTop = (imgEl.offsetHeight - scrollEl.clientHeight) / 2;
-      };
-
-      if (imgEl.complete && imgEl.naturalWidth) imgEl.onload(null as any);
-
-      zoomInBtn.addEventListener('click', () => doZoom(1.4));
-      zoomOutBtn.addEventListener('click', () => doZoom(0.7));
-
-      // Scroll wheel zoom
-      scrollEl.addEventListener('wheel', (e) => {
-        if (e.ctrlKey || e.metaKey) {
-          e.preventDefault();
-          doZoom(e.deltaY > 0 ? 0.85 : 1.18);
-        }
-      }, { passive: false });
-
-      // Double-click to zoom in
-      scrollEl.addEventListener('dblclick', () => doZoom(1.5));
-
-      function close() { overlay.remove(); }
-      closeBtn.addEventListener('click', close);
-      overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-      const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { close(); window.removeEventListener('keydown', onKey); } };
+      // Close on Escape
+      const onKey = (e: KeyboardEvent) => { if (e.key === 'Escape') { overlay.remove(); window.removeEventListener('keydown', onKey); } };
       window.addEventListener('keydown', onKey);
     }
 
@@ -393,101 +330,34 @@ import Base from '../../layouts/Base.astro';
     margin: -10% 0;
   }
 
-  /* Zoom overlay — scrollable container */
+  /* Zoom overlay — simple fullscreen lightbox */
   .dtk-zoom-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0,0,0,0.85);
+    background: rgba(0,0,0,0.9);
     z-index: 1000;
-  }
-
-  .dtk-zoom-scroll {
-    position: absolute;
-    inset: 0;
-    overflow: auto;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 2rem;
+    cursor: pointer;
+    padding: 1rem;
+    /* Allow native pinch zoom on mobile */
+    touch-action: pinch-zoom;
+    overflow: auto;
   }
 
-  .dtk-zoom-scroll img {
-    max-width: none;
-    width: 100%;
-    flex-shrink: 0;
+  .dtk-zoom-overlay img {
+    max-width: 95vw;
+    max-height: 95vh;
     background: #fff;
     border-radius: var(--radius);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.3);
-    user-select: none;
-    -webkit-user-select: none;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
   }
 
-  .dtk-zoom-scroll img.dtk-zoom-rotated {
+  .dtk-zoom-overlay img.dtk-zoom-rotated {
     transform: rotate(90deg);
-  }
-
-  .dtk-zoom-close {
-    position: absolute;
-    top: 1rem;
-    right: 1rem;
-    width: 40px;
-    height: 40px;
-    border-radius: 50%;
-    background: rgba(255,255,255,0.15);
-    border: none;
-    color: #fff;
-    font-size: 1.5rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1002;
-    backdrop-filter: blur(4px);
-  }
-
-  .dtk-zoom-close:hover {
-    background: rgba(255,255,255,0.3);
-  }
-
-  .dtk-zoom-controls {
-    position: absolute;
-    bottom: 1.2rem;
-    left: 50%;
-    transform: translateX(-50%);
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    z-index: 1002;
-    background: rgba(0,0,0,0.5);
-    backdrop-filter: blur(8px);
-    padding: 0.4rem 0.8rem;
-    border-radius: 50px;
-  }
-
-  .dtk-zoom-btn {
-    width: 32px;
-    height: 32px;
-    border-radius: 50%;
-    border: none;
-    background: rgba(255,255,255,0.15);
-    color: #fff;
-    font-size: 1.2rem;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .dtk-zoom-btn:hover {
-    background: rgba(255,255,255,0.3);
-  }
-
-  .dtk-zoom-level {
-    color: rgba(255,255,255,0.7);
-    font-size: 0.8rem;
-    min-width: 3rem;
-    text-align: center;
-    font-weight: 600;
+    max-width: 95vh;
+    max-height: 95vw;
   }
 
   /* Mobile: rotated diagrams need to fit in viewport */

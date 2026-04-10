@@ -187,14 +187,13 @@ import Base from '../layouts/Base.astro';
     const target = getNextExamDate();
 
     function updateCountdown() {
-      const now = Date.now();
-      const diff = target.getTime() - now;
+      const now = new Date();
+      const diff = target.getTime() - now.getTime();
       const el = document.getElementById('cd-inline');
       if (!el) return;
 
       if (diff <= 0) {
-        // Exam has started but it's still exam day (before 17:00)
-        const hours = Math.floor((diff + 8 * 3600000) / 3600000); // hours left of exam
+        const hours = Math.floor((diff + 8 * 3600000) / 3600000);
         if (hours > 0) {
           el.textContent = `${hours} timmar`;
         } else {
@@ -203,18 +202,24 @@ import Base from '../layouts/Base.astro';
         return;
       }
 
-      const days = Math.floor(diff / 86400000);
-      const hours = Math.floor((diff % 86400000) / 3600000);
-      const mins = Math.floor((diff % 3600000) / 60000);
+      // Count calendar days until exam day (number of nights left)
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const examDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+      const daysUntil = Math.round((examDay.getTime() - today.getTime()) / 86400000);
 
-      if (days > 1) {
-        el.textContent = `${days} dagar`;
-      } else if (days === 1) {
-        el.textContent = `1 dag och ${hours} timmar`;
-      } else if (hours > 0) {
-        el.textContent = `${hours} timmar`;
+      if (daysUntil > 1) {
+        el.textContent = `${daysUntil} dagar`;
+      } else if (daysUntil === 1) {
+        el.textContent = '1 dag';
       } else {
-        el.textContent = `${mins} minuter`;
+        // Exam day — show hours until start
+        const hours = Math.floor(diff / 3600000);
+        const mins = Math.floor((diff % 3600000) / 60000);
+        if (hours > 0) {
+          el.textContent = `${hours} timmar`;
+        } else {
+          el.textContent = `${mins} minuter`;
+        }
       }
     }
 

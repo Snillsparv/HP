@@ -202,24 +202,19 @@ import Base from '../layouts/Base.astro';
         return;
       }
 
-      // Count calendar days until exam day (number of nights left)
-      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const examDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
-      const daysUntil = Math.round((examDay.getTime() - today.getTime()) / 86400000);
+      const hours = Math.floor(diff / 3600000);
 
-      if (daysUntil > 1) {
+      if (hours >= 24) {
+        // Count calendar days (nights left)
+        const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        const examDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
+        const daysUntil = Math.round((examDay.getTime() - today.getTime()) / 86400000);
         el.textContent = `${daysUntil} dagar`;
-      } else if (daysUntil === 1) {
-        el.textContent = '1 dag';
+      } else if (hours > 0) {
+        el.textContent = `${hours} timmar`;
       } else {
-        // Exam day — show hours until start
-        const hours = Math.floor(diff / 3600000);
         const mins = Math.floor((diff % 3600000) / 60000);
-        if (hours > 0) {
-          el.textContent = `${hours} timmar`;
-        } else {
-          el.textContent = `${mins} minuter`;
-        }
+        el.textContent = `${mins} minuter`;
       }
     }
 

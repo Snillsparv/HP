@@ -390,19 +390,6 @@ li { margin-bottom: 0.3em; }
 .step:last-child { padding-bottom: 0; }
 
 /* Vertical connecting line */
-.step::before {
-  content: '';
-  position: absolute;
-  left: 50%;
-  top: 44px;
-  height: calc(100% - 44px);
-  width: 2px;
-  background: var(--color-border);
-  transform: translateX(-50%);
-}
-
-.step:last-child::before { display: none; }
-
 .step-number {
   width: 44px;
   height: 44px;
@@ -767,6 +754,26 @@ tr:hover {
 .contact-row {
   display: flex;
   gap: 0.7rem;
+}
+
+.highfive-wrapper {
+  text-align: center;
+  margin: 2rem 0 1rem;
+}
+
+.highfive-img {
+  width: 180px;
+  cursor: pointer;
+  transition: transform 0.15s;
+  border-radius: var(--radius);
+}
+
+.highfive-img:hover {
+  transform: scale(1.05);
+}
+
+.highfive-img.highfive-active {
+  transform: scale(1.15);
 }
 
 .contact-form input,

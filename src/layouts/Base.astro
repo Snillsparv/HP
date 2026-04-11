@@ -81,6 +81,9 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
           <button type="submit" class="btn btn-primary">Skicka</button>
         </form>
       </div>
+      <div class="highfive-wrapper">
+        <img src="/jonas_1.webp" alt="High five!" class="highfive-img" id="highfive-img" />
+      </div>
       <p>&copy; {new Date().getFullYear()} Jonas von Essen · HPAkuten</p>
     </div>
   </footer>
@@ -89,6 +92,35 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     document.getElementById('nav-toggle')?.addEventListener('click', () => {
       document.getElementById('site-nav')?.classList.toggle('open');
     });
+
+    // High five interaction
+    const hfImg = document.getElementById('highfive-img') as HTMLImageElement | null;
+    if (hfImg) {
+      let hfTimeout: number | null = null;
+      hfImg.addEventListener('click', () => {
+        hfImg.src = '/jonas_2.webp';
+        hfImg.classList.add('highfive-active');
+        try {
+          const ctx = new AudioContext();
+          const osc = ctx.createOscillator();
+          const gain = ctx.createGain();
+          osc.connect(gain);
+          gain.connect(ctx.destination);
+          osc.frequency.setValueAtTime(800, ctx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(1200, ctx.currentTime + 0.05);
+          osc.frequency.exponentialRampToValueAtTime(600, ctx.currentTime + 0.15);
+          gain.gain.setValueAtTime(0.3, ctx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+          osc.start(ctx.currentTime);
+          osc.stop(ctx.currentTime + 0.3);
+        } catch {}
+        if (hfTimeout) clearTimeout(hfTimeout);
+        hfTimeout = setTimeout(() => {
+          hfImg.src = '/jonas_1.webp';
+          hfImg.classList.remove('highfive-active');
+        }, 1500) as unknown as number;
+      });
+    }
 
     // Global: fade in images with data-fadein attribute
     function initFadeImages() {

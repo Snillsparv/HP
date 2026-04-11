@@ -424,7 +424,7 @@ li { margin-bottom: 0.3em; }
 .step:nth-child(4) .step-number { background: #2563eb; }
 
 .step-number--final {
-  background: var(--color-success);
+  background: #1d4ed8;
   width: 48px;
   height: 48px;
   font-size: 1.3rem;

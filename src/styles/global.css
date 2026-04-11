@@ -418,10 +418,10 @@ li { margin-bottom: 0.3em; }
   text-decoration: none;
 }
 
-.step:nth-child(1) .step-number { background: #6366f1; }
-.step:nth-child(2) .step-number { background: #4f8af7; }
-.step:nth-child(3) .step-number { background: #3ba3f5; }
-.step:nth-child(4) .step-number { background: #14b8a6; }
+.step:nth-child(1) .step-number { background: #93c5fd; }
+.step:nth-child(2) .step-number { background: #60a5fa; }
+.step:nth-child(3) .step-number { background: #3b82f6; }
+.step:nth-child(4) .step-number { background: #2563eb; }
 
 .step-number--final {
   background: var(--color-success);

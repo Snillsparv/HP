@@ -44,13 +44,10 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       <a href="/" class="site-logo">HP<span>Akuten</span></a>
       <button class="nav-toggle" aria-label="Meny" id="nav-toggle">☰</button>
       <nav class="site-nav" id="site-nav">
-        <a href="/snabbguiden" class:list={[{ active: currentPath.startsWith('/snabbguiden') }]}>Snabbguiden</a>
-        <a href="/delprov" class:list={[{ active: currentPath.startsWith('/delprov') }]}>Delprov</a>
-        <a href="/minnestekniker" class:list={[{ active: currentPath.startsWith('/minnestekniker') }]}>Minnestekniker</a>
-        <a href="/trana" class:list={[{ active: currentPath.startsWith('/trana') }]}>Träna</a>
-        <a href="/ovning" class:list={[{ active: currentPath.startsWith('/ovning') }]}>Övning</a>
+        <a href="/om-hp" class:list={[{ active: currentPath.startsWith('/om-hp') }]}>Om HP</a>
+        <a href="/trana" class:list={[{ active: currentPath.startsWith('/trana') || currentPath.startsWith('/prov') || currentPath.startsWith('/delprov') }]}>Träna</a>
         <a href="/forum" class:list={[{ active: currentPath.startsWith('/forum') }]}>Forum</a>
-        <a href="/om" class:list={[{ active: currentPath.startsWith('/om') }]}>Om Jonas</a>
+        <a href="/om" class:list={[{ active: currentPath === '/om' }]}>Om Jonas</a>
         {user ? (
           <a href="/konto/profil" class="nav-login">{user.name}</a>
         ) : (

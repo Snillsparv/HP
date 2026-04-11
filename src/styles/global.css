@@ -139,6 +139,11 @@ li { margin-bottom: 0.3em; }
   color: var(--color-primary);
 }
 
+.site-nav a.nav-cta {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
 .nav-toggle {
   display: none;
   background: none;

@@ -2,143 +2,113 @@
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Träna på Högskoleprovet – HPAkuten" description="Öva på exempeluppgifter för alla åtta delprov på högskoleprovet. Välj delprov och träna med riktiga uppgifter.">
+<Base title="Träna på Högskoleprovet – HPAkuten" description="Öva på riktiga provuppgifter från HT 2021. Steg-för-steg-plan med videogenomgångar.">
   <div class="page-content">
     <div class="container" style="max-width: 800px;">
       <h1>Träna på Högskoleprovet</h1>
-      <p class="page-intro">Gör riktiga provuppgifter från HT 2021 — det prov där Jonas fick 160 av 160 poäng.</p>
+      <p class="page-intro">Följ planen steg för steg och du kommer att vara betydligt mer redo på provdagen.</p>
 
-      <div style="margin: 2rem 0;">
-        <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
+      <div class="train-steps">
+
+        <div class="train-step">
+          <div class="train-step-header">
+            <span class="train-step-num" style="background: #93c5fd;">1</span>
+            <h2>Se överblicken</h2>
+          </div>
+          <p>Börja med att titta på den här videon så att du förstår hur provet är upplagt.</p>
+          <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
+        </div>
+
+        <div class="train-step">
+          <div class="train-step-header">
+            <span class="train-step-num" style="background: #60a5fa;">2</span>
+            <h2>Gör kvantitativt prov 1</h2>
+          </div>
+          <p>Gör det första kvantitativa provet på tid. Rätta sedan och kolla på mina videor med lösningsförslag för de uppgifter du var osäker på.</p>
+          <a href="/prov/kvant-ht2021" class="prov-hero-link">
+            <div class="prov-hero-card">
+              <h3>Kvantitativt prov 1</h3>
+              <div class="prov-hero-stats">
+                <span><strong>40</strong> uppgifter</span>
+                <span><strong>55</strong> minuter</span>
+                <span>XYZ + KVA + NOG + DTK</span>
+              </div>
+              <span class="btn btn-primary" style="margin-top:1rem;">Starta provet</span>
+            </div>
+          </a>
+        </div>
+
+        <div class="train-step">
+          <div class="train-step-header">
+            <span class="train-step-num" style="background: #3b82f6;">3</span>
+            <h2>Gör verbalt prov 1</h2>
+          </div>
+          <p>Gör den verbala delen på tid och titta sedan på lösningsförslagen.</p>
+          <a href="/prov/verbal-ht2021" class="prov-hero-link">
+            <div class="prov-hero-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #d97706;">
+              <h3>Verbalt prov 1</h3>
+              <div class="prov-hero-stats">
+                <span><strong>30</strong> uppgifter</span>
+                <span><strong>33</strong> minuter</span>
+                <span>ORD + LÄS + MEK</span>
+              </div>
+              <span class="btn btn-primary" style="margin-top:1rem; background:#d97706;">Starta provet</span>
+            </div>
+          </a>
+        </div>
+
+        <div class="train-step">
+          <div class="train-step-header">
+            <span class="train-step-num" style="background: #2563eb;">4</span>
+            <h2>Titta på mattegenomgången</h2>
+          </div>
+          <p>Nu vet du var dina svaga punkter finns. Titta igenom min video som går igenom all matte du behöver kunna på högskoleprovet.</p>
+          <a href="/delprov/xyz" class="prov-hero-link">
+            <div class="prov-hero-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color: #16a34a;">
+              <h3>Mattegenomgången</h3>
+              <p style="margin-bottom:0;">All matte du behöver kunna, i en video.</p>
+              <span class="btn btn-primary" style="margin-top:1rem; background:#16a34a;">Till videon</span>
+            </div>
+          </a>
+        </div>
+
+        <div class="train-step">
+          <div class="train-step-header">
+            <span class="train-step-num" style="background: #1d4ed8;">5</span>
+            <h2>Gör prov 2 och jämför</h2>
+          </div>
+          <p>Gör det andra kvantitativa och det andra verbala provet och jämför med dina första resultat!</p>
+
+          <a href="/prov/kvant2-ht2021" class="prov-hero-link">
+            <div class="prov-hero-card">
+              <h3>Kvantitativt prov 2</h3>
+              <div class="prov-hero-stats">
+                <span><strong>40</strong> uppgifter</span>
+                <span><strong>55</strong> minuter</span>
+                <span>XYZ + KVA + NOG + DTK</span>
+              </div>
+              <span class="btn btn-primary" style="margin-top:1rem;">Starta provet</span>
+            </div>
+          </a>
+
+          <a href="/prov/verbal2-ht2021" class="prov-hero-link">
+            <div class="prov-hero-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #d97706;">
+              <h3>Verbalt prov 2</h3>
+              <div class="prov-hero-stats">
+                <span><strong>30</strong> uppgifter</span>
+                <span><strong>33</strong> minuter</span>
+                <span>ORD + LÄS + MEK</span>
+              </div>
+              <span class="btn btn-primary" style="margin-top:1rem; background:#d97706;">Starta provet</span>
+            </div>
+          </a>
+
+          <div class="tip-box success" style="margin-top: 1.5rem;">
+            <strong>Du är nu i ett mycket bättre läge än du var i tidigare! Lycka till!!</strong>
+          </div>
+        </div>
+
       </div>
-
-      <a href="/prov/kvant-ht2021" class="prov-hero-link">
-        <div class="prov-hero-card">
-          <div class="prov-hero-badge">Rekommenderat</div>
-          <h2>Kvantitativt prov — HT 2021</h2>
-          <p>Alla 4 delprov ihop, precis som på riktigt.</p>
-          <div class="prov-hero-stats">
-            <span><strong>40</strong> uppgifter</span>
-            <span><strong>55</strong> minuter</span>
-            <span>XYZ + KVA + NOG + DTK</span>
-          </div>
-          <span class="btn btn-primary" style="margin-top:1rem;">Starta provet</span>
-        </div>
-      </a>
-
-      <h2 style="margin-top: 2.5rem;">Eller gör ett delprov i taget</h2>
-      <p style="color: var(--color-muted); margin-bottom: 1rem;">Kvantitativa delprov</p>
-
-      <div class="prov-list">
-        <a href="/prov/xyz-ht2021" class="prov-list-item">
-          <div class="prov-list-icon">1</div>
-          <div>
-            <h3>XYZ — Matematisk problemlösning</h3>
-            <p>12 uppgifter · 12 minuter</p>
-          </div>
-        </a>
-        <a href="/prov/kva-ht2021" class="prov-list-item">
-          <div class="prov-list-icon">2</div>
-          <div>
-            <h3>KVA — Kvantitativa jämförelser</h3>
-            <p>10 uppgifter · 18 minuter</p>
-          </div>
-        </a>
-        <a href="/prov/nog-ht2021" class="prov-list-item">
-          <div class="prov-list-icon">3</div>
-          <div>
-            <h3>NOG — Kvantitativa resonemang</h3>
-            <p>6 uppgifter · 12 minuter</p>
-          </div>
-        </a>
-        <a href="/prov/dtk-ht2021" class="prov-list-item">
-          <div class="prov-list-icon">4</div>
-          <div>
-            <h3>DTK — Diagram, tabeller och kartor</h3>
-            <p>12 uppgifter · 18 minuter</p>
-          </div>
-        </a>
-      </div>
-
-      <a href="/prov/verbal-ht2021" class="prov-hero-link">
-        <div class="prov-hero-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #d97706;">
-          <div class="prov-hero-badge" style="background: #d97706;">Verbalt</div>
-          <h2>Verbalt prov — HT 2021</h2>
-          <p>ORD, LÄS och MEK ihop (utan ELF).</p>
-          <div class="prov-hero-stats">
-            <span><strong>30</strong> uppgifter</span>
-            <span><strong>33</strong> minuter</span>
-            <span>ORD + LÄS + MEK</span>
-          </div>
-          <span class="btn btn-primary" style="margin-top:1rem; background:#d97706;">Starta provet</span>
-        </div>
-      </a>
-
-      <h2 style="margin-top: 2.5rem;">Eller gör ett verbalt delprov i taget</h2>
-      <p style="color: var(--color-muted); margin-bottom: 1rem;">Verbala delprov</p>
-
-      <div class="prov-list">
-        <a href="/prov/ord-ht2021" class="prov-list-item">
-          <div class="prov-list-icon">5</div>
-          <div>
-            <h3>ORD — Ordförståelse</h3>
-            <p>10 uppgifter · 3 minuter</p>
-          </div>
-        </a>
-        <a href="/prov/las-ht2021" class="prov-list-item">
-          <div class="prov-list-icon">6</div>
-          <div>
-            <h3>LÄS — Läsförståelse</h3>
-            <p>10 uppgifter · 22 minuter</p>
-          </div>
-        </a>
-        <a href="/prov/mek-ht2021" class="prov-list-item">
-          <div class="prov-list-icon">7</div>
-          <div>
-            <h3>MEK — Meningskomplettering</h3>
-            <p>10 uppgifter · 8 minuter</p>
-          </div>
-        </a>
-        <div class="prov-list-item prov-list-item--disabled">
-          <div class="prov-list-icon">8</div>
-          <div>
-            <h3>ELF — Engelsk läsförståelse</h3>
-            <p>Ej tillgängligt (copyright)</p>
-          </div>
-        </div>
-      </div>
-
-      <h2 style="margin-top: 3.5rem;">Provpass 2 — HT 2021</h2>
-      <p style="color: var(--color-muted); margin-bottom: 1rem;">Andra omgångens kvantitativa och verbala pass.</p>
-
-      <a href="/prov/kvant2-ht2021" class="prov-hero-link">
-        <div class="prov-hero-card" style="background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%); border-color: #059669;">
-          <div class="prov-hero-badge" style="background: #059669;">Kvantitativt 2</div>
-          <h2>Kvantitativt prov 2 — HT 2021</h2>
-          <p>Andra kvantitativa passet (provpass 4).</p>
-          <div class="prov-hero-stats">
-            <span><strong>40</strong> uppgifter</span>
-            <span><strong>55</strong> minuter</span>
-            <span>XYZ + KVA + NOG + DTK</span>
-          </div>
-          <span class="btn btn-primary" style="margin-top:1rem; background:#059669;">Starta provet</span>
-        </div>
-      </a>
-
-      <a href="/prov/verbal2-ht2021" class="prov-hero-link">
-        <div class="prov-hero-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #d97706;">
-          <div class="prov-hero-badge" style="background: #d97706;">Verbalt 2</div>
-          <h2>Verbalt prov 2 — HT 2021</h2>
-          <p>Andra verbala passet — ORD, LÄS och MEK (utan ELF).</p>
-          <div class="prov-hero-stats">
-            <span><strong>30</strong> uppgifter</span>
-            <span><strong>33</strong> minuter</span>
-            <span>ORD + LÄS + MEK</span>
-          </div>
-          <span class="btn btn-primary" style="margin-top:1rem; background:#d97706;">Starta provet</span>
-        </div>
-      </a>
-
     </div>
   </div>
 </Base>
@@ -149,12 +119,11 @@ import Base from '../layouts/Base.astro';
 
   .prov-hero-card {
     text-align: center;
-    padding: 2rem;
+    padding: 1.5rem 2rem;
     background: linear-gradient(135deg, #eff3ff 0%, #e0e7ff 100%);
     border: 2px solid var(--color-primary);
     border-radius: var(--radius);
-    margin: 1.5rem 0;
-    position: relative;
+    margin: 1rem 0;
     transition: box-shadow 0.15s, transform 0.15s;
   }
 
@@ -163,23 +132,8 @@ import Base from '../layouts/Base.astro';
     transform: translateY(-2px);
   }
 
-  .prov-hero-badge {
-    position: absolute;
-    top: -0.7rem;
-    left: 50%;
-    transform: translateX(-50%);
-    background: var(--color-primary);
-    color: #fff;
-    font-size: 0.75rem;
-    font-weight: 700;
-    padding: 0.2rem 0.8rem;
-    border-radius: 50px;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-  }
-
-  .prov-hero-card h2 { margin: 0.5rem 0 0.3rem; font-size: 1.3rem; }
-  .prov-hero-card > p { color: var(--color-muted); margin-bottom: 1rem; }
+  .prov-hero-card h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
+  .prov-hero-card > p { color: var(--color-muted); }
 
   .prov-hero-stats {
     display: flex;
@@ -189,64 +143,40 @@ import Base from '../layouts/Base.astro';
     color: var(--color-muted);
   }
 
-  .prov-list {
+  .train-steps {
     display: flex;
     flex-direction: column;
-    gap: 0.8rem;
+    gap: 3rem;
+    margin-top: 2rem;
   }
 
-  .prov-list-item {
+  .train-step-header {
     display: flex;
     align-items: center;
-    gap: 1.2rem;
-    padding: 1.2rem 1.5rem;
-    background: var(--color-surface);
-    border: 1px solid var(--color-border);
-    border-radius: var(--radius);
-    text-decoration: none;
-    color: var(--color-text);
-    transition: all 0.15s;
-    box-shadow: var(--shadow);
+    gap: 1rem;
+    margin-bottom: 0.8rem;
   }
 
-  a.prov-list-item:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-    text-decoration: none;
+  .train-step-header h2 {
+    margin: 0;
+    font-size: 1.3rem;
   }
 
-  .prov-list-item--disabled {
-    opacity: 0.5;
-    cursor: default;
-  }
-
-  .prov-list-icon {
-    width: 40px;
-    height: 40px;
+  .train-step-num {
+    width: 44px;
+    height: 44px;
     border-radius: 50%;
-    background: var(--color-primary);
     color: #fff;
     display: flex;
     align-items: center;
     justify-content: center;
+    font-size: 1.2rem;
     font-weight: 800;
-    font-size: 1.1rem;
     flex-shrink: 0;
   }
 
-  .prov-list-item--disabled .prov-list-icon {
-    background: var(--color-muted);
-  }
-
-  .prov-list-item h3 {
-    margin: 0 0 0.2rem;
-    font-size: 1.05rem;
-  }
-
-  .prov-list-item p {
-    margin: 0;
+  .train-step > p {
+    margin: 0 0 1rem;
     color: var(--color-muted);
-    font-size: 0.9rem;
   }
 </style>

@@ -80,6 +80,15 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
           <p style="color:var(--color-muted); font-size:0.9rem; max-width:400px; margin:0 auto 2rem;">
             Provet består av tre delprov: ORD (10), LÄS (10) och MEK (10).<br>Tiden startar automatiskt.
           </p>
+          <div style="margin-bottom:2rem;">
+            <p style="color:var(--color-muted); font-size:0.85rem; margin-bottom:0.5rem;">Vill du se en genomgång av delproven först?</p>
+            <div style="display:flex; justify-content:center; gap:0.8rem; flex-wrap:wrap;">
+              <a href="/delprov/ord" style="font-size:0.85rem;">ORD</a>
+              <a href="/delprov/las" style="font-size:0.85rem;">LÄS</a>
+              <a href="/delprov/mek" style="font-size:0.85rem;">MEK</a>
+              <a href="/delprov/elf" style="font-size:0.85rem;">ELF</a>
+            </div>
+          </div>
           <button class="btn btn-primary" id="btn-start" style="font-size:1.1rem; padding:0.9rem 3rem;">Starta provet</button>
         </div>
       `;

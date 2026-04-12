@@ -17,9 +17,16 @@ const VERBAL_TABLE: [number, number][] = [
   [77, 2.0],
 ];
 
+// Full test = 80 questions per del (kvant or verbal)
+// Our kvant tests have 40 questions (half of full 80)
+// Our verbal tests have 30 questions (ORD+LÄS+MEK but no ELF, i.e. 30 out of 60 scored verbal questions)
+// To estimate normering we scale up to the full 80-question equivalent
+
 export function getNormering(score: number, total: number, type: 'kvant' | 'verbal'): number {
-  // Scale score to equivalent out of 80
-  const scaled = Math.round(score * 80 / total);
+  // For verbal without ELF: the 30 questions represent 3/4 of the verbal part (60 of 80).
+  // We scale to 80 by assuming proportional performance on ELF.
+  const fullTotal = 80;
+  const scaled = Math.round(score * fullTotal / total);
   const table = type === 'kvant' ? KVANT_TABLE : VERBAL_TABLE;
 
   let result = 0.0;

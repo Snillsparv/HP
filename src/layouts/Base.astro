@@ -47,6 +47,9 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     "description": "Gratis förberedelser inför högskoleprovet med strategier, övningsprov och videogenomgångar från Jonas von Essen, tvåfaldig världsmästare i minne med 2.0 på HP tolv gånger i rad.",
     "logo": "https://www.hpakuten.se/favicon.svg"
   })} />
+
+  <!-- Plausible Analytics (GDPR-friendly, no cookies) -->
+  <script defer data-domain="hpakuten.se" src="https://plausible.io/js/script.js"></script>
 </head>
 <body>
   <header class="site-header">

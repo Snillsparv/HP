@@ -114,6 +114,15 @@ li { margin-bottom: 0.3em; }
   font-weight: 800;
   color: var(--color-text);
   text-decoration: none;
+  padding: 0.3rem 0.6rem;
+  border: 2px solid transparent;
+  border-radius: var(--radius);
+  transition: border-color 0.3s;
+}
+
+.site-logo:hover {
+  border-color: var(--color-primary);
+  text-decoration: none;
 }
 
 .site-logo span {

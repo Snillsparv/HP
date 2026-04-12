@@ -60,12 +60,11 @@ for (const testId of testOrder) {
   if (!r || !info || !stList) continue;
   const rawAnswers = r.answers;
   const savedAnswers: (number | null)[] = Array.isArray(rawAnswers) ? rawAnswers : (typeof rawAnswers === 'string' ? JSON.parse(rawAnswers) : []);
-  console.log(`[profil] testId=${testId} answersType=${typeof rawAnswers} isArray=${Array.isArray(rawAnswers)} len=${savedAnswers.length} first5=${JSON.stringify(savedAnswers.slice(0,5))}`);
   let qi = 0;
   for (const st of stList) {
     let correct = 0;
     for (const q of st.questions) {
-      if (qi < savedAnswers.length && savedAnswers[qi] === q.correct) correct++;
+      if (qi < savedAnswers.length && Number(savedAnswers[qi]) === q.correct) correct++;
       qi++;
     }
     allBars.push({ name: st.shortName, correct, total: st.questions.length, pct: Math.round((correct / st.questions.length) * 100), testName: info.name });

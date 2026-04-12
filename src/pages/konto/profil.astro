@@ -58,7 +58,8 @@ for (const testId of testOrder) {
   const info = testLabels[testId];
   const stList = testQuestionSets[testId];
   if (!r || !info || !stList) continue;
-  const savedAnswers: (number | null)[] = r.answers || [];
+  const rawAnswers = r.answers;
+  const savedAnswers: (number | null)[] = typeof rawAnswers === 'string' ? JSON.parse(rawAnswers) : (rawAnswers || []);
   let qi = 0;
   for (const st of stList) {
     let correct = 0;

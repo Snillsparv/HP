@@ -78,9 +78,14 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
               <div style="color:var(--color-muted); font-size:0.85rem;">minuter</div>
             </div>
           </div>
-          <p style="color:var(--color-muted); font-size:0.9rem; max-width:420px; margin:0 auto 2rem;">
-            ORD (10) + LÄS (10) + MEK (10)<br>Tiden startar när du trycker på knappen.
+          <p style="color:var(--color-muted); font-size:0.9rem; max-width:420px; margin:0 auto 1.5rem;">
+            ORD (10) + LÄS (10) + MEK (10)
           </p>
+          <div style="text-align:left; max-width:440px; margin:0 auto 2rem; color:var(--color-muted); font-size:0.88rem; line-height:1.7;">
+            <p style="margin-bottom:0.6rem;">Se till att du inte kommer att bli störd de närmaste 33 minuterna. Sätt din telefon på stör ej, precis som på provet. Se till att du har papper och penna redo.</p>
+            <p style="margin-bottom:0.6rem;">Jag rekommenderar att du gör provet på datorn för att se texterna bättre, men att göra det på mobilen fungerar också.</p>
+            <p style="margin-bottom:0;">När du skrivit klart kommer provet att rättas automatiskt och du kan titta på mina lösningar.</p>
+          </div>
           <button class="btn btn-primary" id="btn-start" style="font-size:1.2rem; padding:1rem 4rem;">Starta provet</button>
         </div>
       `;

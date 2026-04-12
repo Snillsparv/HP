@@ -2,43 +2,38 @@
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Om Jonas von Essen – HPAkuten" description="Jonas von Essen är tvåfaldig världsmästare i minne, har skrivit högskoleprovet 15 gånger och fått 2.0 tolv gånger i rad — inklusive 160 av 160 poäng.">
+<Base title="Om Jonas von Essen – HPAkuten" description="Jonas von Essen är tvåfaldig världsmästare i minne, har skrivit högskoleprovet 15 gånger och fått 2.0 tolv gånger i rad, inklusive 160 av 160 poäng.">
   <div class="page-content">
     <div class="container">
       <h1>Om Jonas von Essen</h1>
-      <p class="page-intro">Tvåfaldig världsmästare i minne. 2.0 på HP de senaste 12 gångerna. 160 av 160 poäng — ensam i landet.</p>
+      <p class="page-intro">Tvåfaldig världsmästare i minne. 2.0 på HP de senaste 12 gångerna. 160 av 160 poäng, ensam i landet.</p>
+
+      <div class="jonas-gallery">
+        <img src="/jonas_vm.webp" alt="Jonas von Essen vid World Memory Championships" data-fadein />
+        <img src="/jonas_smartare.webp" alt="Jonas von Essen" data-fadein />
+        <img src="/jonas_pkm.webp" alt="Jonas von Essen föreläser" data-fadein />
+        <img src="/jonas_knut.webp" alt="Jonas von Essen" data-fadein />
+      </div>
 
       <h2>Min bakgrund</h2>
       <p>
-        Jag heter Jonas von Essen och kommer från Skövde. År 2013 och 2014 blev jag utsedd till
-        världsmästare i minne vid World Memory Championships. Jag har bland annat memorerat
-        100 000 decimaler av pi och hundratals slumpmässiga valnötter i kinesisk tv.
+        Jonas är tvåfaldig världsmästare i minne och har skrivit högskoleprovet 15 gånger, de allra flesta för skojs skull. Han har fått 2.0 12 gånger i rad och sista gången han skrev hade han som enda person i landet 160 av 160 möjliga poäng.
       </p>
       <p>
-        Men det som kanske är mest relevant här: jag har skrivit högskoleprovet 15 gånger och fått 2.0
-        de senaste 12 gångerna i rad. HT 2021 fick jag 160 av 160 möjliga poäng — som enda person i
-        hela landet. Jag har flera gånger haft landets högsta resultat.
+        Till skillnad från vad man kan tro är Jonas inte född med något superminne. Istället upptäckte han i 20-årsåldern uråldriga <a href="https://www.jonasvonessen.se">minnestekniker</a> som vem som helst kan använda för att komma ihåg mycket mer på ett mycket lättare och roligare sätt än annars. Om du lyckas ta dig in på universitetet kommer du ha stor nytta av dessa!
       </p>
       <p>
-        Jag var ingen övernaturligt begåvad person som barn. Jag upptäckte minnestekniker som tonåring
-        och insåg att <em>alla</em> kan förbättra sitt minne dramatiskt med rätt metoder. Det är den
-        insikten som driver den här sidan.
+        Det som har gjort Jonas framgångsrik på olika områden är framför allt hans fokus på noggranna förberedelser och vilja att lägga ner tid för att bli bra på det han brinner för. Samma sak gäller för högskoleprovet, den som tränar och förbereder sig har mycket bättre chanser än den som bara går dit och hoppas på det bästa. Så <a href="/trana">sätt genast igång med träningen</a> om du inte gjort det, ditt framtida jag kommer att tacka dig!
       </p>
 
       <h2>Varför den här sidan?</h2>
       <p>
-        Jag har märkt att det finns en stor lucka bland HP-resurser: ingen fokuserar ordentligt på
-        minnestekniker. Det är konstigt, för det är en av de mest effektiva sakerna du kan göra
-        för att höja ditt resultat — särskilt på de verbala delarna.
-      </p>
-      <p>
-        De flesta HP-sajter gömmer det bästa innehållet bakom betalväggar, har rörig design, eller
-        skrivs av anonyma personer. Den här sidan är annorlunda:
+        De flesta HP-sidor på nätet kostar pengar och innehåller en massa som inte behövs. Den här sidan är annorlunda: en ren och tydlig sida som ger dig exakt vad du behöver, helt gratis, skriven av någon du kan lita på.
       </p>
       <ul>
-        <li>Allt kärninnehåll är gratis.</li>
-        <li>Allt är skrivet av mig personligen, baserat på min erfarenhet.</li>
-        <li>Fokus på det som faktiskt fungerar.</li>
+        <li>Allt innehåll är gratis, inga betalväggar.</li>
+        <li>Allt är skrivet av Jonas personligen, baserat på hans erfarenhet.</li>
+        <li>Fokus på det som faktiskt fungerar, inget onödigt fluff.</li>
       </ul>
 
       <h2>Sett i media</h2>
@@ -52,7 +47,7 @@ import Base from '../layouts/Base.astro';
 
       <h2>Swisha en kaffe</h2>
       <div class="tip-box success">
-        <strong>Allt på den här sidan är gratis — för alltid.</strong>
+        <strong>Allt på den här sidan är gratis, för alltid.</strong>
         Inga premiumplaner, inga dolda kostnader, ingen betalvägg. Men om du vill tacka för att
         sidan hjälpte dig får du gärna swisha en kaffe. Och ännu hellre: skriv och berätta hur det gick!
         Det är det bästa tacket jag kan få.
@@ -60,8 +55,8 @@ import Base from '../layouts/Base.astro';
 
       <h2>Föreläsningar &amp; kontakt</h2>
       <p>
-        Jag föreläser regelbundet om minnestekniker, inlärning och högskoleprovet.
-        För förfrågningar, kontakta mig via:
+        Jonas föreläser regelbundet om minnestekniker, inlärning och högskoleprovet.
+        För förfrågningar, kontakta honom via:
       </p>
       <ul>
         <li>Webb: <a href="https://www.jonasvonessen.se">jonasvonessen.se</a></li>
@@ -69,3 +64,26 @@ import Base from '../layouts/Base.astro';
     </div>
   </div>
 </Base>
+
+<style>
+  .jonas-gallery {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.8rem;
+    margin: 2rem 0;
+  }
+
+  .jonas-gallery img {
+    width: 100%;
+    aspect-ratio: 1;
+    object-fit: cover;
+    border-radius: var(--radius);
+    box-shadow: var(--shadow);
+  }
+
+  @media (max-width: 600px) {
+    .jonas-gallery {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>

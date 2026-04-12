@@ -52,9 +52,12 @@ await pool.query(`
   );
 `);
 
-// Add avatar_color column if it doesn't exist (migration for existing databases)
+// Migrations for existing databases
 await pool.query(`
   ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color TEXT DEFAULT '#2563eb';
+`);
+await pool.query(`
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS train_step INTEGER DEFAULT 1;
 `);
 
 export default pool;

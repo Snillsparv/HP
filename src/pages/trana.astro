@@ -1,5 +1,8 @@
 ---
 import Base from '../layouts/Base.astro';
+import { getSessionFromCookies } from '../lib/auth.js';
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const serverStep = user?.train_step || 1;
 ---
 
 <Base title="Träna på Högskoleprovet – HPAkuten" description="Öva på riktiga provuppgifter från HT 2021. Steg-för-steg-plan med videogenomgångar.">
@@ -21,7 +24,7 @@ import Base from '../layouts/Base.astro';
         </div>
 
         <div class="train-step train-step--locked" id="step-2" data-step="2">
-          <button class="train-back-btn" data-back="1">&larr;</button>
+          <button class="train-back-btn" data-back="1">&uarr;</button>
           <div class="train-step-header">
             <span class="train-step-num">2</span>
             <h2>Gör kvantitativt prov 1</h2>
@@ -51,7 +54,7 @@ import Base from '../layouts/Base.astro';
         </div>
 
         <div class="train-step train-step--locked" id="step-3" data-step="3">
-          <button class="train-back-btn" data-back="2">&larr;</button>
+          <button class="train-back-btn" data-back="2">&uarr;</button>
           <div class="train-step-header">
             <span class="train-step-num">3</span>
             <h2>Gör verbalt prov 1</h2>
@@ -81,7 +84,7 @@ import Base from '../layouts/Base.astro';
         </div>
 
         <div class="train-step train-step--locked" id="step-4" data-step="4">
-          <button class="train-back-btn" data-back="3">&larr;</button>
+          <button class="train-back-btn" data-back="3">&uarr;</button>
           <div class="train-step-header">
             <span class="train-step-num">4</span>
             <h2>Titta på mattegenomgången</h2>
@@ -98,7 +101,7 @@ import Base from '../layouts/Base.astro';
         </div>
 
         <div class="train-step train-step--locked" id="step-5" data-step="5">
-          <button class="train-back-btn" data-back="4">&larr;</button>
+          <button class="train-back-btn" data-back="4">&uarr;</button>
           <div class="train-step-header">
             <span class="train-step-num">5a</span>
             <h2>Gör kvantitativt prov 2</h2>
@@ -119,7 +122,7 @@ import Base from '../layouts/Base.astro';
         </div>
 
         <div class="train-step train-step--locked" id="step-6" data-step="6">
-          <button class="train-back-btn" data-back="5">&larr;</button>
+          <button class="train-back-btn" data-back="5">&uarr;</button>
           <div class="train-step-header">
             <span class="train-step-num">5b</span>
             <h2>Gör verbalt prov 2</h2>
@@ -149,9 +152,24 @@ import Base from '../layouts/Base.astro';
     </div>
   </div>
 
+  <script define:vars={{ serverStep }}>
+    window.__serverStep = serverStep;
+  </script>
+
   <script>
     const STORAGE_KEY = 'hp-train-step';
-    const saved = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10);
+    const localStep = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10);
+    const sStep = (window as any).__serverStep || 1;
+    const saved = Math.max(localStep, sStep);
+
+    function saveStep(n: number) {
+      localStorage.setItem(STORAGE_KEY, String(n));
+      fetch('/api/auth/train-step', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ step: n }),
+      }).catch(() => {});
+    }
 
     function activateStep(n: number) {
       document.querySelectorAll('.train-step').forEach(el => {
@@ -169,10 +187,21 @@ import Base from '../layouts/Base.astro';
 
     activateStep(saved);
 
+    // Auto-scroll to current step on page load (if not step 1)
+    if (saved > 1) {
+      requestAnimationFrame(() => {
+        const target = document.getElementById(`step-${saved}`);
+        if (target) {
+          const y = target.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      });
+    }
+
     document.querySelectorAll('.train-done-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const next = parseInt(btn.getAttribute('data-next') || '1', 10);
-        localStorage.setItem(STORAGE_KEY, String(next));
+        saveStep(next);
         activateStep(next);
         const target = document.getElementById(`step-${next}`);
         if (target) {
@@ -185,7 +214,7 @@ import Base from '../layouts/Base.astro';
     document.querySelectorAll('.train-back-btn').forEach(btn => {
       btn.addEventListener('click', () => {
         const back = parseInt(btn.getAttribute('data-back') || '1', 10);
-        localStorage.setItem(STORAGE_KEY, String(back));
+        saveStep(back);
         activateStep(back);
         const target = document.getElementById(`step-${back}`);
         if (target) {

@@ -9,6 +9,11 @@ if (!user) {
 }
 
 const avatarColor = user.avatar_color || '#2563eb';
+const colors = [
+  '#2563eb', '#3b82f6', '#06b6d4', '#14b8a6', '#10b981',
+  '#84cc16', '#eab308', '#f97316', '#ef4444', '#ec4899',
+  '#a855f7', '#6366f1', '#64748b', '#1e293b',
+];
 ---
 
 <Base title="Min profil – HPAkuten">
@@ -17,7 +22,7 @@ const avatarColor = user.avatar_color || '#2563eb';
       <h1>Min profil</h1>
 
       <div class="profile-card">
-        <div class="profile-avatar" id="avatar" style={`background: ${avatarColor};`}>{user.name.charAt(0).toUpperCase()}</div>
+        <button class="profile-avatar" id="avatar-btn" style={`background: ${avatarColor};`} type="button" title="Klicka för att byta färg">{user.name.charAt(0).toUpperCase()}</button>
         <div>
           <p><strong>{user.name}</strong></p>
           <p style="color: var(--color-muted); font-size: 0.9rem;">{user.email}</p>
@@ -25,9 +30,15 @@ const avatarColor = user.avatar_color || '#2563eb';
         </div>
       </div>
 
-      <div class="color-picker-section">
-        <p style="font-weight: 600; margin-bottom: 0.5rem;">Välj färg på din profilbubbla</p>
-        <div class="color-picker" id="color-picker"></div>
+      <div class="color-picker" id="color-picker" style="display: none;">
+        {colors.map(c => (
+          <button
+            type="button"
+            class:list={['color-dot', { 'color-dot--active': c === avatarColor }]}
+            data-color={c}
+            style={`background-color: ${c};`}
+          />
+        ))}
       </div>
 
       <form method="POST" action="/api/auth/logout" style="margin-top: 2rem;">
@@ -36,38 +47,29 @@ const avatarColor = user.avatar_color || '#2563eb';
     </div>
   </div>
 
-  <script define:vars={{ currentColor: avatarColor }}>
-    window.__currentColor = currentColor;
-  </script>
-
   <script>
-    const colors = [
-      '#2563eb', '#3b82f6', '#06b6d4', '#14b8a6', '#10b981',
-      '#84cc16', '#eab308', '#f97316', '#ef4444', '#ec4899',
-      '#a855f7', '#6366f1', '#64748b', '#1e293b',
-    ];
-
+    const avatar = document.getElementById('avatar-btn')!;
     const picker = document.getElementById('color-picker')!;
-    const avatar = document.getElementById('avatar')!;
-    let selected = (window as any).__currentColor;
+    const dots = picker.querySelectorAll('.color-dot');
 
-    colors.forEach(color => {
-      const dot = document.createElement('button');
-      dot.className = 'color-dot' + (color === selected ? ' color-dot--active' : '');
-      dot.style.background = color;
-      dot.type = 'button';
+    avatar.addEventListener('click', () => {
+      const open = picker.style.display !== 'none';
+      picker.style.display = open ? 'none' : 'flex';
+    });
+
+    dots.forEach(dot => {
       dot.addEventListener('click', async () => {
-        selected = color;
+        const color = dot.getAttribute('data-color')!;
         avatar.style.background = color;
-        picker.querySelectorAll('.color-dot').forEach(d => d.classList.remove('color-dot--active'));
+        dots.forEach(d => d.classList.remove('color-dot--active'));
         dot.classList.add('color-dot--active');
+        picker.style.display = 'none';
         await fetch('/api/auth/avatar-color', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ color }),
         });
       });
-      picker.appendChild(dot);
     });
   </script>
 </Base>
@@ -99,17 +101,26 @@ const avatarColor = user.avatar_color || '#2563eb';
     font-size: 1.5rem;
     font-weight: 700;
     flex-shrink: 0;
-    transition: background 0.2s;
+    border: none;
+    cursor: pointer;
+    transition: transform 0.15s, box-shadow 0.15s;
   }
 
-  .color-picker-section {
-    margin-top: 1.5rem;
+  .profile-avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.2);
   }
 
   .color-picker {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    margin-top: 1rem;
+    padding: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    justify-content: center;
   }
 
   .color-dot {
@@ -118,12 +129,12 @@ const avatarColor = user.avatar_color || '#2563eb';
     border-radius: 50%;
     border: 3px solid transparent;
     cursor: pointer;
-    transition: transform 0.15s, border-color 0.15s;
     padding: 0;
+    transition: transform 0.15s, border-color 0.15s;
   }
 
   .color-dot:hover {
-    transform: scale(1.15);
+    transform: scale(1.2);
   }
 
   .color-dot--active {

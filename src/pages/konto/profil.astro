@@ -3,6 +3,10 @@ import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
 import pool from '../../lib/db.js';
 import { getNormering } from '../../lib/normering.js';
+import { subTests as kvant1Tests } from '../../lib/questions-ht2021.js';
+import { subTests as kvant2Tests } from '../../lib/questions-kvant2-ht2021.js';
+import { verbalSubTests as verbal1Tests } from '../../lib/questions-verbal-ht2021.js';
+import { verbalSubTests2 as verbal2Tests } from '../../lib/questions-verbal2-ht2021.js';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 
@@ -37,6 +41,34 @@ const testOrder = ['kvant-ht2021', 'verbal-ht2021', 'kvant2-ht2021', 'verbal2-ht
 const resultMap = new Map(results.map((r: any) => [r.test_id, r]));
 
 function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
+
+// Compute per-subtest breakdown from saved answers
+const testQuestionSets: Record<string, { shortName: string; questions: { correct: number }[] }[]> = {
+  'kvant-ht2021': kvant1Tests,
+  'kvant2-ht2021': kvant2Tests,
+  'verbal-ht2021': verbal1Tests,
+  'verbal2-ht2021': verbal2Tests,
+};
+
+interface SubtestBar { name: string; correct: number; total: number; pct: number; testName: string; }
+const allBars: SubtestBar[] = [];
+
+for (const testId of testOrder) {
+  const r = resultMap.get(testId) as any;
+  const info = testLabels[testId];
+  const stList = testQuestionSets[testId];
+  if (!r || !info || !stList) continue;
+  const savedAnswers: (number | null)[] = r.answers || [];
+  let qi = 0;
+  for (const st of stList) {
+    let correct = 0;
+    for (const q of st.questions) {
+      if (qi < savedAnswers.length && savedAnswers[qi] === q.correct) correct++;
+      qi++;
+    }
+    allBars.push({ name: st.shortName, correct, total: st.questions.length, pct: Math.round((correct / st.questions.length) * 100), testName: info.name });
+  }
+}
 ---
 
 <Base title="Min profil – HPAkuten">
@@ -88,27 +120,25 @@ function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padSta
             })}
           </div>
 
-          <div class="results-chart">
-            <p style="font-weight: 700; font-size: 0.9rem; color: var(--color-muted); margin-bottom: 0.8rem;">Översikt</p>
-            {testOrder.map(testId => {
-              const r = resultMap.get(testId) as any;
-              const info = testLabels[testId];
-              if (!r || !info) return null;
-              const pct = Math.round((r.score / r.total) * 100);
-              const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
-              return (
-                <div class="profile-bar-row">
-                  <div class="profile-bar-label">{info.name}</div>
-                  <div class="profile-bar-track">
-                    <div class="profile-bar-fill" style={`--target-width:${pct}%; background:${color};`}>
-                      <span class="profile-bar-value">{r.score}/{r.total}</span>
+          {allBars.length > 0 && (
+            <div class="results-chart">
+              <p style="font-weight: 700; font-size: 0.9rem; color: var(--color-muted); margin-bottom: 1rem;">Per deldelprov</p>
+              <div class="vchart">
+                {allBars.map((bar, i) => {
+                  const color = bar.pct >= 80 ? '#22c55e' : bar.pct >= 60 ? '#3b82f6' : bar.pct >= 40 ? '#f59e0b' : '#ef4444';
+                  return (
+                    <div class="vchart-col">
+                      <div class="vchart-value">{bar.correct}/{bar.total}</div>
+                      <div class="vchart-track">
+                        <div class="vchart-fill" style={`--target-height:${bar.pct}%; background:${color}; animation-delay:${0.1 + i * 0.08}s;`} />
+                      </div>
+                      <div class="vchart-label">{bar.name}</div>
                     </div>
-                  </div>
-                  <div class="profile-bar-pct">{pct}%</div>
-                </div>
-              );
-            })}
-          </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </Fragment>
       )}
 
@@ -278,57 +308,56 @@ function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padSta
     border-radius: var(--radius);
   }
 
-  .profile-bar-row {
+  .vchart {
     display: flex;
-    align-items: center;
-    gap: 0.6rem;
-    margin-bottom: 0.5rem;
+    align-items: flex-end;
+    gap: 0.4rem;
+    height: 200px;
   }
 
-  .profile-bar-label {
-    min-width: 100px;
-    font-weight: 700;
-    font-size: 0.85rem;
-    flex-shrink: 0;
-  }
-
-  .profile-bar-track {
+  .vchart-col {
     flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    height: 100%;
+  }
+
+  .vchart-value {
+    font-size: 0.7rem;
+    font-weight: 700;
+    color: var(--color-muted);
+    margin-bottom: 0.3rem;
+    white-space: nowrap;
+  }
+
+  .vchart-track {
+    flex: 1;
+    width: 100%;
     background: #f1f5f9;
     border-radius: 6px;
-    height: 26px;
+    display: flex;
+    align-items: flex-end;
     overflow: hidden;
   }
 
-  .profile-bar-fill {
-    height: 100%;
+  .vchart-fill {
+    width: 100%;
     border-radius: 6px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 0;
-    animation: profileBarGrow 0.8s ease-out forwards;
-    animation-delay: 0.3s;
+    height: 0;
+    animation: vbarGrow 0.8s ease-out forwards;
   }
 
-  .profile-bar-value {
-    color: #fff;
-    font-size: 0.78rem;
+  .vchart-label {
+    font-size: 0.7rem;
     font-weight: 700;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+    margin-top: 0.4rem;
+    color: var(--color-text);
+    white-space: nowrap;
   }
 
-  .profile-bar-pct {
-    min-width: 36px;
-    text-align: right;
-    font-weight: 700;
-    font-size: 0.85rem;
-    color: var(--color-muted);
-    flex-shrink: 0;
-  }
-
-  @keyframes profileBarGrow {
-    from { width: 0; }
-    to { width: var(--target-width); }
+  @keyframes vbarGrow {
+    from { height: 0; }
+    to { height: var(--target-height); }
   }
 </style>

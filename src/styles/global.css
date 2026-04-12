@@ -399,10 +399,15 @@ li { margin-bottom: 0.3em; }
   padding: 0 1.5rem 2rem;
   position: relative;
   transition: transform 0.15s;
+  text-decoration: none;
+  color: var(--color-text);
+  cursor: pointer;
 }
 
 .step:hover {
   transform: scale(1.04);
+  text-decoration: none;
+  color: var(--color-text);
 }
 
 .step:last-child { padding-bottom: 0; }
@@ -452,15 +457,6 @@ li { margin-bottom: 0.3em; }
   margin: 0 0 0.5rem;
 }
 
-.step-content h3 a {
-  color: var(--color-text);
-  text-decoration: none;
-}
-
-.step-content h3 a:hover {
-  color: var(--color-primary);
-  text-decoration: none;
-}
 
 .step-content p {
   margin-bottom: 0.8rem;

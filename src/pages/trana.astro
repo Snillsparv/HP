@@ -33,11 +33,12 @@ const serverStep = user?.train_step || 1;
           <div class="delprov-videos">
             <p class="delprov-videos-label">Se genomgång av delproven först:</p>
             <div class="delprov-videos-links">
-              <a href="/delprov/xyz">XYZ</a>
-              <a href="/delprov/kva">KVA</a>
-              <a href="/delprov/nog">NOG</a>
-              <a href="/delprov/dtk">DTK</a>
+              <button class="delprov-video-btn" data-vimeo="1181681156">XYZ</button>
+              <button class="delprov-video-btn" data-vimeo="1181679570">KVA</button>
+              <button class="delprov-video-btn" data-vimeo="1181680376">NOG</button>
+              <button class="delprov-video-btn" data-vimeo="1181679102">DTK</button>
             </div>
+            <div class="delprov-video-player"></div>
           </div>
           <a href="/prov/kvant-ht2021" class="prov-hero-link">
             <div class="prov-hero-card prov-hero-card--kvant">
@@ -63,11 +64,12 @@ const serverStep = user?.train_step || 1;
           <div class="delprov-videos">
             <p class="delprov-videos-label">Se genomgång av delproven först:</p>
             <div class="delprov-videos-links">
-              <a href="/delprov/ord">ORD</a>
-              <a href="/delprov/las">LÄS</a>
-              <a href="/delprov/mek">MEK</a>
-              <a href="/delprov/elf">ELF</a>
+              <button class="delprov-video-btn" data-vimeo="1181680666">ORD</button>
+              <button class="delprov-video-btn" data-vimeo="1181679796">LÄS</button>
+              <button class="delprov-video-btn" data-vimeo="1181680021">MEK</button>
+              <button class="delprov-video-btn" data-vimeo="1181679386">ELF</button>
             </div>
+            <div class="delprov-video-player"></div>
           </div>
           <a href="/prov/verbal-ht2021" class="prov-hero-link">
             <div class="prov-hero-card prov-hero-card--verbal">
@@ -207,6 +209,26 @@ const serverStep = user?.train_step || 1;
         if (target) {
           const y = target.getBoundingClientRect().top + window.scrollY - 80;
           window.scrollTo({ top: y, behavior: 'smooth' });
+        }
+      });
+    });
+
+    document.querySelectorAll('.delprov-video-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const vimeoId = btn.getAttribute('data-vimeo');
+        const player = btn.closest('.delprov-videos')!.querySelector('.delprov-video-player') as HTMLElement;
+        const isActive = btn.classList.contains('delprov-video-btn--active');
+
+        // Deactivate all buttons in this group
+        btn.closest('.delprov-videos-links')!.querySelectorAll('.delprov-video-btn').forEach(b => b.classList.remove('delprov-video-btn--active'));
+
+        if (isActive) {
+          player.innerHTML = '';
+          player.style.display = 'none';
+        } else {
+          btn.classList.add('delprov-video-btn--active');
+          player.style.display = 'block';
+          player.innerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${vimeoId}?dnt=1" title="${btn.textContent}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
         }
       });
     });
@@ -393,8 +415,36 @@ const serverStep = user?.train_step || 1;
     gap: 1rem;
   }
 
-  .delprov-videos-links a {
+  .delprov-video-btn {
     font-weight: 700;
     font-size: 0.95rem;
+    background: none;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 0.4rem 1rem;
+    cursor: pointer;
+    color: var(--color-primary);
+    font-family: var(--font-sans);
+    transition: background 0.15s, border-color 0.15s;
+  }
+
+  .delprov-video-btn:hover {
+    border-color: var(--color-primary);
+    background: #eff6ff;
+  }
+
+  .delprov-video-btn--active {
+    background: var(--color-primary);
+    color: #fff;
+    border-color: var(--color-primary);
+  }
+
+  .delprov-video-btn--active:hover {
+    background: var(--color-primary);
+  }
+
+  .delprov-video-player {
+    display: none;
+    margin-top: 1rem;
   }
 </style>

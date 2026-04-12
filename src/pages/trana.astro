@@ -17,7 +17,7 @@ import Base from '../layouts/Base.astro';
           </div>
           <p>Börja med att titta på den här videon så att du förstår hur provet är upplagt.</p>
           <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
-          <button class="btn btn-primary train-done-btn" data-next="2">Klar, gå vidare</button>
+          <button class="btn btn-primary train-done-btn" data-next="2">Jag har kollat!</button>
         </div>
 
         <div class="train-step train-step--locked" id="step-2" data-step="2">
@@ -37,7 +37,7 @@ import Base from '../layouts/Base.astro';
               <span class="btn btn-primary prov-btn--kvant" style="margin-top:1rem;">Starta provet</span>
             </div>
           </a>
-          <button class="btn btn-primary train-done-btn" data-next="3">Klar, gå vidare</button>
+          <button class="btn btn-primary train-done-btn" data-next="3">Klar</button>
         </div>
 
         <div class="train-step train-step--locked" id="step-3" data-step="3">
@@ -57,7 +57,7 @@ import Base from '../layouts/Base.astro';
               <span class="btn btn-primary prov-btn--verbal" style="margin-top:1rem;">Starta provet</span>
             </div>
           </a>
-          <button class="btn btn-primary train-done-btn" data-next="4">Klar, gå vidare</button>
+          <button class="btn btn-primary train-done-btn" data-next="4">Klar</button>
         </div>
 
         <div class="train-step train-step--locked" id="step-4" data-step="4">
@@ -73,7 +73,7 @@ import Base from '../layouts/Base.astro';
               <span class="btn btn-primary prov-btn--matte" style="margin-top:1rem;">Till videon</span>
             </div>
           </a>
-          <button class="btn btn-primary train-done-btn" data-next="5">Klar, gå vidare</button>
+          <button class="btn btn-primary train-done-btn" data-next="5">Klar</button>
         </div>
 
         <div class="train-step train-step--locked" id="step-5" data-step="5">
@@ -123,15 +123,13 @@ import Base from '../layouts/Base.astro';
     function activateStep(n: number) {
       document.querySelectorAll('.train-step').forEach(el => {
         const step = parseInt(el.getAttribute('data-step') || '0', 10);
-        if (step <= n) {
-          el.classList.remove('train-step--locked');
-        } else {
-          el.classList.add('train-step--locked');
-        }
-        if (step === n) {
+        el.classList.remove('train-step--locked', 'train-step--active', 'train-step--done');
+        if (step < n) {
+          el.classList.add('train-step--done');
+        } else if (step === n) {
           el.classList.add('train-step--active');
         } else {
-          el.classList.remove('train-step--active');
+          el.classList.add('train-step--locked');
         }
       });
     }
@@ -145,7 +143,8 @@ import Base from '../layouts/Base.astro';
         activateStep(next);
         const target = document.getElementById(`step-${next}`);
         if (target) {
-          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          const y = target.getBoundingClientRect().top + window.scrollY - 80;
+          window.scrollTo({ top: y, behavior: 'smooth' });
         }
       });
     });
@@ -227,11 +226,18 @@ import Base from '../layouts/Base.astro';
     filter: grayscale(0.3);
   }
 
+  .train-step--done {
+    opacity: 0.35;
+    filter: grayscale(0.3);
+  }
+
   .train-step-header {
     display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 1rem;
+    gap: 0.5rem;
     margin-bottom: 0.8rem;
+    text-align: center;
   }
 
   .train-step-header h2 {
@@ -256,6 +262,7 @@ import Base from '../layouts/Base.astro';
   .train-step > p {
     margin: 0 0 1rem;
     color: var(--color-muted);
+    text-align: center;
   }
 
   .train-done-btn {

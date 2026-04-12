@@ -140,7 +140,8 @@ li { margin-bottom: 0.3em; }
 }
 
 .site-nav a.nav-cta {
-  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   font-weight: 700;
 }
 

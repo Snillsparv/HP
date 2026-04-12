@@ -69,23 +69,47 @@ function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padSta
       {results.length === 0 ? (
         <p style="color: var(--color-muted);">Du har inte gjort några prov ännu. <a href="/trana">Börja träna!</a></p>
       ) : (
-        <div class="results-grid">
-          {testOrder.map(testId => {
-            const r = resultMap.get(testId) as any;
-            const info = testLabels[testId];
-            if (!r || !info) return null;
-            const normered = getNormering(r.score, r.total, info.type);
-            const isKvant = info.type === 'kvant';
-            return (
-              <div class={`result-card ${isKvant ? 'result-card--kvant' : 'result-card--verbal'}`}>
-                <div class="result-card-label">{info.name}</div>
-                <div class="result-card-norm">{normered.toFixed(1)}</div>
-                <div class="result-card-raw">{r.score}/{r.total} rätt</div>
-                {r.time_seconds && <div class="result-card-time">Tid: {fmt(r.time_seconds)}</div>}
-              </div>
-            );
-          })}
-        </div>
+        <Fragment>
+          <div class="results-grid">
+            {testOrder.map(testId => {
+              const r = resultMap.get(testId) as any;
+              const info = testLabels[testId];
+              if (!r || !info) return null;
+              const normered = getNormering(r.score, r.total, info.type);
+              const isKvant = info.type === 'kvant';
+              return (
+                <div class={`result-card ${isKvant ? 'result-card--kvant' : 'result-card--verbal'}`}>
+                  <div class="result-card-label">{info.name}</div>
+                  <div class="result-card-norm">{normered.toFixed(1)}</div>
+                  <div class="result-card-raw">{r.score}/{r.total} rätt</div>
+                  {r.time_seconds && <div class="result-card-time">Tid: {fmt(r.time_seconds)}</div>}
+                </div>
+              );
+            })}
+          </div>
+
+          <div class="results-chart">
+            <p style="font-weight: 700; font-size: 0.9rem; color: var(--color-muted); margin-bottom: 0.8rem;">Översikt</p>
+            {testOrder.map(testId => {
+              const r = resultMap.get(testId) as any;
+              const info = testLabels[testId];
+              if (!r || !info) return null;
+              const pct = Math.round((r.score / r.total) * 100);
+              const color = pct >= 80 ? '#22c55e' : pct >= 60 ? '#3b82f6' : pct >= 40 ? '#f59e0b' : '#ef4444';
+              return (
+                <div class="profile-bar-row">
+                  <div class="profile-bar-label">{info.name}</div>
+                  <div class="profile-bar-track">
+                    <div class="profile-bar-fill" style={`--target-width:${pct}%; background:${color};`}>
+                      <span class="profile-bar-value">{r.score}/{r.total}</span>
+                    </div>
+                  </div>
+                  <div class="profile-bar-pct">{pct}%</div>
+                </div>
+              );
+            })}
+          </div>
+        </Fragment>
       )}
 
       <form method="POST" action="/api/auth/logout" style="margin-top: 2.5rem;">
@@ -244,5 +268,67 @@ function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padSta
     .results-grid {
       grid-template-columns: 1fr;
     }
+  }
+
+  .results-chart {
+    margin-top: 1.5rem;
+    padding: 1.2rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+
+  .profile-bar-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 0.5rem;
+  }
+
+  .profile-bar-label {
+    min-width: 100px;
+    font-weight: 700;
+    font-size: 0.85rem;
+    flex-shrink: 0;
+  }
+
+  .profile-bar-track {
+    flex: 1;
+    background: #f1f5f9;
+    border-radius: 6px;
+    height: 26px;
+    overflow: hidden;
+  }
+
+  .profile-bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 0;
+    animation: profileBarGrow 0.8s ease-out forwards;
+    animation-delay: 0.3s;
+  }
+
+  .profile-bar-value {
+    color: #fff;
+    font-size: 0.78rem;
+    font-weight: 700;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  }
+
+  .profile-bar-pct {
+    min-width: 36px;
+    text-align: right;
+    font-weight: 700;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    flex-shrink: 0;
+  }
+
+  @keyframes profileBarGrow {
+    from { width: 0; }
+    to { width: var(--target-width); }
   }
 </style>

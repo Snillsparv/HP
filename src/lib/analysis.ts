@@ -126,21 +126,19 @@ export function analyzeResults(
     summaryParts.push('Bra jobbat! Fortsätt träna för att bli ännu bättre.');
   }
 
-  // Build animated bar chart — subtests
-  const maxTotal = Math.max(...subtestResults.map(s => s.total));
-  let subtestBarsHTML = subtestResults.map(st => {
+  // Build vertical bar chart — subtests
+  let subtestBarsHTML = `<div class="analysis-vchart">` + subtestResults.map((st, i) => {
     const pct = Math.round(st.rate * 100);
     return `
-      <div class="analysis-bar-row">
-        <div class="analysis-bar-label">${st.shortName}</div>
-        <div class="analysis-bar-track">
-          <div class="analysis-bar-fill" style="--target-width:${pct}%; background:${barColor(pct)};">
-            <span class="analysis-bar-value">${st.correct}/${st.total}</span>
-          </div>
+      <div class="analysis-vchart-col">
+        <div class="analysis-vchart-value">${st.correct}/${st.total}</div>
+        <div class="analysis-vchart-track">
+          <div class="analysis-vchart-fill" style="--target-height:${pct}%; background:${barColor(pct)}; animation-delay:${0.1 + i * 0.1}s;"></div>
         </div>
-        <div class="analysis-bar-pct">${pct}%</div>
+        <div class="analysis-vchart-label">${st.shortName}</div>
+        <div class="analysis-vchart-pct">${pct}%</div>
       </div>`;
-  }).join('');
+  }).join('') + `</div>`;
 
   // Build category bars (only for subtests with categories)
   let categoryBarsHTML = '';
@@ -193,13 +191,63 @@ export function analyzeResults(
         padding: 1.5rem;
         margin: 1.5rem 0;
       }
+      /* Vertical subtest chart */
+      .analysis-vchart {
+        display: flex;
+        align-items: flex-end;
+        gap: 0.6rem;
+        height: 180px;
+        margin-bottom: 0.5rem;
+      }
+      .analysis-vchart-col {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+      }
+      .analysis-vchart-value {
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--color-muted);
+        margin-bottom: 0.3rem;
+      }
+      .analysis-vchart-track {
+        flex: 1;
+        width: 100%;
+        max-width: 60px;
+        background: #f1f5f9;
+        border-radius: 6px;
+        display: flex;
+        align-items: flex-end;
+        overflow: hidden;
+      }
+      .analysis-vchart-fill {
+        width: 100%;
+        border-radius: 6px;
+        height: 0;
+        animation: vbarAnalysis 0.8s ease-out forwards;
+      }
+      .analysis-vchart-label {
+        font-size: 0.75rem;
+        font-weight: 700;
+        margin-top: 0.4rem;
+      }
+      .analysis-vchart-pct {
+        font-size: 0.7rem;
+        color: var(--color-muted);
+        font-weight: 600;
+      }
+      @keyframes vbarAnalysis {
+        from { height: 0; }
+        to { height: var(--target-height); }
+      }
+
+      /* Horizontal category bars */
       .analysis-bar-row {
         display: flex;
         align-items: center;
         gap: 0.6rem;
-        margin-bottom: 0.6rem;
-      }
-      .analysis-bar-row--small {
         margin-bottom: 0.4rem;
       }
       .analysis-bar-row--small .analysis-bar-label {
@@ -216,16 +264,15 @@ export function analyzeResults(
       .analysis-bar-label {
         min-width: 50px;
         font-weight: 700;
-        font-size: 0.9rem;
+        font-size: 0.88rem;
         flex-shrink: 0;
       }
       .analysis-bar-track {
         flex: 1;
         background: #f1f5f9;
         border-radius: 6px;
-        height: 28px;
+        height: 26px;
         overflow: hidden;
-        position: relative;
       }
       .analysis-bar-fill {
         height: 100%;
@@ -234,27 +281,24 @@ export function analyzeResults(
         align-items: center;
         justify-content: center;
         width: 0;
-        animation: barGrow 0.8s ease-out forwards;
-        animation-delay: 0.2s;
-        position: relative;
-        overflow: hidden;
+        animation: hbarAnalysis 0.8s ease-out forwards;
+        animation-delay: 0.3s;
       }
       .analysis-bar-value {
         color: #fff;
-        font-size: 0.8rem;
+        font-size: 0.78rem;
         font-weight: 700;
-        white-space: nowrap;
         text-shadow: 0 1px 2px rgba(0,0,0,0.2);
       }
       .analysis-bar-pct {
         min-width: 36px;
         text-align: right;
         font-weight: 700;
-        font-size: 0.85rem;
+        font-size: 0.82rem;
         color: var(--color-muted);
         flex-shrink: 0;
       }
-      @keyframes barGrow {
+      @keyframes hbarAnalysis {
         from { width: 0; }
         to { width: var(--target-width); }
       }

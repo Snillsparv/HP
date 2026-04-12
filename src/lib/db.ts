@@ -13,6 +13,7 @@ await pool.query(`
     email TEXT UNIQUE NOT NULL,
     password_hash TEXT,
     google_id TEXT UNIQUE,
+    avatar_color TEXT DEFAULT '#2563eb',
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
 
@@ -49,6 +50,11 @@ await pool.query(`
     time_seconds INTEGER,
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
+`);
+
+// Add avatar_color column if it doesn't exist (migration for existing databases)
+await pool.query(`
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color TEXT DEFAULT '#2563eb';
 `);
 
 export default pool;

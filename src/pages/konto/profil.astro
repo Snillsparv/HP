@@ -7,6 +7,8 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 if (!user) {
   return Astro.redirect('/konto/login');
 }
+
+const avatarColor = user.avatar_color || '#2563eb';
 ---
 
 <Base title="Min profil – HPAkuten">
@@ -15,7 +17,7 @@ if (!user) {
       <h1>Min profil</h1>
 
       <div class="profile-card">
-        <div class="profile-avatar">{user.name.charAt(0).toUpperCase()}</div>
+        <div class="profile-avatar" id="avatar" style={`background: ${avatarColor};`}>{user.name.charAt(0).toUpperCase()}</div>
         <div>
           <p><strong>{user.name}</strong></p>
           <p style="color: var(--color-muted); font-size: 0.9rem;">{user.email}</p>
@@ -23,11 +25,51 @@ if (!user) {
         </div>
       </div>
 
+      <div class="color-picker-section">
+        <p style="font-weight: 600; margin-bottom: 0.5rem;">Välj färg på din profilbubbla</p>
+        <div class="color-picker" id="color-picker"></div>
+      </div>
+
       <form method="POST" action="/api/auth/logout" style="margin-top: 2rem;">
         <button type="submit" class="btn btn-outline" style="width: 100%;">Logga ut</button>
       </form>
     </div>
   </div>
+
+  <script define:vars={{ currentColor: avatarColor }}>
+    window.__currentColor = currentColor;
+  </script>
+
+  <script>
+    const colors = [
+      '#2563eb', '#3b82f6', '#06b6d4', '#14b8a6', '#10b981',
+      '#84cc16', '#eab308', '#f97316', '#ef4444', '#ec4899',
+      '#a855f7', '#6366f1', '#64748b', '#1e293b',
+    ];
+
+    const picker = document.getElementById('color-picker')!;
+    const avatar = document.getElementById('avatar')!;
+    let selected = (window as any).__currentColor;
+
+    colors.forEach(color => {
+      const dot = document.createElement('button');
+      dot.className = 'color-dot' + (color === selected ? ' color-dot--active' : '');
+      dot.style.background = color;
+      dot.type = 'button';
+      dot.addEventListener('click', async () => {
+        selected = color;
+        avatar.style.background = color;
+        picker.querySelectorAll('.color-dot').forEach(d => d.classList.remove('color-dot--active'));
+        dot.classList.add('color-dot--active');
+        await fetch('/api/auth/avatar-color', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ color }),
+        });
+      });
+      picker.appendChild(dot);
+    });
+  </script>
 </Base>
 
 <style>
@@ -50,7 +92,6 @@ if (!user) {
     width: 56px;
     height: 56px;
     border-radius: 50%;
-    background: var(--color-primary);
     color: #fff;
     display: flex;
     align-items: center;
@@ -58,5 +99,35 @@ if (!user) {
     font-size: 1.5rem;
     font-weight: 700;
     flex-shrink: 0;
+    transition: background 0.2s;
+  }
+
+  .color-picker-section {
+    margin-top: 1.5rem;
+  }
+
+  .color-picker {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .color-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    border: 3px solid transparent;
+    cursor: pointer;
+    transition: transform 0.15s, border-color 0.15s;
+    padding: 0;
+  }
+
+  .color-dot:hover {
+    transform: scale(1.15);
+  }
+
+  .color-dot--active {
+    border-color: var(--color-text);
+    transform: scale(1.1);
   }
 </style>

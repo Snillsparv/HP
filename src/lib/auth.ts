@@ -7,6 +7,7 @@ export interface User {
   name: string;
   email: string;
   google_id?: string;
+  avatar_color?: string;
   created_at: string;
 }
 
@@ -50,7 +51,7 @@ export async function createSession(userId: number): Promise<string> {
 
 export async function getUserFromSession(token: string): Promise<User | undefined> {
   const { rows } = await pool.query(`
-    SELECT u.id, u.name, u.email, u.google_id, u.created_at
+    SELECT u.id, u.name, u.email, u.google_id, u.avatar_color, u.created_at
     FROM sessions s JOIN users u ON s.user_id = u.id
     WHERE s.token = $1 AND s.expires_at > NOW()
   `, [token]);

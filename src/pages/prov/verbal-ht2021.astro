@@ -18,6 +18,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
   <script>
     import { verbalSubTests } from '../../lib/questions-verbal-ht2021.js';
     import type { VSubTest } from '../../lib/questions-verbal-ht2021.js';
+    import { getNormering } from '../../lib/normering.js';
 
     const subTests = verbalSubTests;
     const root = document.getElementById('prov-root')!;
@@ -248,10 +249,14 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
           }).join('')}</div>`;
       }
 
+      const normered = getNormering(totalScore, allQuestions.length, 'verbal');
+
       root.innerHTML = `
         <div class="pq-result-head">
           <h2>Resultat</h2>
-          <div class="pq-score">${totalScore}/${allQuestions.length}</div>
+          <div class="pq-normered">${normered.toFixed(1)}</div>
+          <p style="color:var(--color-muted); font-size:0.9rem;">normerad poäng (uppskattad)</p>
+          <div class="pq-score" style="font-size:1.5rem; margin-top:0.5rem;">${totalScore}/${allQuestions.length}</div>
           <p style="color:var(--color-muted)">rätt svar · tid: ${fmt(elapsed)}</p>
         </div>
         ${resultsHTML}
@@ -325,6 +330,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
   .pq-ov-val { color: var(--color-muted); font-size: 0.7rem; }
   .pq-result-head { text-align: center; margin-bottom: 2rem; }
   .pq-result-head h2 { margin-top: 0; }
+  .pq-normered { font-size: 4rem; font-weight: 800; color: var(--color-primary); line-height: 1; }
   .pq-score { font-size: 3rem; font-weight: 800; color: var(--color-primary); line-height: 1; }
   .pq-results { display: flex; flex-direction: column; gap: 0.4rem; }
   .pq-res { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1rem; border-radius: var(--radius); font-size: 0.95rem; }

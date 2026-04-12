@@ -151,6 +151,7 @@ const serverStep = user?.train_step || 1;
           <div style="text-align: center; margin-top: 1.5rem;">
             <img src="/jonas_cheers.gif" alt="Jonas firar!" style="max-width: 300px; border-radius: var(--radius);" />
           </div>
+          <button class="btn btn-outline train-reset-btn" style="display:block; width:100%; margin-top:1.5rem;" id="btn-reset">Börja om</button>
         </div>
 
       </div>
@@ -247,6 +248,12 @@ const serverStep = user?.train_step || 1;
           window.scrollTo({ top: y, behavior: 'smooth' });
         }
       });
+    });
+
+    document.getElementById('btn-reset')?.addEventListener('click', () => {
+      saveStep(1);
+      activateStep(1);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     });
   </script>
 </Base>

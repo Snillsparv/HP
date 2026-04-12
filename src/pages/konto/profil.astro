@@ -1,6 +1,8 @@
 ---
 import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
+import pool from '../../lib/db.js';
+import { getNormering } from '../../lib/normering.js';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 
@@ -14,11 +16,32 @@ const colors = [
   '#84cc16', '#eab308', '#f97316', '#ef4444', '#ec4899',
   '#a855f7', '#6366f1', '#64748b', '#1e293b',
 ];
+
+// Fetch best results per test
+const { rows: results } = await pool.query(`
+  SELECT DISTINCT ON (test_id) test_id, score, total, time_seconds, created_at
+  FROM test_results
+  WHERE user_id = $1
+  ORDER BY test_id, score DESC, created_at DESC
+`, [user.id]);
+
+const testLabels: Record<string, { name: string; type: 'kvant' | 'verbal' }> = {
+  'kvant-ht2021': { name: 'Kvantitativt 1', type: 'kvant' },
+  'verbal-ht2021': { name: 'Verbalt 1', type: 'verbal' },
+  'kvant2-ht2021': { name: 'Kvantitativt 2', type: 'kvant' },
+  'verbal2-ht2021': { name: 'Verbalt 2', type: 'verbal' },
+};
+
+const testOrder = ['kvant-ht2021', 'verbal-ht2021', 'kvant2-ht2021', 'verbal2-ht2021'];
+
+const resultMap = new Map(results.map((r: any) => [r.test_id, r]));
+
+function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
 ---
 
 <Base title="Min profil – HPAkuten">
   <div class="page-content">
-    <div class="container" style="max-width: 480px;">
+    <div class="container" style="max-width: 560px;">
       <h1>Min profil</h1>
 
       <div class="profile-card">
@@ -41,7 +64,31 @@ const colors = [
         ))}
       </div>
 
-      <form method="POST" action="/api/auth/logout" style="margin-top: 2rem;">
+      <h2 style="margin-top: 2.5rem;">Mina resultat</h2>
+
+      {results.length === 0 ? (
+        <p style="color: var(--color-muted);">Du har inte gjort några prov ännu. <a href="/trana">Börja träna!</a></p>
+      ) : (
+        <div class="results-grid">
+          {testOrder.map(testId => {
+            const r = resultMap.get(testId) as any;
+            const info = testLabels[testId];
+            if (!r || !info) return null;
+            const normered = getNormering(r.score, r.total, info.type);
+            const isKvant = info.type === 'kvant';
+            return (
+              <div class={`result-card ${isKvant ? 'result-card--kvant' : 'result-card--verbal'}`}>
+                <div class="result-card-label">{info.name}</div>
+                <div class="result-card-norm">{normered.toFixed(1)}</div>
+                <div class="result-card-raw">{r.score}/{r.total} rätt</div>
+                {r.time_seconds && <div class="result-card-time">Tid: {fmt(r.time_seconds)}</div>}
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <form method="POST" action="/api/auth/logout" style="margin-top: 2.5rem;">
         <button type="submit" class="btn btn-outline" style="width: 100%;">Logga ut</button>
       </form>
     </div>
@@ -140,5 +187,62 @@ const colors = [
   .color-dot--active {
     border-color: var(--color-text);
     transform: scale(1.1);
+  }
+
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 1rem;
+  }
+
+  .result-card {
+    text-align: center;
+    padding: 1.2rem;
+    border-radius: var(--radius);
+    border: 2px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .result-card--kvant {
+    border-color: #ea580c;
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+  }
+
+  .result-card--verbal {
+    border-color: #2563eb;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+  }
+
+  .result-card-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--color-muted);
+    margin-bottom: 0.3rem;
+  }
+
+  .result-card-norm {
+    font-size: 2.5rem;
+    font-weight: 800;
+    color: var(--color-text);
+    line-height: 1.1;
+  }
+
+  .result-card-raw {
+    font-size: 0.9rem;
+    color: var(--color-muted);
+    margin-top: 0.2rem;
+  }
+
+  .result-card-time {
+    font-size: 0.8rem;
+    color: var(--color-muted);
+  }
+
+  @media (max-width: 400px) {
+    .results-grid {
+      grid-template-columns: 1fr;
+    }
   }
 </style>

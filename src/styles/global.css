@@ -570,6 +570,7 @@ li { margin-bottom: 0.3em; }
 /* === Content page === */
 .page-content {
   padding: 2.5rem 0 3rem;
+  min-height: 80vh;
 }
 
 .page-content h1 {

@@ -5,6 +5,7 @@ export interface VQuestion {
   text: string;
   options: string[];
   correct: number;
+  category?: string;
   word?: string;
   images?: string[];
   textTitle?: string;

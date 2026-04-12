@@ -30,6 +30,7 @@ if (user) {
     import { verbalSubTests2 } from '../../lib/questions-verbal2-ht2021.js';
     import type { VSubTest } from '../../lib/questions-verbal2-ht2021.js';
     import { getNormering } from '../../lib/normering.js';
+    import { analyzeResults } from '../../lib/analysis.js';
 
     const subTests = verbalSubTests2;
     const root = document.getElementById('prov-root')!;
@@ -260,6 +261,7 @@ if (user) {
       }
 
       const normered = getNormering(totalScore, allQuestions.length, 'verbal');
+      const { summaryHTML: analysisHTML } = analyzeResults(allQuestions, answers);
       const ps = (window as any).__prevScore;
       const pt = (window as any).__prevTotal;
       let comparisonHTML = '';
@@ -284,6 +286,7 @@ if (user) {
           <p style="color:var(--color-muted)">rätt svar · tid: ${fmt(elapsed)}</p>
         </div>
         ${comparisonHTML}
+        ${analysisHTML}
         ${resultsHTML}
         <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
         <div class="pq-nav" style="margin-top:2rem;">

@@ -3,6 +3,7 @@ export interface VQuestion {
   text: string;
   options: string[];
   correct: number;
+  category?: string;
   word?: string; // ORD
   images?: string[]; // LÄS
   textTitle?: string; // LÄS

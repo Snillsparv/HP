@@ -19,6 +19,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     import { subTests } from '../../lib/questions-ht2021.js';
     import type { Question, SubTest } from '../../lib/questions-ht2021.js';
     import { getNormering } from '../../lib/normering.js';
+    import { analyzeResults } from '../../lib/analysis.js';
 
     const root = document.getElementById('prov-root')!;
     const allQuestions = subTests.flatMap(st => st.questions.map(q => ({ ...q, subTest: st })));
@@ -265,6 +266,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       }
 
       const normered = getNormering(totalScore, allQuestions.length, 'kvant');
+      const { summaryHTML: analysisHTML } = analyzeResults(allQuestions, answers);
 
       root.innerHTML = `
         <div class="pq-result-head">
@@ -274,6 +276,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
           <div class="pq-score" style="font-size:1.5rem; margin-top:0.5rem;">${totalScore}/${allQuestions.length}</div>
           <p style="color:var(--color-muted)">rätt svar · tid: ${fmt(elapsed)}</p>
         </div>
+        ${analysisHTML}
         ${resultsHTML}
         <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
         <div class="pq-nav" style="margin-top:2rem;">

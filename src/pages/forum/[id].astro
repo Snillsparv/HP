@@ -44,7 +44,7 @@ function timeAgo(dateStr: string) {
 
       <article class="thread-post">
         <div class="post-header">
-          <div class="post-avatar">{thread.user_name.charAt(0).toUpperCase()}</div>
+          <div class="post-avatar" style={`background: ${thread.avatar_color || '#2563eb'};`}>{thread.user_name.charAt(0).toUpperCase()}</div>
           <div>
             <strong>{thread.user_name}</strong>
             <span class="post-time">{timeAgo(thread.created_at)}</span>
@@ -62,7 +62,7 @@ function timeAgo(dateStr: string) {
           {replies.map(r => (
             <div class="reply-item">
               <div class="post-header">
-                <div class="post-avatar post-avatar--small">{r.user_name.charAt(0).toUpperCase()}</div>
+                <div class="post-avatar post-avatar--small" style={`background: ${r.avatar_color || '#2563eb'};`}>{r.user_name.charAt(0).toUpperCase()}</div>
                 <div>
                   <strong>{r.user_name}</strong>
                   <span class="post-time">{timeAgo(r.created_at)}</span>
@@ -126,7 +126,6 @@ function timeAgo(dateStr: string) {
     width: 40px;
     height: 40px;
     border-radius: 50%;
-    background: var(--color-primary);
     color: #fff;
     display: flex;
     align-items: center;

@@ -4,6 +4,7 @@ export interface Thread {
   id: number;
   user_id: number;
   user_name: string;
+  avatar_color: string;
   category: string;
   title: string;
   body: string;
@@ -16,13 +17,14 @@ export interface Reply {
   thread_id: number;
   user_id: number;
   user_name: string;
+  avatar_color: string;
   body: string;
   created_at: string;
 }
 
 export async function getThreads(category?: string): Promise<Thread[]> {
   const base = `
-    SELECT t.*, u.name as user_name,
+    SELECT t.*, u.name as user_name, u.avatar_color,
       (SELECT COUNT(*) FROM replies r WHERE r.thread_id = t.id)::int as reply_count
     FROM threads t JOIN users u ON t.user_id = u.id
   `;
@@ -36,7 +38,7 @@ export async function getThreads(category?: string): Promise<Thread[]> {
 
 export async function getThread(id: number): Promise<Thread | undefined> {
   const { rows } = await pool.query(`
-    SELECT t.*, u.name as user_name,
+    SELECT t.*, u.name as user_name, u.avatar_color,
       (SELECT COUNT(*) FROM replies r WHERE r.thread_id = t.id)::int as reply_count
     FROM threads t JOIN users u ON t.user_id = u.id
     WHERE t.id = $1
@@ -54,7 +56,7 @@ export async function createThread(userId: number, category: string, title: stri
 
 export async function getReplies(threadId: number): Promise<Reply[]> {
   const { rows } = await pool.query(`
-    SELECT r.*, u.name as user_name
+    SELECT r.*, u.name as user_name, u.avatar_color
     FROM replies r JOIN users u ON r.user_id = u.id
     WHERE r.thread_id = $1
     ORDER BY r.created_at ASC

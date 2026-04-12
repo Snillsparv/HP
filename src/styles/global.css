@@ -114,14 +114,12 @@ li { margin-bottom: 0.3em; }
   font-weight: 800;
   color: var(--color-text);
   text-decoration: none;
-  padding: 0.3rem 0.6rem;
-  border: 2px solid transparent;
-  border-radius: var(--radius);
-  transition: border-color 0.3s;
+  transition: transform 0.15s;
+  display: inline-block;
 }
 
 .site-logo:hover {
-  border-color: var(--color-primary);
+  transform: scale(1.08);
   text-decoration: none;
 }
 

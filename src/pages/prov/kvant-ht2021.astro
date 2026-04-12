@@ -69,7 +69,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       root.innerHTML = `
         <div style="text-align:center; padding: 3rem 0;">
           <h1 style="font-size:1.8rem; margin-bottom: 1.5rem;">Kvantitativt prov 1</h1>
-          <img src="/kvant.webp" alt="Kvantitativt prov" width="280" height="280" style="width:280px; height:280px; margin-bottom:1.5rem; border-radius:var(--radius);" data-fadein />
+          <img src="/kvant.webp" alt="Kvantitativt prov" width="280" height="280" loading="lazy" style="width:280px; height:280px; margin-bottom:1.5rem; border-radius:var(--radius);" data-fadein />
           <div style="display:flex; justify-content:center; gap:3rem; margin-bottom: 2.5rem;">
             <div>
               <div style="font-size:2.8rem; font-weight:800; color:var(--color-primary);">40</div>
@@ -130,7 +130,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 
       let diagramHTML = '';
       if (st.type === 'dtk' && q.diagram) {
-        diagramHTML = `<div class="dtk-diagram"><img src="${q.diagram}" alt="${q.diagramAlt}" class="dtk-diagram-img ${q.rotate ? 'dtk-rotated' : ''}" data-fadein style="cursor:zoom-in;" /></div>`;
+        diagramHTML = `<div class="dtk-diagram"><img src="${q.diagram}" alt="${q.diagramAlt}" class="dtk-diagram-img ${q.rotate ? 'dtk-rotated' : ''}" loading="lazy" data-fadein style="cursor:zoom-in;" /></div>`;
       }
 
       root.innerHTML = `
@@ -279,7 +279,13 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         ${analysisHTML}
         ${resultsHTML}
         <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
-        <div class="pq-nav" style="margin-top:2rem;">
+        <div class="pq-share" style="text-align:center; margin:1.5rem 0;">
+          <button class="btn btn-outline btn-sm" id="btn-share" style="display:inline-flex; align-items:center; gap:0.4rem;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            Dela ditt resultat
+          </button>
+        </div>
+        <div class="pq-nav" style="margin-top:1rem;">
           <button class="btn btn-outline btn-sm" id="btn-retry">Gör om provet</button>
           <a href="/trana" class="btn btn-primary btn-sm" id="btn-continue">Fortsätt</a>
         </div>
@@ -305,6 +311,18 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       document.getElementById('btn-retry')?.addEventListener('click', () => {
         answers.fill(null); current = 0; submitted = false; timerSeconds = totalTime; timerPaused = false; started = false;
         render();
+      });
+
+      // Share result
+      document.getElementById('btn-share')?.addEventListener('click', async () => {
+        const text = `Jag fick ${normered.toFixed(1)} (${totalScore}/${allQuestions.length}) på kvantitativt prov på HPAkuten! Träna du också gratis: www.hpakuten.se`;
+        if (navigator.share) {
+          try { await navigator.share({ text }); } catch {}
+        } else {
+          await navigator.clipboard.writeText(text);
+          const btn = document.getElementById('btn-share');
+          if (btn) { btn.textContent = 'Kopierat!'; setTimeout(() => { btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Dela ditt resultat'; }, 2000); }
+        }
       });
 
       // Advance train step when continuing

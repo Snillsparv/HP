@@ -66,7 +66,7 @@ import Base from '../../layouts/Base.astro';
         <div class="pq-progress">Uppgift ${current + 1} av ${allQuestions.length}</div>
         <div class="las-text-section">
           <p class="las-text-label">${q.textTitle} — klicka för att läsa</p>
-          ${q.images.map((img: string) => `<img src="${img}" alt="${q.textTitle}" class="las-text-img dtk-diagram-img" data-fadein style="cursor:zoom-in;" />`).join('')}
+          ${q.images.map((img: string) => `<img src="${img}" alt="${q.textTitle}" class="las-text-img dtk-diagram-img" loading="lazy" data-fadein style="cursor:zoom-in;" />`).join('')}
         </div>
         <div class="pq-card">
           <div class="pq-question">

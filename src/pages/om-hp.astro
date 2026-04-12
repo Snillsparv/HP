@@ -2,14 +2,14 @@
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Om Högskoleprovet – HPAkuten" description="Vad är högskoleprovet? Hur fungerar det? Viktiga datum, provets upplägg och poängberäkning.">
+<Base title="Om Högskoleprovet – HPAkuten" description="Allt om högskoleprovet (HP): provdatum, upplägg, delprov, poängberäkning och anmälan. Komplett guide till hur HP fungerar.">
   <div class="page-content">
     <div class="container">
       <h1>Om Högskoleprovet</h1>
       <p class="page-intro">Allt du behöver veta om högskoleprovet: upplägg, datum och poäng.</p>
 
       <div style="text-align: center; margin: 2rem 0;">
-        <img src="/bild_hp.webp" alt="Högskoleprovet" width="1200" height="670" data-fadein style="width: 100%; height: auto; border-radius: var(--radius); box-shadow: var(--shadow);" />
+        <img src="/bild_hp.webp" alt="Högskoleprovet" width="1200" height="670" loading="lazy" data-fadein style="width: 100%; height: auto; border-radius: var(--radius); box-shadow: var(--shadow);" />
       </div>
 
       <h2>Vad är högskoleprovet?</h2>
@@ -138,4 +138,50 @@ import Base from '../layouts/Base.astro';
       </div>
     </div>
   </div>
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    "mainEntity": [
+      {
+        "@type": "Question",
+        "name": "Vad är högskoleprovet?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Högskoleprovet (HP) är ett frivilligt prov som ger dig en extra chans att komma in på universitet och högskola, utöver dina gymnasiebetyg. Provet ges två gånger per år, på våren (april) och hösten (oktober), och består av fem provpass med totalt 160 skarpa frågor."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Hur många gånger kan man skriva högskoleprovet?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Du kan skriva högskoleprovet hur många gånger du vill. Bara ditt bästa resultat räknas. I snitt höjer sig 70–80 % av alla som skriver provet en andra gång."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Hur länge gäller HP-resultatet?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Resultatet från högskoleprovet är giltigt i 8 år. Bara ditt bästa resultat räknas vid antagning."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "Vad kostar högskoleprovet?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Avgiften för att skriva högskoleprovet är 550 kr. Anmälan görs på hogskoleprov.nu."
+        }
+      },
+      {
+        "@type": "Question",
+        "name": "När är nästa högskoleprov?",
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": "Högskoleprovet ges två gånger per år: på våren (april) och hösten (oktober). Nästa provtillfälle är 18 april 2026. Anmälan görs på hogskoleprov.nu."
+        }
+      }
+    ]
+  })} />
 </Base>

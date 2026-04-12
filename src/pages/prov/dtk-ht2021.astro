@@ -64,7 +64,7 @@ import Base from '../../layouts/Base.astro';
             num: 33,
             text: `Vilken av cirklarna visar hur hushållssektorns avfallstyp <i>Övrigt från återvinningscentral</i> fördelades på behandlingstyp?
               <div style="text-align:center;margin:1rem 0;">
-                <img src="/prov-dtk1-33.png" alt="Fyra cirkeldiagram A-D" data-fadein style="max-width:450px;aspect-ratio:730/116;" />
+                <img src="/prov-dtk1-33.png" alt="Fyra cirkeldiagram A-D" loading="lazy" data-fadein style="max-width:450px;aspect-ratio:730/116;" />
               </div>`,
             options: ['A', 'B', 'C', 'D'],
             correct: 1
@@ -152,7 +152,7 @@ import Base from '../../layouts/Base.astro';
         <div class="pq-progress">Uppgift ${current + 1} av ${allQuestions.length}</div>
         <div class="dtk-diagram">
           <p class="dtk-diagram-label">Studera diagrammet/tabellen och besvara frågan.</p>
-          <img src="${q.diagram}" alt="${q.diagramAlt}" class="dtk-diagram-img ${q.rotate ? 'dtk-rotated' : ''}" data-fadein />
+          <img src="${q.diagram}" alt="${q.diagramAlt}" class="dtk-diagram-img ${q.rotate ? 'dtk-rotated' : ''}" loading="lazy" data-fadein />
         </div>
         <div class="pq-card">
           <div class="pq-question">

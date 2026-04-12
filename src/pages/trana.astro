@@ -5,7 +5,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const serverStep = user?.train_step || 1;
 ---
 
-<Base title="Träna på Högskoleprovet – HPAkuten" description="Öva på riktiga provuppgifter från HT 2021. Steg-för-steg-plan med videogenomgångar.">
+<Base title="Träna på Högskoleprovet – HPAkuten" description="Träna gratis på riktiga HP-uppgifter med timer och rättning. Steg-för-steg-plan med videogenomgångar för högskoleprovet HT 2021.">
   <div class="page-content">
     <div class="container" style="max-width: 800px;">
       <h1>Träna på Högskoleprovet</h1>
@@ -19,7 +19,9 @@ const serverStep = user?.train_step || 1;
             <h2>Se överblicken</h2>
           </div>
           <p>Börja med att titta på den här videon så att du förstår hur provet är upplagt.</p>
-          <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
+          <div class="video-placeholder" data-vimeo="1181680968">
+            <div class="video-placeholder-play">&#9654;</div>
+          </div>
           <button class="btn btn-primary train-done-btn" data-next="2">Jag har kollat!</button>
         </div>
 
@@ -149,7 +151,7 @@ const serverStep = user?.train_step || 1;
             <strong style="font-size: 1.2rem;">Du är nu i ett mycket bättre läge än du var i tidigare! Lycka till! :D</strong>
           </div>
           <div style="text-align: center; margin-top: 1.5rem;">
-            <img src="/jonas_cheers.gif" alt="Jonas firar!" style="max-width: 600px; width: 100%; border-radius: var(--radius);" />
+            <img src="/jonas_cheers.gif" alt="Jonas firar!" loading="lazy" style="max-width: 600px; width: 100%; border-radius: var(--radius);" />
           </div>
           <button class="btn btn-outline train-reset-btn" style="display:block; width:100%; margin-top:1.5rem;" id="btn-reset">Börja om</button>
         </div>

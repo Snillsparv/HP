@@ -1,19 +1,12 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://www.hpakuten.se/</loc><priority>1.0</priority></url>
-  <url><loc>https://www.hpakuten.se/snabbguiden</loc><priority>0.9</priority></url>
-  <url><loc>https://www.hpakuten.se/minnestekniker</loc><priority>0.9</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov</loc><priority>0.8</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov/ord</loc><priority>0.7</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov/las</loc><priority>0.7</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov/mek</loc><priority>0.7</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov/elf</loc><priority>0.7</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov/xyz</loc><priority>0.7</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov/kva</loc><priority>0.7</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov/nog</loc><priority>0.7</priority></url>
-  <url><loc>https://www.hpakuten.se/delprov/dtk</loc><priority>0.7</priority></url>
-  <url><loc>https://www.hpakuten.se/trana</loc><priority>0.8</priority></url>
-  <url><loc>https://www.hpakuten.se/ovning</loc><priority>0.8</priority></url>
-  <url><loc>https://www.hpakuten.se/forum</loc><priority>0.6</priority></url>
-  <url><loc>https://www.hpakuten.se/om</loc><priority>0.5</priority></url>
+  <url><loc>https://www.hpakuten.se/trana</loc><priority>0.9</priority></url>
+  <url><loc>https://www.hpakuten.se/om-hp</loc><priority>0.9</priority></url>
+  <url><loc>https://www.hpakuten.se/om</loc><priority>0.7</priority></url>
+  <url><loc>https://www.hpakuten.se/forum</loc><priority>0.7</priority></url>
+  <url><loc>https://www.hpakuten.se/prov/kvant-ht2021</loc><priority>0.8</priority></url>
+  <url><loc>https://www.hpakuten.se/prov/verbal-ht2021</loc><priority>0.8</priority></url>
+  <url><loc>https://www.hpakuten.se/prov/kvant2-ht2021</loc><priority>0.8</priority></url>
+  <url><loc>https://www.hpakuten.se/prov/verbal2-ht2021</loc><priority>0.8</priority></url>
 </urlset>

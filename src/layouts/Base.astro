@@ -37,6 +37,16 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
   <meta name="twitter:title" content={title} />
   <meta name="twitter:description" content={description} />
   <meta name="twitter:image" content={`https://www.hpakuten.se${ogImage}`} />
+
+  <!-- Organization structured data -->
+  <script type="application/ld+json" set:html={JSON.stringify({
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "name": "HPAkuten",
+    "url": "https://www.hpakuten.se",
+    "description": "Gratis förberedelser inför högskoleprovet med strategier, övningsprov och videogenomgångar från Jonas von Essen, tvåfaldig världsmästare i minne med 2.0 på HP tolv gånger i rad.",
+    "logo": "https://www.hpakuten.se/favicon.svg"
+  })} />
 </head>
 <body>
   <header class="site-header">
@@ -88,6 +98,14 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     });
 
 
+
+    // Lazy-load Vimeo: click placeholder to load iframe
+    document.querySelectorAll('.video-placeholder').forEach(el => {
+      el.addEventListener('click', () => {
+        const id = el.getAttribute('data-vimeo');
+        el.outerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${id}?dnt=1&autoplay=1" title="Video" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+      });
+    });
 
     // Global: fade in images with data-fadein attribute
     function initFadeImages() {

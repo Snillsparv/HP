@@ -8,98 +8,102 @@ import Base from '../layouts/Base.astro';
       <h1>Träna på Högskoleprovet</h1>
       <p class="page-intro">Följ planen steg för steg och du kommer att vara betydligt mer redo på provdagen.</p>
 
-      <div class="train-steps">
+      <div class="train-steps" id="train-steps">
 
-        <div class="train-step">
+        <div class="train-step" id="step-1" data-step="1">
           <div class="train-step-header">
-            <span class="train-step-num" style="background: #93c5fd;">1</span>
+            <span class="train-step-num">1</span>
             <h2>Se överblicken</h2>
           </div>
           <p>Börja med att titta på den här videon så att du förstår hur provet är upplagt.</p>
-          <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
+          <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
+          <button class="btn btn-primary train-done-btn" data-next="2">Klar, gå vidare</button>
         </div>
 
-        <div class="train-step">
+        <div class="train-step train-step--locked" id="step-2" data-step="2">
           <div class="train-step-header">
-            <span class="train-step-num" style="background: #60a5fa;">2</span>
+            <span class="train-step-num">2</span>
             <h2>Gör kvantitativt prov 1</h2>
           </div>
           <p>Gör det första kvantitativa provet på tid. Rätta sedan och kolla på mina videor med lösningsförslag för de uppgifter du var osäker på.</p>
           <a href="/prov/kvant-ht2021" class="prov-hero-link">
-            <div class="prov-hero-card">
+            <div class="prov-hero-card prov-hero-card--kvant">
               <h3>Kvantitativt prov 1</h3>
               <div class="prov-hero-stats">
                 <span><strong>40</strong> uppgifter</span>
                 <span><strong>55</strong> minuter</span>
                 <span>XYZ + KVA + NOG + DTK</span>
               </div>
-              <span class="btn btn-primary" style="margin-top:1rem;">Starta provet</span>
+              <span class="btn btn-primary prov-btn--kvant" style="margin-top:1rem;">Starta provet</span>
             </div>
           </a>
+          <button class="btn btn-primary train-done-btn" data-next="3">Klar, gå vidare</button>
         </div>
 
-        <div class="train-step">
+        <div class="train-step train-step--locked" id="step-3" data-step="3">
           <div class="train-step-header">
-            <span class="train-step-num" style="background: #3b82f6;">3</span>
+            <span class="train-step-num">3</span>
             <h2>Gör verbalt prov 1</h2>
           </div>
           <p>Gör den verbala delen på tid och titta sedan på lösningsförslagen.</p>
           <a href="/prov/verbal-ht2021" class="prov-hero-link">
-            <div class="prov-hero-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #d97706;">
+            <div class="prov-hero-card prov-hero-card--verbal">
               <h3>Verbalt prov 1</h3>
               <div class="prov-hero-stats">
                 <span><strong>30</strong> uppgifter</span>
                 <span><strong>33</strong> minuter</span>
                 <span>ORD + LÄS + MEK</span>
               </div>
-              <span class="btn btn-primary" style="margin-top:1rem; background:#d97706;">Starta provet</span>
+              <span class="btn btn-primary prov-btn--verbal" style="margin-top:1rem;">Starta provet</span>
             </div>
           </a>
+          <button class="btn btn-primary train-done-btn" data-next="4">Klar, gå vidare</button>
         </div>
 
-        <div class="train-step">
+        <div class="train-step train-step--locked" id="step-4" data-step="4">
           <div class="train-step-header">
-            <span class="train-step-num" style="background: #2563eb;">4</span>
+            <span class="train-step-num">4</span>
             <h2>Titta på mattegenomgången</h2>
           </div>
           <p>Nu vet du var dina svaga punkter finns. Titta igenom min video som går igenom all matte du behöver kunna på högskoleprovet.</p>
           <a href="/delprov/xyz" class="prov-hero-link">
-            <div class="prov-hero-card" style="background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-color: #16a34a;">
+            <div class="prov-hero-card prov-hero-card--matte">
               <h3>Mattegenomgången</h3>
               <p style="margin-bottom:0;">All matte du behöver kunna, i en video.</p>
-              <span class="btn btn-primary" style="margin-top:1rem; background:#16a34a;">Till videon</span>
+              <span class="btn btn-primary prov-btn--matte" style="margin-top:1rem;">Till videon</span>
             </div>
           </a>
+          <button class="btn btn-primary train-done-btn" data-next="5">Klar, gå vidare</button>
         </div>
 
-        <div class="train-step">
+        <div class="train-step train-step--locked" id="step-5" data-step="5">
           <div class="train-step-header">
-            <span class="train-step-num" style="background: #1d4ed8;">5</span>
+            <span class="train-step-num">5</span>
             <h2>Gör prov 2 och jämför</h2>
           </div>
           <p>Gör det andra kvantitativa och det andra verbala provet och jämför med dina första resultat!</p>
 
           <a href="/prov/kvant2-ht2021" class="prov-hero-link">
-            <div class="prov-hero-card">
+            <div class="prov-hero-card prov-hero-card--kvant">
               <h3>Kvantitativt prov 2</h3>
               <div class="prov-hero-stats">
                 <span><strong>40</strong> uppgifter</span>
                 <span><strong>55</strong> minuter</span>
                 <span>XYZ + KVA + NOG + DTK</span>
               </div>
-              <span class="btn btn-primary" style="margin-top:1rem;">Starta provet</span>
+              <span class="btn btn-primary prov-btn--kvant" style="margin-top:1rem;">Starta provet</span>
             </div>
           </a>
 
           <a href="/prov/verbal2-ht2021" class="prov-hero-link">
-            <div class="prov-hero-card" style="background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%); border-color: #d97706;">
+            <div class="prov-hero-card prov-hero-card--verbal">
               <h3>Verbalt prov 2</h3>
               <div class="prov-hero-stats">
                 <span><strong>30</strong> uppgifter</span>
                 <span><strong>33</strong> minuter</span>
                 <span>ORD + LÄS + MEK</span>
               </div>
-              <span class="btn btn-primary" style="margin-top:1rem; background:#d97706;">Starta provet</span>
+              <span class="btn btn-primary prov-btn--verbal" style="margin-top:1rem;">Starta provet</span>
             </div>
           </a>
 
@@ -111,6 +115,41 @@ import Base from '../layouts/Base.astro';
       </div>
     </div>
   </div>
+
+  <script>
+    const STORAGE_KEY = 'hp-train-step';
+    const saved = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10);
+
+    function activateStep(n: number) {
+      document.querySelectorAll('.train-step').forEach(el => {
+        const step = parseInt(el.getAttribute('data-step') || '0', 10);
+        if (step <= n) {
+          el.classList.remove('train-step--locked');
+        } else {
+          el.classList.add('train-step--locked');
+        }
+        if (step === n) {
+          el.classList.add('train-step--active');
+        } else {
+          el.classList.remove('train-step--active');
+        }
+      });
+    }
+
+    activateStep(saved);
+
+    document.querySelectorAll('.train-done-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const next = parseInt(btn.getAttribute('data-next') || '1', 10);
+        localStorage.setItem(STORAGE_KEY, String(next));
+        activateStep(next);
+        const target = document.getElementById(`step-${next}`);
+        if (target) {
+          target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        }
+      });
+    });
+  </script>
 </Base>
 
 <style>
@@ -120,17 +159,35 @@ import Base from '../layouts/Base.astro';
   .prov-hero-card {
     text-align: center;
     padding: 1.5rem 2rem;
-    background: linear-gradient(135deg, #eff3ff 0%, #e0e7ff 100%);
-    border: 2px solid var(--color-primary);
+    border: 2px solid var(--color-border);
     border-radius: var(--radius);
     margin: 1rem 0;
     transition: box-shadow 0.15s, transform 0.15s;
   }
 
   .prov-hero-link:hover .prov-hero-card {
-    box-shadow: 0 8px 24px rgba(37,99,235,0.15);
+    box-shadow: 0 8px 24px rgba(0,0,0,0.1);
     transform: translateY(-2px);
   }
+
+  .prov-hero-card--kvant {
+    background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%);
+    border-color: #ea580c;
+  }
+
+  .prov-hero-card--verbal {
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    border-color: #2563eb;
+  }
+
+  .prov-hero-card--matte {
+    background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%);
+    border-color: #16a34a;
+  }
+
+  .prov-btn--kvant { background: #ea580c; }
+  .prov-btn--verbal { background: #2563eb; }
+  .prov-btn--matte { background: #16a34a; }
 
   .prov-hero-card h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
   .prov-hero-card > p { color: var(--color-muted); }
@@ -146,8 +203,28 @@ import Base from '../layouts/Base.astro';
   .train-steps {
     display: flex;
     flex-direction: column;
-    gap: 3rem;
+    gap: 2rem;
     margin-top: 2rem;
+  }
+
+  .train-step {
+    padding: 2rem;
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    box-shadow: var(--shadow);
+    transition: opacity 0.3s, filter 0.3s;
+  }
+
+  .train-step--active {
+    border-color: var(--color-primary);
+    box-shadow: 0 4px 20px rgba(37,99,235,0.12);
+  }
+
+  .train-step--locked {
+    opacity: 0.35;
+    pointer-events: none;
+    filter: grayscale(0.3);
   }
 
   .train-step-header {
@@ -166,6 +243,7 @@ import Base from '../layouts/Base.astro';
     width: 44px;
     height: 44px;
     border-radius: 50%;
+    background: #2563eb;
     color: #fff;
     display: flex;
     align-items: center;
@@ -178,5 +256,13 @@ import Base from '../layouts/Base.astro';
   .train-step > p {
     margin: 0 0 1rem;
     color: var(--color-muted);
+  }
+
+  .train-done-btn {
+    display: block;
+    width: 100%;
+    margin-top: 1.5rem;
+    font-size: 1rem;
+    padding: 0.8rem;
   }
 </style>

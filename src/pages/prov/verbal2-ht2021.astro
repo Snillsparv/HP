@@ -67,29 +67,21 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     function renderStart() {
       root.innerHTML = `
         <div style="text-align:center; padding: 3rem 0;">
-          <h1 style="font-size:1.6rem;">Verbalt prov 2 — HT 2021</h1>
-          <p style="color:var(--color-muted); margin-bottom: 0.5rem;">Provpass 5 — ORD, LÄS och MEK (utan ELF).</p>
-          <div style="margin: 2rem 0;">
-            <div style="font-size:2.5rem; font-weight:800; color:var(--color-primary);">30</div>
-            <div style="color:var(--color-muted); font-size:0.9rem;">uppgifter</div>
-          </div>
-          <div style="margin-bottom: 2rem;">
-            <div style="font-size:2.5rem; font-weight:800; color:var(--color-primary);">33:00</div>
-            <div style="color:var(--color-muted); font-size:0.9rem;">minuter</div>
-          </div>
-          <p style="color:var(--color-muted); font-size:0.9rem; max-width:400px; margin:0 auto 2rem;">
-            Provet består av tre delprov: ORD (10), LÄS (10) och MEK (10).<br>Tiden startar automatiskt.
-          </p>
-          <div style="margin-bottom:2rem;">
-            <p style="color:var(--color-muted); font-size:0.85rem; margin-bottom:0.5rem;">Vill du se en genomgång av delproven först?</p>
-            <div style="display:flex; justify-content:center; gap:0.8rem; flex-wrap:wrap;">
-              <a href="/delprov/ord" style="font-size:0.85rem;">ORD</a>
-              <a href="/delprov/las" style="font-size:0.85rem;">LÄS</a>
-              <a href="/delprov/mek" style="font-size:0.85rem;">MEK</a>
-              <a href="/delprov/elf" style="font-size:0.85rem;">ELF</a>
+          <h1 style="font-size:1.8rem; margin-bottom: 2rem;">Verbalt prov 2</h1>
+          <div style="display:flex; justify-content:center; gap:3rem; margin-bottom: 2.5rem;">
+            <div>
+              <div style="font-size:2.8rem; font-weight:800; color:var(--color-primary);">30</div>
+              <div style="color:var(--color-muted); font-size:0.85rem;">uppgifter</div>
+            </div>
+            <div>
+              <div style="font-size:2.8rem; font-weight:800; color:var(--color-primary);">33:00</div>
+              <div style="color:var(--color-muted); font-size:0.85rem;">minuter</div>
             </div>
           </div>
-          <button class="btn btn-primary" id="btn-start" style="font-size:1.1rem; padding:0.9rem 3rem;">Starta provet</button>
+          <p style="color:var(--color-muted); font-size:0.9rem; max-width:420px; margin:0 auto 2rem;">
+            ORD (10) + LÄS (10) + MEK (10)<br>Tiden startar när du trycker på knappen.
+          </p>
+          <button class="btn btn-primary" id="btn-start" style="font-size:1.2rem; padding:1rem 4rem;">Starta provet</button>
         </div>
       `;
       document.getElementById('btn-start')?.addEventListener('click', () => {

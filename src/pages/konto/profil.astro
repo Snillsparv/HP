@@ -59,7 +59,8 @@ for (const testId of testOrder) {
   const stList = testQuestionSets[testId];
   if (!r || !info || !stList) continue;
   const rawAnswers = r.answers;
-  const savedAnswers: (number | null)[] = typeof rawAnswers === 'string' ? JSON.parse(rawAnswers) : (rawAnswers || []);
+  const savedAnswers: (number | null)[] = Array.isArray(rawAnswers) ? rawAnswers : (typeof rawAnswers === 'string' ? JSON.parse(rawAnswers) : []);
+  console.log(`[profil] testId=${testId} answersType=${typeof rawAnswers} isArray=${Array.isArray(rawAnswers)} len=${savedAnswers.length} first5=${JSON.stringify(savedAnswers.slice(0,5))}`);
   let qi = 0;
   for (const st of stList) {
     let correct = 0;

@@ -267,12 +267,19 @@ if (user) {
           <div class="pq-results">${qs.map((q, i) => {
             const gi = startIdx + i;
             const ok = answers[gi] === q.correct;
-            return `<div class="pq-res ${ok ? 'pq-res--ok' : 'pq-res--no'}">
-              <span class="pq-res-icon">${ok ? '✓' : '✗'}</span>
-              <span class="pq-res-num">${q.num}.</span>
-              <span>Ditt svar: <b>${answers[gi] !== null ? labels[answers[gi]!] : '—'}</b></span>
-              ${!ok ? `<span class="pq-res-right">Rätt: <b>${labels[q.correct]}</b></span>` : ''}
-            </div>`;
+            return `<div class="pq-res-wrap">
+      <div class="pq-res ${ok ? 'pq-res--ok' : 'pq-res--no'}" data-toggle="res-${q.num}" style="cursor:pointer;">
+        <span class="pq-res-icon">${ok ? '✓' : '✗'}</span>
+        <span class="pq-res-num">${q.num}.</span>
+        <span>Ditt svar: <b>${answers[gi] !== null ? labels[answers[gi]!] : '—'}</b></span>
+        ${!ok ? `<span class="pq-res-right">Rätt: <b>${labels[q.correct]}</b></span>` : ''}
+        <span class="pq-res-chevron">▾</span>
+      </div>
+      <div class="pq-res-detail" id="res-${q.num}" style="display:none;">
+        <div class="pq-res-question">${q.text || ''}${st.type === 'kva' && q.q1 ? `<div class="kva-pair"><div class="kva-row"><span class="kva-label"><i>Kvantitet I:</i></span><span>${q.q1}</span></div><div class="kva-row"><span class="kva-label"><i>Kvantitet II:</i></span><span>${q.q2}</span></div></div>` : ''}${st.type === 'nog' && q.s1 ? `<div class="nog-statements"><div class="nog-stmt"><span class="nog-stmt-num">(1)</span><span>${q.s1}</span></div><div class="nog-stmt"><span class="nog-stmt-num">(2)</span><span>${q.s2}</span></div></div>` : ''}</div>
+        <div class="pq-res-options">${q.options.map((opt, oi) => `<div class="pq-res-opt ${oi === q.correct ? 'pq-res-opt--correct' : ''} ${oi === answers[gi] && oi !== q.correct ? 'pq-res-opt--wrong' : ''}">${labels[oi]}. ${opt}</div>`).join('')}</div>
+      </div>
+    </div>`;
           }).join('')}</div>`;
       }
 
@@ -333,6 +340,20 @@ if (user) {
       } else {
         saveArea.innerHTML = `<div class="tip-box"><strong>Vill du spara ditt resultat?</strong> <a href="/konto/registrera">Skapa ett gratis konto</a> eller <a href="/konto/login">logga in</a>.</div>`;
       }
+
+      // Accordion toggle for question details
+      root.querySelectorAll('[data-toggle]').forEach(el => {
+        el.addEventListener('click', () => {
+          const targetId = el.getAttribute('data-toggle')!;
+          const detail = document.getElementById(targetId);
+          if (detail) {
+            const open = detail.style.display !== 'none';
+            detail.style.display = open ? 'none' : 'block';
+            el.querySelector('.pq-res-chevron')!.textContent = open ? '▾' : '▴';
+          }
+        });
+      });
+      renderTex();
 
       document.getElementById('btn-retry')?.addEventListener('click', () => {
         answers.fill(null); current = 0; submitted = false; timerSeconds = totalTime; timerPaused = false; started = false;
@@ -407,6 +428,14 @@ if (user) {
   .pq-res--no .pq-res-icon { color: #ef4444; }
   .pq-res-num { font-weight: 600; min-width: 2rem; }
   .pq-res-right { margin-left: auto; color: var(--color-success); }
+  .pq-res-chevron { margin-left: auto; color: var(--color-muted); font-size: 0.8rem; flex-shrink: 0; }
+  .pq-res-wrap { margin-bottom: 0.3rem; }
+  .pq-res-detail { padding: 1rem 1rem 1rem 2.5rem; background: #fafbfc; border: 1px solid var(--color-border); border-radius: 0 0 var(--radius) var(--radius); margin-top: -1px; }
+  .pq-res-question { font-size: 0.95rem; line-height: 1.6; margin-bottom: 0.8rem; }
+  .pq-res-options { display: flex; flex-direction: column; gap: 0.3rem; }
+  .pq-res-opt { padding: 0.4rem 0.8rem; border-radius: var(--radius); font-size: 0.9rem; }
+  .pq-res-opt--correct { background: #ecfdf5; color: #065f46; font-weight: 600; }
+  .pq-res-opt--wrong { background: #fef2f2; color: #991b1b; text-decoration: line-through; }
   .tex { font-size: 1.05em; }
   .btn-sm { padding: 0.5rem 1.2rem; font-size: 0.9rem; }
   .kva-pair { margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }

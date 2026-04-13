@@ -91,7 +91,7 @@ const serverStep = user?.train_step || 1;
             <span class="train-step-num">4</span>
             <h2>Titta på mattegenomgången</h2>
           </div>
-          <p>Nu vet du var dina svaga punkter finns. Titta igenom den här videon som går igenom all matte du behöver kunna på högskoleprovet.</p>
+          <p>Nu vet du var dina svaga punkter finns. Titta igenom den här videon som går igenom all matte du behöver kunna på högskoleprovet. Min egen mattegenomgång och en video om den verbala delen kommer senare i veckan!</p>
           <div class="video-embed"><iframe src="https://www.youtube.com/embed/Ru5OT9qmb5M" title="Mattegenomgång för högskoleprovet" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
           <button class="btn btn-primary train-done-btn" data-next="5">Klar</button>
         </div>
@@ -145,7 +145,7 @@ const serverStep = user?.train_step || 1;
             <strong style="font-size: 1.2rem;">Du är nu i ett mycket bättre läge än du var i tidigare! Lycka till! :D</strong>
           </div>
           <div style="text-align: center; margin-top: 1.5rem;">
-            <img src="/jonas_cheers.gif" alt="Jonas firar!" loading="lazy" style="max-width: 600px; width: 100%; border-radius: var(--radius);" />
+            <img data-src="/jonas_cheers.gif" alt="Jonas firar!" id="cheers-gif" style="max-width: 600px; width: 100%; border-radius: var(--radius); display:none;" />
           </div>
           <button class="btn btn-outline train-reset-btn" style="display:block; width:100%; margin-top:1.5rem;" id="btn-reset">Börja om</button>
         </div>
@@ -185,6 +185,15 @@ const serverStep = user?.train_step || 1;
           el.classList.add('train-step--locked');
         }
       });
+
+      // Load cheers gif only when reaching final step
+      if (n >= 7) {
+        const gif = document.getElementById('cheers-gif') as HTMLImageElement | null;
+        if (gif && !gif.src) {
+          gif.src = gif.getAttribute('data-src') || '';
+          gif.style.display = 'block';
+        }
+      }
     }
 
     activateStep(saved);

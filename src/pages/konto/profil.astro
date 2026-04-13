@@ -23,7 +23,7 @@ const colors = [
 
 // Fetch best results per test
 const { rows: results } = await pool.query(`
-  SELECT DISTINCT ON (test_id) test_id, score, total, time_seconds, created_at
+  SELECT DISTINCT ON (test_id) test_id, score, total, answers, time_seconds, created_at
   FROM test_results
   WHERE user_id = $1
   ORDER BY test_id, score DESC, created_at DESC

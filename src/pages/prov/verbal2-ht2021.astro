@@ -97,6 +97,7 @@ if (user) {
           </div>
           <div class="tip-box" style="max-width:440px; margin:0 auto 2rem; font-size:0.88rem; text-align:left;">När du skrivit klart kommer provet att rättas automatiskt och du kan titta på mina lösningar.</div>
           <div class="tip-box warning" style="max-width:440px; margin:0 auto 2rem; font-size:0.88rem; text-align:left;">ELF-delen (engelsk läsförståelse) ingår tyvärr inte eftersom de engelska texterna ofta är copyrightade och inte publiceras. Men ELF fungerar precis som LÄS, så har du gjort den vet du hur det går till.</div>
+          ${!(window as any).__isLoggedIn ? '<div style="max-width:440px; margin:0 auto 1.5rem; padding:1rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius); font-size:0.85rem; text-align:left; color:#1e40af;"><strong>Tips:</strong> <a href="/konto/registrera" style="color:#1e40af; text-decoration:underline;">Skapa ett gratis konto</a> för att spara dina resultat och se din utveckling. Det är helt frivilligt och kostar inget.</div>' : ''}
           <button class="btn btn-primary" id="btn-start" style="font-size:1.2rem; padding:1rem 4rem;">Starta provet</button>
         </div>
       `;
@@ -308,7 +309,13 @@ if (user) {
         </div>
       `;
 
-      // Save results
+      // Always save to localStorage
+      const resultData = { testId: 'verbal2-ht2021', score: totalScore, total: allQuestions.length, answers: [...answers], timeSeconds: elapsed, date: new Date().toISOString() };
+      const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
+      stored['verbal2-ht2021'] = resultData;
+      localStorage.setItem('hp-results', JSON.stringify(stored));
+
+      // Also save to server if logged in
       const saveArea = document.getElementById('save-area')!;
       if ((window as any).__isLoggedIn) {
         try {
@@ -317,12 +324,12 @@ if (user) {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ testId: 'verbal2-ht2021', score: totalScore, total: allQuestions.length, answers, timeSeconds: elapsed }),
           });
-          saveArea.innerHTML = '<div class="tip-box success"><strong>Resultat sparat!</strong></div>';
+          saveArea.innerHTML = '<div class="tip-box success"><strong>Resultat sparat i ditt konto!</strong></div>';
         } catch {
-          saveArea.innerHTML = '<div class="tip-box warning"><strong>Kunde inte spara resultatet.</strong></div>';
+          saveArea.innerHTML = '<div class="tip-box warning"><strong>Kunde inte spara till kontot, men resultatet finns sparat lokalt.</strong></div>';
         }
       } else {
-        saveArea.innerHTML = `<div class="tip-box"><strong>Vill du spara ditt resultat?</strong> <a href="/konto/registrera">Skapa ett gratis konto</a> eller <a href="/konto/login">logga in</a>.</div>`;
+        saveArea.innerHTML = '<div class="tip-box success"><strong>Resultat sparat!</strong> <a href="/konto/registrera">Skapa ett gratis konto</a> för att spara dina resultat permanent.</div>';
       }
 
       // Accordion toggle for question details

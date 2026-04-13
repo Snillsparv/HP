@@ -70,6 +70,13 @@ for (const testId of testOrder) {
     allBars.push({ name: st.shortName, correct, total: st.questions.length, pct: Math.round((correct / st.questions.length) * 100), testName: info.name });
   }
 }
+
+const testUrls: Record<string, string> = {
+  'kvant-ht2021': '/prov/kvant-ht2021',
+  'verbal-ht2021': '/prov/verbal-ht2021',
+  'kvant2-ht2021': '/prov/kvant2-ht2021',
+  'verbal2-ht2021': '/prov/verbal2-ht2021',
+};
 ---
 
 <Base title="Min profil – HPAkuten">
@@ -111,12 +118,13 @@ for (const testId of testOrder) {
               const normered = getNormering(r.score, r.total, info.type);
               const isKvant = info.type === 'kvant';
               return (
-                <div class={`result-card ${isKvant ? 'result-card--kvant' : 'result-card--verbal'}`}>
+                <a href={`${testUrls[testId]}?review=1`} class={`result-card ${isKvant ? 'result-card--kvant' : 'result-card--verbal'}`} style="text-decoration:none; color:inherit;">
                   <div class="result-card-label">{info.name}</div>
                   <div class="result-card-norm">{normered.toFixed(1)}</div>
                   <div class="result-card-raw">{r.score}/{r.total} rätt</div>
                   {r.time_seconds && <div class="result-card-time">Tid: {fmt(r.time_seconds)}</div>}
-                </div>
+                  <div class="result-card-link">Se rättning</div>
+                </a>
               );
             })}
           </div>
@@ -293,6 +301,23 @@ for (const testId of testOrder) {
   .result-card-time {
     font-size: 0.8rem;
     color: var(--color-muted);
+  }
+
+  .result-card-link {
+    font-size: 0.8rem;
+    color: var(--color-primary);
+    font-weight: 600;
+    margin-top: 0.4rem;
+  }
+
+  a.result-card {
+    transition: transform 0.15s, box-shadow 0.15s;
+    cursor: pointer;
+  }
+
+  a.result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
   }
 
   @media (max-width: 400px) {

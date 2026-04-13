@@ -44,6 +44,19 @@ if (user) {
     let timerPaused = false;
     let started = false;
 
+    const urlParams = new URLSearchParams(window.location.search);
+    const isReview = urlParams.get('review') === '1';
+    if (isReview) {
+      const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
+      const saved = stored['verbal2-ht2021'];
+      if (saved?.answers) {
+        saved.answers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
+        submitted = true;
+        started = true;
+        timerSeconds = totalTime - (saved.timeSeconds || 0);
+      }
+    }
+
     // Load KaTeX
     const css = document.createElement('link');
     css.rel = 'stylesheet';

@@ -19,7 +19,7 @@ const serverStep = user?.train_step || 1;
             <h2>Se överblicken</h2>
           </div>
           <p>Börja med att titta på den här videon så att du förstår hur provet är upplagt.</p>
-          <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
+          <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1&title=0&byline=0&portrait=0" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
           <button class="btn btn-primary train-done-btn" data-next="2">Jag har kollat!</button>
         </div>
 
@@ -91,14 +91,8 @@ const serverStep = user?.train_step || 1;
             <span class="train-step-num">4</span>
             <h2>Titta på mattegenomgången</h2>
           </div>
-          <p>Nu vet du var dina svaga punkter finns. Titta igenom min video som går igenom all matte du behöver kunna på högskoleprovet.</p>
-          <a href="/delprov/xyz" class="prov-hero-link">
-            <div class="prov-hero-card prov-hero-card--matte">
-              <h3>Mattegenomgången</h3>
-              <p style="margin-bottom:0;">All matte du behöver kunna, i en video.</p>
-              <span class="btn btn-primary prov-btn--matte" style="margin-top:1rem;">Till videon</span>
-            </div>
-          </a>
+          <p>Nu vet du var dina svaga punkter finns. Titta igenom den här videon som går igenom all matte du behöver kunna på högskoleprovet.</p>
+          <div class="video-embed"><iframe src="https://www.youtube.com/embed/Ru5OT9qmb5M" title="Mattegenomgång för högskoleprovet" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe></div>
           <button class="btn btn-primary train-done-btn" data-next="5">Klar</button>
         </div>
 
@@ -232,7 +226,7 @@ const serverStep = user?.train_step || 1;
         } else {
           btn.classList.add('delprov-video-btn--active');
           player.style.display = 'block';
-          player.innerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${vimeoId}?dnt=1" title="${btn.textContent}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+          player.innerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${vimeoId}?dnt=1&title=0&byline=0&portrait=0" title="${btn.textContent}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
         }
       });
     });

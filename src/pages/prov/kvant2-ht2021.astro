@@ -109,7 +109,7 @@ if (user) {
             <p style="margin-bottom:0;">Jag rekommenderar att du gör provet på datorn för att se diagrammen bättre, men att göra det på mobilen fungerar också.</p>
           </div>
           <div class="tip-box" style="max-width:440px; margin:0 auto 2rem; font-size:0.88rem; text-align:left;">När du skrivit klart kommer provet att rättas automatiskt och du kan titta på mina lösningar.</div>
-          ${!(window as any).__isLoggedIn ? '<div style="max-width:440px; margin:0 auto 1.5rem; padding:1rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius); font-size:0.85rem; text-align:left; color:#1e40af;"><strong>Tips:</strong> <a href="/konto/registrera" style="color:#1e40af; text-decoration:underline;">Skapa ett konto</a> för att spara dina resultat och se din utveckling. OBS! Det är helt frivilligt och kostar inget. Du kan också fortsätta utan konto!</div>' : ''}
+          ${!(window as any).__isLoggedIn ? '<div style="max-width:440px; margin:0 auto 1.5rem; padding:1rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius); font-size:0.85rem; text-align:left; color:#1e40af;"><strong>Tips:</strong> <a href="#" onclick="event.preventDefault(); window.openSignupModal();" style="color:#1e40af; text-decoration:underline;">Skapa ett konto</a> för att spara dina resultat och se din utveckling. OBS! Det är helt frivilligt och kostar inget. Du kan också fortsätta utan konto!</div>' : ''}
           <button class="btn btn-primary" id="btn-start" style="font-size:1.2rem; padding:1rem 4rem;">Starta provet</button>
         </div>
       `;
@@ -326,11 +326,15 @@ if (user) {
         ${analysisHTML}
         ${resultsHTML}
         <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
-        <div class="pq-share" style="text-align:center; margin:1.5rem 0;">
+        <div class="pq-share" style="text-align:center; margin:1.5rem 0; display:flex; justify-content:center; gap:0.8rem; flex-wrap:wrap;">
           <button class="btn btn-outline btn-sm" id="btn-share" style="display:inline-flex; align-items:center; gap:0.4rem;">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            Dela ditt resultat
+            Dela
           </button>
+          <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fwww.hpakuten.se%2Ftrana&quote=${encodeURIComponent(`Jag fick ${normered.toFixed(1)} (${totalScore}/${allQuestions.length}) på kvantitativt prov på HPAkuten! Träna du också gratis`)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="display:inline-flex; align-items:center; gap:0.4rem; background:#0084ff; color:#fff; border-color:#0084ff;">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.906 1.454 5.497 3.73 7.191V22l3.34-1.836c.89.247 1.834.38 2.81.38h.12c5.523 0 10-4.145 10-9.243S17.523 2 12 2z"/></svg>
+            Messenger
+          </a>
         </div>
         <div class="pq-nav" style="margin-top:1rem;">
           <button class="btn btn-outline btn-sm" id="btn-retry">Gör om provet</button>

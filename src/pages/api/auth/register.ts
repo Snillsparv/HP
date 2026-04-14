@@ -24,11 +24,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     const user = await createUser(name, email, password);
     const token = await createSession(user.id);
+    const redirect = form.get('redirect')?.toString() || '/forum';
 
     return new Response(null, {
       status: 302,
       headers: {
-        Location: '/forum',
+        Location: redirect,
         'Set-Cookie': `session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 3600}`,
       },
     });

@@ -110,6 +110,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       <div class="signup-modal-divider"><span>eller</span></div>
 
       <form method="POST" action="/api/auth/register">
+        <input type="hidden" name="redirect" id="modal-redirect" value="" />
         <div class="signup-modal-fg">
           <label for="modal-reg-name">Namn / Användarnamn</label>
           <input type="text" id="modal-reg-name" name="name" placeholder="Ditt namn eller alias" required />
@@ -168,6 +169,8 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 
     // Signup modal
     window.openSignupModal = () => {
+      const redirectField = document.getElementById('modal-redirect') as HTMLInputElement;
+      if (redirectField) redirectField.value = window.location.pathname + window.location.search;
       document.getElementById('signup-modal').style.display = 'flex';
     };
     document.getElementById('signup-modal')?.addEventListener('click', (e) => {

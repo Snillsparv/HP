@@ -35,7 +35,9 @@ if (user) {
 
     const root = document.getElementById('prov-root')!;
     const allQuestions = subTests.flatMap(st => st.questions.map(q => ({ ...q, subTest: st })));
-    const totalTime = 55 * 60;
+    const DEFAULT_TIME = 55 * 60;
+    const EXTENDED_TIME = 80 * 60;
+    let totalTime = DEFAULT_TIME;
     const answers: (number | null)[] = new Array(allQuestions.length).fill(null);
     let current = 0;
     let submitted = false;
@@ -152,7 +154,7 @@ if (user) {
               <div style="color:var(--color-muted); font-size:0.85rem;">uppgifter</div>
             </div>
             <div>
-              <div style="font-size:2.8rem; font-weight:800; color:var(--color-primary);">55:00</div>
+              <div style="font-size:2.8rem; font-weight:800; color:var(--color-primary);" id="time-display">55:00</div>
               <div style="color:var(--color-muted); font-size:0.85rem;">minuter</div>
             </div>
           </div>
@@ -161,6 +163,12 @@ if (user) {
             <p style="margin-bottom:0;">Jag rekommenderar att du gör provet på datorn för att se diagrammen bättre, men att göra det på mobilen fungerar också.</p>
           </div>
           <div class="tip-box" style="max-width:440px; margin:0 auto 2rem; font-size:0.88rem; text-align:left;">När du skrivit klart kommer provet att rättas automatiskt och du kan titta på mina lösningar.</div>
+          <div style="max-width:440px; margin:0 auto 1.5rem; text-align:left;">
+            <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; font-size:0.88rem; color:var(--color-muted);">
+              <input type="checkbox" id="extended-time" style="width:18px; height:18px;" />
+              <span>Förlängd provtid (80 min) — för dig med rätt till extra tid</span>
+            </label>
+          </div>
           ${!(window as any).__isLoggedIn ? '<div style="max-width:440px; margin:0 auto 1.5rem; padding:1rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius); font-size:0.85rem; text-align:left; color:#1e40af;"><strong>Tips:</strong> <a href="#" onclick="event.preventDefault(); window.openSignupModal();" style="color:#1e40af; text-decoration:underline;">Skapa ett konto</a> för att spara dina resultat och se din utveckling. OBS! Det är helt frivilligt och kostar inget. Du kan också fortsätta utan konto!</div>' : ''}
           ${getSavedProgress() ? `
             <div style="display:flex; flex-direction:column; gap:0.8rem; align-items:center;">
@@ -172,8 +180,16 @@ if (user) {
           `}
         </div>
       `;
+      document.getElementById('extended-time')?.addEventListener('change', (e) => {
+        const checked = (e.target as HTMLInputElement).checked;
+        const td = document.getElementById('time-display');
+        if (td) td.textContent = checked ? '80:00' : '55:00';
+      });
       document.getElementById('btn-start')?.addEventListener('click', () => {
         clearProgress();
+        const ext = document.getElementById('extended-time') as HTMLInputElement | null;
+        if (ext?.checked) totalTime = EXTENDED_TIME;
+        timerSeconds = totalTime;
         started = true;
         startTimer();
         render();
@@ -191,6 +207,9 @@ if (user) {
       });
       document.getElementById('btn-restart')?.addEventListener('click', () => {
         clearProgress();
+        const ext = document.getElementById('extended-time') as HTMLInputElement | null;
+        if (ext?.checked) totalTime = EXTENDED_TIME;
+        timerSeconds = totalTime;
         started = true;
         startTimer();
         render();

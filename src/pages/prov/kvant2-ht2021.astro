@@ -44,6 +44,8 @@ if (user) {
     let timerPaused = false;
     let started = false;
 
+    const PROGRESS_KEY = 'hp-progress-kvant2-ht2021';
+
     const urlParams = new URLSearchParams(window.location.search);
     const isReview = urlParams.get('review') === '1';
     if (isReview) {
@@ -56,6 +58,37 @@ if (user) {
         timerSeconds = totalTime - (saved.timeSeconds || 0);
       }
     }
+
+    // Check for saved in-progress test
+    function getSavedProgress() {
+      try {
+        const raw = localStorage.getItem(PROGRESS_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (data?.answers?.length === allQuestions.length && data.started && !data.submitted) return data;
+      } catch {}
+      return null;
+    }
+
+    function saveProgress() {
+      if (started && !submitted) {
+        const elapsed = totalTime - timerSeconds;
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify({ answers: [...answers], current, timerSeconds, started, submitted, elapsed }));
+      }
+    }
+
+    function clearProgress() {
+      localStorage.removeItem(PROGRESS_KEY);
+    }
+
+    // Auto-save on leaving page
+    window.addEventListener('beforeunload', (e) => {
+      if (started && !submitted) {
+        saveProgress();
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
 
     // Load KaTeX
     const css = document.createElement('link');
@@ -84,6 +117,7 @@ if (user) {
           if (timerSeconds <= 0) {
             clearInterval(timerInterval!);
             submitted = true;
+            clearProgress();
             render();
           }
         }
@@ -111,10 +145,35 @@ if (user) {
           </div>
           <div class="tip-box" style="max-width:440px; margin:0 auto 2rem; font-size:0.88rem; text-align:left;">När du skrivit klart kommer provet att rättas automatiskt och du kan titta på mina lösningar.</div>
           ${!(window as any).__isLoggedIn ? '<div style="max-width:440px; margin:0 auto 1.5rem; padding:1rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius); font-size:0.85rem; text-align:left; color:#1e40af;"><strong>Tips:</strong> <a href="#" onclick="event.preventDefault(); window.openSignupModal();" style="color:#1e40af; text-decoration:underline;">Skapa ett konto</a> för att spara dina resultat och se din utveckling. OBS! Det är helt frivilligt och kostar inget. Du kan också fortsätta utan konto!</div>' : ''}
-          <button class="btn btn-primary" id="btn-start" style="font-size:1.2rem; padding:1rem 4rem;">Starta provet</button>
+          ${getSavedProgress() ? `
+            <div style="display:flex; flex-direction:column; gap:0.8rem; align-items:center;">
+              <button class="btn btn-primary" id="btn-resume" style="font-size:1.2rem; padding:1rem 4rem;">Fortsätt där du var</button>
+              <button class="btn btn-outline" id="btn-restart" style="font-size:0.95rem; padding:0.7rem 2rem;">Börja om från början</button>
+            </div>
+          ` : `
+            <button class="btn btn-primary" id="btn-start" style="font-size:1.2rem; padding:1rem 4rem;">Starta provet</button>
+          `}
         </div>
       `;
       document.getElementById('btn-start')?.addEventListener('click', () => {
+        clearProgress();
+        started = true;
+        startTimer();
+        render();
+      });
+      document.getElementById('btn-resume')?.addEventListener('click', () => {
+        const prog = getSavedProgress();
+        if (prog) {
+          prog.answers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
+          current = prog.current || 0;
+          timerSeconds = prog.timerSeconds || totalTime;
+        }
+        started = true;
+        startTimer();
+        render();
+      });
+      document.getElementById('btn-restart')?.addEventListener('click', () => {
+        clearProgress();
         started = true;
         startTimer();
         render();
@@ -201,7 +260,7 @@ if (user) {
       });
       document.getElementById('btn-prev')?.addEventListener('click', () => { current--; render(); });
       document.getElementById('btn-next')?.addEventListener('click', () => { current++; render(); });
-      document.getElementById('btn-submit')?.addEventListener('click', () => { submitted = true; if (timerInterval) clearInterval(timerInterval); render(); });
+      document.getElementById('btn-submit')?.addEventListener('click', () => { submitted = true; clearProgress(); if (timerInterval) clearInterval(timerInterval); render(); });
       document.getElementById('btn-overview')?.addEventListener('click', renderOverview);
       document.getElementById('btn-pause')?.addEventListener('click', () => { timerPaused = !timerPaused; render(); });
       root.querySelectorAll('.pq-dot').forEach(el => {
@@ -260,7 +319,7 @@ if (user) {
         el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
       });
       document.getElementById('btn-back')?.addEventListener('click', () => render());
-      document.getElementById('btn-submit')?.addEventListener('click', () => { submitted = true; if (timerInterval) clearInterval(timerInterval); render(); });
+      document.getElementById('btn-submit')?.addEventListener('click', () => { submitted = true; clearProgress(); if (timerInterval) clearInterval(timerInterval); render(); });
       document.getElementById('btn-pause')?.addEventListener('click', () => { timerPaused = !timerPaused; renderOverview(); });
     }
 

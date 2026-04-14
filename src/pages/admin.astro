@@ -1,0 +1,160 @@
+---
+import Base from '../layouts/Base.astro';
+import { getSessionFromCookies } from '../lib/auth.js';
+import pool from '../lib/db.js';
+
+const ADMIN_EMAIL = 'snillsparv@gmail.com';
+
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+
+if (!user || user.email !== ADMIN_EMAIL) {
+  return Astro.redirect('/');
+}
+
+// Stats
+const { rows: [userCount] } = await pool.query('SELECT COUNT(*) as count FROM users');
+const { rows: [resultCount] } = await pool.query('SELECT COUNT(*) as count FROM test_results');
+const { rows: [threadCount] } = await pool.query('SELECT COUNT(*) as count FROM threads');
+const { rows: [replyCount] } = await pool.query('SELECT COUNT(*) as count FROM replies');
+
+// Recent users
+const { rows: recentUsers } = await pool.query(`
+  SELECT id, name, email, avatar_color, train_step, created_at
+  FROM users ORDER BY created_at DESC LIMIT 20
+`);
+
+// Test results per test
+const { rows: resultsByTest } = await pool.query(`
+  SELECT test_id, COUNT(*) as count, ROUND(AVG(score)::numeric, 1) as avg_score
+  FROM test_results GROUP BY test_id ORDER BY test_id
+`);
+
+// Recent results
+const { rows: recentResults } = await pool.query(`
+  SELECT tr.test_id, tr.score, tr.total, tr.created_at, u.name, u.email
+  FROM test_results tr JOIN users u ON tr.user_id = u.id
+  ORDER BY tr.created_at DESC LIMIT 20
+`);
+
+function timeAgo(d: string) {
+  const diff = Date.now() - new Date(d).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 60) return `${mins}m sedan`;
+  const hours = Math.floor(mins / 60);
+  if (hours < 24) return `${hours}h sedan`;
+  const days = Math.floor(hours / 24);
+  return `${days}d sedan`;
+}
+---
+
+<Base title="Admin – HPAkuten">
+  <div class="page-content">
+    <div class="container">
+      <h1>Admin</h1>
+
+      <div class="admin-stats">
+        <div class="admin-stat">
+          <div class="admin-stat-num">{userCount.count}</div>
+          <div class="admin-stat-label">Användare</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-num">{resultCount.count}</div>
+          <div class="admin-stat-label">Provresultat</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-num">{threadCount.count}</div>
+          <div class="admin-stat-label">Forumtrådar</div>
+        </div>
+        <div class="admin-stat">
+          <div class="admin-stat-num">{replyCount.count}</div>
+          <div class="admin-stat-label">Foruminlägg</div>
+        </div>
+      </div>
+
+      <h2>Resultat per prov</h2>
+      <table>
+        <thead>
+          <tr><th>Prov</th><th>Antal</th><th>Snittpoäng</th></tr>
+        </thead>
+        <tbody>
+          {resultsByTest.map(r => (
+            <tr><td>{r.test_id}</td><td>{r.count}</td><td>{r.avg_score}</td></tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h2>Senaste användare</h2>
+      <table>
+        <thead>
+          <tr><th>Namn</th><th>E-post</th><th>Steg</th><th>Registrerad</th></tr>
+        </thead>
+        <tbody>
+          {recentUsers.map(u => (
+            <tr>
+              <td>{u.name}</td>
+              <td style="font-size:0.85rem; color:var(--color-muted);">{u.email}</td>
+              <td>{u.train_step || 1}</td>
+              <td style="font-size:0.85rem;">{timeAgo(u.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h2>Senaste provresultat</h2>
+      <table>
+        <thead>
+          <tr><th>Användare</th><th>Prov</th><th>Poäng</th><th>När</th></tr>
+        </thead>
+        <tbody>
+          {recentResults.map(r => (
+            <tr>
+              <td>{r.name}</td>
+              <td style="font-size:0.85rem;">{r.test_id}</td>
+              <td>{r.score}/{r.total}</td>
+              <td style="font-size:0.85rem;">{timeAgo(r.created_at)}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .admin-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0;
+  }
+
+  .admin-stat {
+    text-align: center;
+    padding: 1.2rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+
+  .admin-stat-num {
+    font-size: 2rem;
+    font-weight: 800;
+    color: var(--color-primary);
+  }
+
+  .admin-stat-label {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+
+  table {
+    width: 100%;
+    margin-bottom: 2rem;
+  }
+
+  @media (max-width: 600px) {
+    .admin-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>

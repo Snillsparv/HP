@@ -48,8 +48,9 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     "logo": "https://www.hpakuten.se/favicon.svg"
   })} />
 
-  <!-- Plausible Analytics (GDPR-friendly, no cookies) -->
-  <script defer data-domain="hpakuten.se" src="https://plausible.io/js/script.js"></script>
+  <!-- Privacy-friendly analytics by Plausible -->
+  <script async src="https://plausible.io/js/pa-lsv7PTlw_-e1oQYlg1trE.js"></script>
+  <script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()</script>
 </head>
 <body>
   <header class="site-header">

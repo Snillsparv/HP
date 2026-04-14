@@ -348,7 +348,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       }
 
       const normered = getNormering(totalScore, allQuestions.length, 'verbal');
-      const { summaryHTML: analysisHTML } = analyzeResults(allQuestions, answers);
+      const { summaryHTML: analysisHTML } = analyzeResults(allQuestions, answers, normered);
 
       root.innerHTML = `
         <div class="pq-result-head">
@@ -516,7 +516,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
   .pq-res--no .pq-res-icon { color: #ef4444; }
   .pq-res-num { font-weight: 600; min-width: 2rem; }
   .pq-res-right { margin-left: auto; color: var(--color-success); }
-  .pq-res-chevron { margin-left: auto; color: var(--color-muted); font-size: 0.8rem; flex-shrink: 0; }
+  .pq-res-chevron { margin-left: auto; color: var(--color-primary); font-size: 1.2rem; flex-shrink: 0; padding: 0 0.3rem; }
   .pq-res-wrap { margin-bottom: 0.3rem; }
   .pq-res-detail { padding: 1rem 1rem 1rem 2.5rem; background: #fafbfc; border: 1px solid var(--color-border); border-radius: 0 0 var(--radius) var(--radius); margin-top: -1px; }
   .pq-res-question { font-size: 0.95rem; line-height: 1.6; margin-bottom: 0.8rem; }

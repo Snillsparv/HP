@@ -23,6 +23,17 @@ interface CategoryResult {
   subTest: string;
 }
 
+function getEducationExample(norm: number): string {
+  if (norm >= 2.0) return 'Alla utbildningar i Sverige, inklusive läkarprogrammet och juristprogrammet!';
+  if (norm >= 1.8) return 'De allra flesta utbildningar, t.ex. läkarprogrammet, psykologprogrammet och juridik.';
+  if (norm >= 1.5) return 'Många populära utbildningar, t.ex. civilingenjör, civilekonom och socionom.';
+  if (norm >= 1.2) return 'De flesta utbildningar i Sverige, t.ex. sjuksköterska, lärare och samhällsvetare.';
+  if (norm >= 1.0) return 'Många programutbildningar runt om i landet.';
+  if (norm >= 0.8) return 'Flera programutbildningar, särskilt utanför storstäderna.';
+  if (norm >= 0.5) return 'Vissa utbildningar med lägre antagningspoäng.';
+  return '';
+}
+
 function barColor(pct: number): string {
   if (pct >= 80) return '#22c55e';
   if (pct >= 60) return '#3b82f6';
@@ -49,7 +60,8 @@ function categoryLabel(cat: string): string {
 
 export function analyzeResults(
   questions: AnalysisQuestion[],
-  answers: (number | null)[]
+  answers: (number | null)[],
+  normered?: number
 ): { weakAreas: string[]; summaryHTML: string } {
   const subtestMap = new Map<string, SubtestResult>();
   const categoryMap = new Map<string, CategoryResult>();
@@ -124,6 +136,14 @@ export function analyzeResults(
     summaryParts.push(`Träna mer på <strong>${worstSubtest.shortName}</strong> för att höja ditt resultat!`);
   } else {
     summaryParts.push('Bra jobbat! Fortsätt träna för att bli ännu bättre.');
+  }
+
+  // Add education example based on normered score
+  if (normered !== undefined && normered >= 0.5) {
+    const eduExample = getEducationExample(normered);
+    if (eduExample) {
+      summaryParts.push(`<br><strong>${normered.toFixed(1)}</strong> räcker till: ${eduExample}`);
+    }
   }
 
   // Build vertical bar chart — subtests

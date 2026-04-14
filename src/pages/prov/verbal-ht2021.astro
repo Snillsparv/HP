@@ -38,7 +38,8 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 
     const urlParams = new URLSearchParams(window.location.search);
     const isReview = urlParams.get('review') === '1';
-    if (isReview) {
+    async function loadReview() {
+      if (!isReview) return;
       const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
       const saved = stored['verbal-ht2021'];
       if (saved?.answers) {
@@ -46,7 +47,22 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         submitted = true;
         started = true;
         timerSeconds = totalTime - (saved.timeSeconds || 0);
+        return;
       }
+      try {
+        const res = await fetch('/api/test/results?testId=verbal-ht2021');
+        const data = await res.json();
+        if (data.results?.length > 0) {
+          const best = data.results[0];
+          const serverAnswers = typeof best.answers === 'string' ? JSON.parse(best.answers) : best.answers;
+          if (serverAnswers?.length) {
+            serverAnswers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
+            submitted = true;
+            started = true;
+            timerSeconds = totalTime - (best.time_seconds || 0);
+          }
+        }
+      } catch {}
     }
 
     // Check for saved in-progress test
@@ -460,7 +476,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       });
     }
 
-    render();
+    loadReview().then(() => render());
   </script>
 </Base>
 

@@ -16,6 +16,10 @@ const { rows: [userCount] } = await pool.query('SELECT COUNT(*) as count FROM us
 const { rows: [resultCount] } = await pool.query('SELECT COUNT(*) as count FROM test_results');
 const { rows: [threadCount] } = await pool.query('SELECT COUNT(*) as count FROM threads');
 const { rows: [replyCount] } = await pool.query('SELECT COUNT(*) as count FROM replies');
+const { rows: [msgCount] } = await pool.query('SELECT COUNT(*) as count FROM contact_messages');
+
+// Contact messages
+const { rows: recentMessages } = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC LIMIT 30');
 
 // Recent users
 const { rows: recentUsers } = await pool.query(`
@@ -122,6 +126,23 @@ function timeAgo(d: string) {
         <tbody>
           {resultsByTest.map(r => (
             <tr><td>{r.test_id}</td><td>{r.count}</td><td>{r.avg_score}</td></tr>
+          ))}
+        </tbody>
+      </table>
+
+      <h2>Meddelanden ({msgCount.count})</h2>
+      <table>
+        <thead>
+          <tr><th>Namn</th><th>E-post</th><th>Meddelande</th><th>När</th></tr>
+        </thead>
+        <tbody>
+          {recentMessages.map(m => (
+            <tr>
+              <td>{m.name}</td>
+              <td style="font-size:0.85rem;">{m.email}</td>
+              <td style="font-size:0.85rem; max-width:300px;">{m.message}</td>
+              <td style="font-size:0.85rem;">{timeAgo(m.created_at)}</td>
+            </tr>
           ))}
         </tbody>
       </table>

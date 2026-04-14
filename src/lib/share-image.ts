@@ -35,11 +35,17 @@ export function generateResultImage(
 
     // HPAkuten logo
     ctx.font = '700 42px system-ui, -apple-system, sans-serif';
+    ctx.textAlign = 'left';
+    const hpText = 'HP';
+    const akutenText = 'Akuten';
+    const hpW = ctx.measureText(hpText).width;
+    const akutenW = ctx.measureText(akutenText).width;
+    const logoTotalW = hpW + akutenW;
+    const logoX = (W - logoTotalW) / 2;
     ctx.fillStyle = '#94a3b8';
-    ctx.textAlign = 'center';
-    ctx.fillText('HP', W / 2 - 42, 90);
+    ctx.fillText(hpText, logoX, 90);
     ctx.fillStyle = '#3b82f6';
-    ctx.fillText('Akuten', W / 2 + 42, 90);
+    ctx.fillText(akutenText, logoX + hpW, 90);
 
     // Test name
     ctx.font = '600 36px system-ui, -apple-system, sans-serif';
@@ -55,7 +61,7 @@ export function generateResultImage(
     // "normerad poäng"
     ctx.font = '400 32px system-ui, -apple-system, sans-serif';
     ctx.fillStyle = '#64748b';
-    ctx.fillText('normerad poäng (uppskattad)', W / 2, 460);
+    ctx.fillText('normerad poäng', W / 2, 460);
 
     // Raw score
     ctx.font = '600 48px system-ui, -apple-system, sans-serif';

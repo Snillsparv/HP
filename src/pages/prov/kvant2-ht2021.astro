@@ -395,7 +395,7 @@ if (user) {
         <div class="pq-result-head">
           <h2>Resultat</h2>
           <div class="pq-normered">${normered.toFixed(1)}</div>
-          <p style="color:var(--color-muted); font-size:0.9rem;">normerad poäng (uppskattad)</p>
+          <p style="color:var(--color-muted); font-size:0.9rem;">normerad poäng</p>
           <div class="pq-score" style="font-size:1.5rem; margin-top:0.5rem;">${totalScore}/${allQuestions.length}</div>
           <p style="color:var(--color-muted)">rätt svar · tid: ${fmt(elapsed)}</p>
         </div>
@@ -403,19 +403,12 @@ if (user) {
         ${analysisHTML}
         ${resultsHTML}
         <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
-        <div class="pq-share" style="text-align:center; margin:1.5rem 0; display:flex; justify-content:center; gap:0.8rem; flex-wrap:wrap;">
-          <button class="btn btn-outline btn-sm" id="btn-share" style="display:inline-flex; align-items:center; gap:0.4rem;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
-            Dela
+        <div class="pq-share" style="text-align:center; margin:1.5rem 0;">
+          <button class="btn btn-primary btn-sm" id="btn-share-img" style="display:inline-flex; align-items:center; gap:0.4rem; font-size:1rem; padding:0.7rem 2rem;">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+            Dela ditt resultat
           </button>
-          <a href="https://www.facebook.com/sharer/sharer.php?u=https%3A%2F%2Fwww.hpakuten.se%2Ftrana&quote=${encodeURIComponent(`Jag fick ${normered.toFixed(1)} (${totalScore}/${allQuestions.length}) på kvantitativt prov på HPAkuten! Träna du också gratis`)}" target="_blank" rel="noopener" class="btn btn-outline btn-sm" style="display:inline-flex; align-items:center; gap:0.4rem; background:#0084ff; color:#fff; border-color:#0084ff;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.477 2 2 6.145 2 11.243c0 2.906 1.454 5.497 3.73 7.191V22l3.34-1.836c.89.247 1.834.38 2.81.38h.12c5.523 0 10-4.145 10-9.243S17.523 2 12 2z"/></svg>
-            Messenger
-          </a>
-          <button class="btn btn-outline btn-sm" id="btn-share-img" style="display:inline-flex; align-items:center; gap:0.4rem;">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
-            Spara bild
-          </button>
+          <div id="share-preview" style="margin-top:1rem; display:none;"></div>
         </div>
         <div class="pq-nav" style="margin-top:1rem;">
           <button class="btn btn-outline btn-sm" id="btn-retry">Gör om provet</button>
@@ -465,22 +458,10 @@ if (user) {
         render();
       });
 
-      document.getElementById('btn-share')?.addEventListener('click', async () => {
-        const text = `Jag fick ${normered.toFixed(1)} (${totalScore}/${allQuestions.length}) på kvantitativt prov på HPAkuten! Träna du också gratis: www.hpakuten.se`;
-        if (navigator.share) {
-          try { await navigator.share({ text }); } catch {}
-        } else {
-          await navigator.clipboard.writeText(text);
-          const btn = document.getElementById('btn-share');
-          if (btn) { btn.textContent = 'Kopierat!'; setTimeout(() => { btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Dela ditt resultat'; }, 2000); }
-        }
-      });
-
       document.getElementById('btn-share-img')?.addEventListener('click', async () => {
         const btn = document.getElementById('btn-share-img')!;
         btn.textContent = 'Genererar...';
 
-        // Collect subtest scores
         const stScores: { name: string; correct: number; total: number }[] = [];
         for (const st of subTests) {
           const qs = allQuestions.filter(q => q.subTest.id === st.id);
@@ -492,25 +473,32 @@ if (user) {
 
         const dataUrl = await generateResultImage('Kvantitativt prov 2', normered, totalScore, allQuestions.length, stScores);
 
-        // Try to share as file, fallback to download
-        try {
-          const res = await fetch(dataUrl);
-          const blob = await res.blob();
-          const file = new File([blob], 'hp-resultat.png', { type: 'image/png' });
-          if (navigator.canShare?.({ files: [file] })) {
-            await navigator.share({ files: [file], title: 'Mitt HP-resultat' });
-          } else {
-            throw new Error('cant share');
-          }
-        } catch {
-          // Fallback: download
+        // Show preview
+        const preview = document.getElementById('share-preview')!;
+        preview.style.display = 'block';
+        preview.innerHTML = `<img src="${dataUrl}" style="max-width:300px; width:100%; border-radius:var(--radius); box-shadow:var(--shadow); margin-bottom:0.8rem;" /><br><div style="display:flex; justify-content:center; gap:0.6rem; flex-wrap:wrap;"><button class="btn btn-primary btn-sm" id="btn-share-native">Dela</button><button class="btn btn-outline btn-sm" id="btn-download">Ladda ner</button></div>`;
+
+        document.getElementById('btn-share-native')?.addEventListener('click', async () => {
+          try {
+            const res2 = await fetch(dataUrl);
+            const blob = await res2.blob();
+            const file = new File([blob], 'hp-resultat.png', { type: 'image/png' });
+            if (navigator.canShare?.({ files: [file] })) {
+              await navigator.share({ files: [file], title: 'Mitt HP-resultat' });
+            } else {
+              await navigator.share({ text: 'Jag tränade på HPAkuten! www.hpakuten.se' });
+            }
+          } catch {}
+        });
+
+        document.getElementById('btn-download')?.addEventListener('click', () => {
           const a = document.createElement('a');
           a.href = dataUrl;
           a.download = 'hp-resultat.png';
           a.click();
-        }
+        });
 
-        btn.innerHTML = '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg> Spara bild';
+        btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg> Dela ditt resultat';
       });
 
       document.getElementById('btn-continue')?.addEventListener('click', () => {

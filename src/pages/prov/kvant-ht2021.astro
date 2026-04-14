@@ -40,7 +40,9 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     const isReview = urlParams.get('review') === '1';
     async function loadReview() {
       if (!isReview) return;
-      // Try localStorage first
+      // Clear any in-progress data — we want the finished result
+      clearProgress();
+      // Try localStorage results first
       const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
       const saved = stored['kvant-ht2021'];
       if (saved?.answers) {

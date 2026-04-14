@@ -50,6 +50,7 @@ if (user) {
     const isReview = urlParams.get('review') === '1';
     async function loadReview() {
       if (!isReview) return;
+      clearProgress();
       const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
       const saved = stored['kvant2-ht2021'];
       if (saved?.answers) {

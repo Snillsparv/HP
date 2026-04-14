@@ -254,10 +254,15 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
           <div class="pq-nav-main">
             <button class="btn btn-outline btn-sm" id="btn-prev" ${current === 0 ? 'disabled' : ''}>Föregående</button>
             ${current === allQuestions.length - 1
-              ? '<button class="btn btn-primary btn-sm" id="btn-submit">Rätta provet</button>'
+              ? '<button class="btn btn-primary btn-sm" id="btn-next">Nästa</button>'
               : '<button class="btn btn-primary btn-sm" id="btn-next">Nästa</button>'}
           </div>
-          <button class="btn btn-sm btn-overview-link" id="btn-overview">Översikt</button>
+          <div style="display:flex; gap:0.6rem; align-items:center;">
+            <button class="btn btn-sm btn-overview-link" id="btn-overview">Översikt</button>
+            ${answers.filter(a => a === null).length === 0
+              ? '<button class="btn btn-sm btn-outline" id="btn-submit" style="color:var(--color-success); border-color:var(--color-success);">Rätta provet</button>'
+              : `<button class="btn btn-sm btn-outline" id="btn-submit" style="opacity:0.5;">Rätta (${answers.filter(a => a !== null).length}/${allQuestions.length})</button>`}
+          </div>
         </div>
         <div class="pq-dots">${allQuestions.map((_, i) => `<span class="pq-dot ${i === current ? 'pq-dot--cur' : ''} ${answers[i] !== null ? 'pq-dot--ans' : ''}" data-i="${i}">${i+1}</span>`).join('')}</div>
       `;
@@ -269,8 +274,13 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         el.addEventListener('change', (e) => { answers[current] = Number((e.target as HTMLInputElement).value); render(); });
       });
       document.getElementById('btn-prev')?.addEventListener('click', () => { current--; render(); });
-      document.getElementById('btn-next')?.addEventListener('click', () => { current++; render(); });
-      document.getElementById('btn-submit')?.addEventListener('click', () => { submitted = true; clearProgress(); if (timerInterval) clearInterval(timerInterval); render(); });
+      document.getElementById('btn-next')?.addEventListener('click', () => { current = (current + 1) % allQuestions.length; render(); });
+      document.getElementById('btn-submit')?.addEventListener('click', () => {
+        const unanswered = answers.filter(a => a === null).length;
+        let msg = 'Vill du rätta provet?';
+        if (unanswered > 0) msg = `Du har ${unanswered} obesvarade frågor. Vill du rätta ändå?`;
+        if (confirm(msg)) { submitted = true; clearProgress(); if (timerInterval) clearInterval(timerInterval); render(); }
+      });
       document.getElementById('btn-overview')?.addEventListener('click', renderOverview);
       document.getElementById('btn-pause')?.addEventListener('click', () => { timerPaused = !timerPaused; render(); });
       root.querySelectorAll('.pq-dot').forEach(el => {
@@ -329,7 +339,12 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
       });
       document.getElementById('btn-back')?.addEventListener('click', () => render());
-      document.getElementById('btn-submit')?.addEventListener('click', () => { submitted = true; clearProgress(); if (timerInterval) clearInterval(timerInterval); render(); });
+      document.getElementById('btn-submit')?.addEventListener('click', () => {
+        const unanswered = answers.filter(a => a === null).length;
+        let msg = 'Vill du rätta provet?';
+        if (unanswered > 0) msg = `Du har ${unanswered} obesvarade frågor. Vill du rätta ändå?`;
+        if (confirm(msg)) { submitted = true; clearProgress(); if (timerInterval) clearInterval(timerInterval); render(); }
+      });
       document.getElementById('btn-pause')?.addEventListener('click', () => { timerPaused = !timerPaused; renderOverview(); });
     }
 

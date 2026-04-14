@@ -20,7 +20,7 @@ export const POST: APIRoute = async ({ request }) => {
   return new Response(null, {
     status: 302,
     headers: {
-      Location: '/forum',
+      Location: '/trana',
       'Set-Cookie': `session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 3600}`,
     },
   });

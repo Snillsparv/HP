@@ -142,7 +142,7 @@ export function analyzeResults(
   if (normered !== undefined && normered >= 0.5) {
     const eduExample = getEducationExample(normered);
     if (eduExample) {
-      summaryParts.push(`<br><strong>${normered.toFixed(1)}</strong> räcker till: ${eduExample}`);
+      summaryParts.push(`</p><div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:0.8rem 1rem; margin-top:0.8rem; color:#1e40af; font-size:0.95rem;"><strong>${normered.toFixed(1)}</strong> räcker till: ${eduExample}</div><p style="margin:0;">`);
     }
   }
 

@@ -362,6 +362,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
               <div class="pq-res-detail" id="res-${q.num}" style="display:none;">
                 <div class="pq-res-question">${q.text || ''}${st.type === 'kva' && q.q1 ? `<div class="kva-pair"><div class="kva-row"><span class="kva-label"><i>Kvantitet I:</i></span><span>${q.q1}</span></div><div class="kva-row"><span class="kva-label"><i>Kvantitet II:</i></span><span>${q.q2}</span></div></div>` : ''}${st.type === 'nog' && q.s1 ? `<div class="nog-statements"><div class="nog-stmt"><span class="nog-stmt-num">(1)</span><span>${q.s1}</span></div><div class="nog-stmt"><span class="nog-stmt-num">(2)</span><span>${q.s2}</span></div></div>` : ''}</div>
                 <div class="pq-res-options">${q.options.map((opt, oi) => `<div class="pq-res-opt ${oi === q.correct ? 'pq-res-opt--correct' : ''} ${oi === answers[gi] && oi !== q.correct ? 'pq-res-opt--wrong' : ''}">${labels[oi]}. ${opt}</div>`).join('')}</div>
+                ${q.videoId ? `<div class="pq-res-video" style="margin-top:1rem;"><p style="font-weight:600; font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">Förklaring:</p><div class="video-embed"><iframe src="https://player.vimeo.com/video/${q.videoId}?dnt=1&title=0&byline=0&portrait=0" title="Förklaring uppgift ${q.num}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div></div>` : ''}
               </div>
             </div>`;
           }).join('')}</div>`;

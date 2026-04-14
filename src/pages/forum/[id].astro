@@ -4,6 +4,7 @@ import { getSessionFromCookies } from '../../lib/auth.js';
 import { getThread, getReplies } from '../../lib/forum.js';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const isAdmin = user?.email === 'snillsparv@gmail.com';
 const id = Number(Astro.params.id);
 const thread = await getThread(id);
 
@@ -52,6 +53,11 @@ function timeAgo(dateStr: string) {
         </div>
         <h1>{thread.title}</h1>
         <div class="post-body">{thread.body}</div>
+        {isAdmin && (
+          <div class="admin-actions">
+            <button class="btn-admin-delete" data-action="delete-thread" data-thread-id={thread.id}>Ta bort tråd</button>
+          </div>
+        )}
       </article>
 
       <!-- Replies -->
@@ -69,6 +75,11 @@ function timeAgo(dateStr: string) {
                 </div>
               </div>
               <div class="post-body">{r.body}</div>
+              {isAdmin && (
+                <div class="admin-actions">
+                  <button class="btn-admin-delete" data-action="delete-reply" data-reply-id={r.id}>Ta bort</button>
+                </div>
+              )}
             </div>
           ))}
         </div>
@@ -96,7 +107,29 @@ function timeAgo(dateStr: string) {
   </div>
 </Base>
 
+<script>
+  document.querySelectorAll('.btn-admin-delete').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const action = btn.getAttribute('data-action');
+      const threadId = btn.getAttribute('data-thread-id');
+      const replyId = btn.getAttribute('data-reply-id');
+      const what = action === 'delete-thread' ? 'hela tråden' : 'svaret';
+      if (!confirm(`Vill du verkligen ta bort ${what}?`)) return;
+      await fetch('/api/forum/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, threadId: threadId ? Number(threadId) : undefined, replyId: replyId ? Number(replyId) : undefined }),
+      });
+      if (action === 'delete-thread') window.location.href = '/forum';
+      else window.location.reload();
+    });
+  });
+</script>
+
 <style>
+  .admin-actions { margin-top: 0.5rem; }
+  .btn-admin-delete { background: none; border: none; color: #ef4444; font-size: 0.8rem; cursor: pointer; padding: 0.2rem 0.4rem; }
+  .btn-admin-delete:hover { text-decoration: underline; }
   .thread-breadcrumb {
     font-size: 0.85rem;
     color: var(--color-muted);

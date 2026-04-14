@@ -69,7 +69,7 @@ export const subTests: SubTest[] = [
     questions: [
       { num: 13, text: 'Medelvärdet av de tre talen <i>x</i>, <i>y</i> och <i>z</i> är 12. Summan av <i>y</i> och <i>z</i> är 30.', q1: '<i>x</i>', q2: '9', options: stdKvaOpts, correct: 1, category: 'aritmetik', videoId: '1182734977' },
       { num: 14, text: '', q1: tex('1 + \\frac{1}{4}'), q2: tex('\\frac{10}{8}'), options: stdKvaOpts, correct: 2, category: 'aritmetik', videoId: '1182735217' },
-      { num: 15, text: `${tex('x > 0')}<br>${tex('y < 0')}<br>${tex('z > 0')}<br>${tex('w < 0')}`, q1: tex('x^2 + y^2'), q2: tex('z^2 + w^2'), options: stdKvaOpts, correct: 3, category: 'algebra', videoId: '1182735261' },
+      { num: 15, text: `${tex('x > 0')}<br>${tex('y < 0')}<br>${tex('z > 0')}<br>${tex('w < 0')}`, q1: tex('x^2 + y^2'), q2: tex('z^2 + w^2'), options: stdKvaOpts, correct: 3, category: 'algebra', videoId: '1183020198' },
       { num: 16, text: '', q1: 'Arean av en rektangel med sidorna 12 cm och 25 cm', q2: 'Arean av en rätvinklig triangel med kateterna 8 cm och 64 cm', options: stdKvaOpts, correct: 0, category: 'geometri', videoId: '1182735282' },
       { num: 17, text: tex('2(2x + 4) = 2x + 4'), q1: tex('x'), q2: '0', options: stdKvaOpts, correct: 1, category: 'algebra', videoId: '1182736576' },
       { num: 18, text: tex('f(x) = x^2 - 2x - 3'), q1: tex('f(3)'), q2: tex('f(-1)'), options: stdKvaOpts, correct: 2, category: 'funktioner', videoId: '1182736871' },

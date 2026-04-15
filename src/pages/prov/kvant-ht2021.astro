@@ -414,6 +414,9 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
           <p style="color:var(--color-muted)">rätt svar · tid: ${fmt(elapsed)}</p>
         </div>
         ${analysisHTML}
+        <div class="tip-box success" style="text-align:center; margin:1.5rem 0; font-size:1rem;">
+          <strong>Klicka på en uppgift nedan</strong> för att se rätt svar och en video där jag förklarar hur man löser den! :)
+        </div>
         ${resultsHTML}
         <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
         <div class="pq-share" style="text-align:center; margin:1.5rem 0;">

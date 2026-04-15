@@ -112,7 +112,8 @@ for (const r of userResults) {
   if (!userMap.has(r.user_id)) userMap.set(r.user_id, { name: r.name, email: r.email });
   const u = userMap.get(r.user_id)!;
   const type = r.test_id.includes('verbal') ? 'verbal' as const : 'kvant' as const;
-  const norm = getNormering(r.score, r.total, type);
+  const isTest2 = r.test_id.includes('2-ht');
+  const norm = getNormering(r.score, r.total, type, isTest2);
   if (r.test_id === 'kvant-ht2021') { u.kvant1 = r.score; u.kvant1n = norm; }
   if (r.test_id === 'kvant2-ht2021') { u.kvant2 = r.score; u.kvant2n = norm; }
   if (r.test_id === 'verbal-ht2021') { u.verbal1 = r.score; u.verbal1n = norm; }

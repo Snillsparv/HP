@@ -115,7 +115,8 @@ const testUrls: Record<string, string> = {
               const r = resultMap.get(testId) as any;
               const info = testLabels[testId];
               if (!r || !info) return null;
-              const normered = getNormering(r.score, r.total, info.type);
+              const isTest2 = testId.includes('2-ht');
+              const normered = getNormering(r.score, r.total, info.type, isTest2);
               const isKvant = info.type === 'kvant';
               return (
                 <a href={`${testUrls[testId]}?review=1`} class={`result-card ${isKvant ? 'result-card--kvant' : 'result-card--verbal'}`} style="text-decoration:none; color:inherit;">

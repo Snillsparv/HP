@@ -218,6 +218,25 @@ function timeAgo(d: string) {
           ))}
         </tbody>
       </table>
+
+      <h2>Alla frågor ({qStats.length} st, sorterade svårast först)</h2>
+      <table>
+        <thead>
+          <tr><th>Prov</th><th>Del</th><th>Fråga</th><th>Rätt</th><th>Svar</th><th>%</th></tr>
+        </thead>
+        <tbody>
+          {[...qStats].sort((a, b) => a.rate - b.rate).map(q => (
+            <tr>
+              <td style="font-size:0.8rem;">{q.testId}</td>
+              <td>{q.subTest}</td>
+              <td><strong>{q.num}</strong></td>
+              <td>{q.correctCount}/{q.answered}</td>
+              <td>{q.answered}</td>
+              <td style={`font-weight:700; color:${q.rate < 30 ? '#ef4444' : q.rate < 50 ? '#f59e0b' : q.rate < 70 ? '#3b82f6' : '#22c55e'};`}>{q.rate}%</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   </div>
 </Base>

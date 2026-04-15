@@ -46,7 +46,7 @@ import { subTests as kvant2Tests } from '../lib/questions-kvant2-ht2021.js';
 import { verbalSubTests as verbal1Tests } from '../lib/questions-verbal-ht2021.js';
 import { verbalSubTests2 as verbal2Tests } from '../lib/questions-verbal2-ht2021.js';
 
-const { rows: allResults } = await pool.query('SELECT test_id, answers FROM test_results');
+const { rows: allResults } = await pool.query('SELECT test_id, answers, created_at FROM test_results');
 
 const testQSets: Record<string, { num: number; correct: number; subTest: string }[]> = {};
 for (const [tid, sts] of Object.entries({ 'kvant-ht2021': kvant1Tests, 'kvant2-ht2021': kvant2Tests, 'verbal-ht2021': verbal1Tests, 'verbal2-ht2021': verbal2Tests })) {
@@ -57,6 +57,14 @@ for (const [tid, sts] of Object.entries({ 'kvant-ht2021': kvant1Tests, 'kvant2-h
   testQSets[tid] = qs;
 }
 
+// Facit fix dates: ignore results before these dates for affected questions
+const facitFixDates: Record<string, string> = {
+  'verbal2-ht2021': '2026-04-16T21:53:00Z',
+};
+const facitFixQuestions: Record<string, number[]> = {
+  'verbal2-ht2021': [14, 15],
+};
+
 interface QStat { testId: string; num: number; subTest: string; answered: number; correctCount: number; rate: number; }
 const qStats: QStat[] = [];
 
@@ -66,8 +74,12 @@ for (const [tid, qs] of Object.entries(testQSets)) {
   for (const r of testResults) {
     const ans = typeof r.answers === 'string' ? JSON.parse(r.answers) : r.answers;
     if (!Array.isArray(ans)) continue;
+    const fixDate = facitFixDates[tid];
+    const fixQs = facitFixQuestions[tid] || [];
     ans.forEach((a: any, i: number) => {
       if (i < qs.length && a !== null && a !== undefined) {
+        // Skip old results for questions with corrected answer keys
+        if (fixDate && fixQs.includes(qs[i].num) && new Date(r.created_at) < new Date(fixDate)) return;
         counters[i].answered++;
         if (Number(a) === qs[i].correct) counters[i].correct++;
       }

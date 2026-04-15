@@ -95,6 +95,35 @@ for (const [tid, qs] of Object.entries(testQSets)) {
 const hardestQuestions = [...qStats].filter(q => q.answered >= 3).sort((a, b) => a.rate - b.rate).slice(0, 20);
 const easiestQuestions = [...qStats].filter(q => q.answered >= 3).sort((a, b) => b.rate - a.rate).slice(0, 10);
 
+// User results with normering
+import { getNormering } from '../lib/normering.js';
+
+const { rows: userResults } = await pool.query(`
+  SELECT DISTINCT ON (tr.user_id, tr.test_id)
+    tr.user_id, tr.test_id, tr.score, tr.total, tr.created_at,
+    u.name, u.email
+  FROM test_results tr JOIN users u ON tr.user_id = u.id
+  ORDER BY tr.user_id, tr.test_id, tr.score DESC
+`);
+
+interface UserComparison { name: string; email: string; kvant1?: number; kvant1n?: number; verbal1?: number; verbal1n?: number; kvant2?: number; kvant2n?: number; verbal2?: number; verbal2n?: number; }
+const userMap = new Map<number, UserComparison>();
+for (const r of userResults) {
+  if (!userMap.has(r.user_id)) userMap.set(r.user_id, { name: r.name, email: r.email });
+  const u = userMap.get(r.user_id)!;
+  const type = r.test_id.includes('verbal') ? 'verbal' as const : 'kvant' as const;
+  const norm = getNormering(r.score, r.total, type);
+  if (r.test_id === 'kvant-ht2021') { u.kvant1 = r.score; u.kvant1n = norm; }
+  if (r.test_id === 'kvant2-ht2021') { u.kvant2 = r.score; u.kvant2n = norm; }
+  if (r.test_id === 'verbal-ht2021') { u.verbal1 = r.score; u.verbal1n = norm; }
+  if (r.test_id === 'verbal2-ht2021') { u.verbal2 = r.score; u.verbal2n = norm; }
+}
+const usersWithResults = [...userMap.values()].filter(u => u.kvant1n || u.verbal1n).sort((a, b) => {
+  const aMax = Math.max(a.kvant1n || 0, a.kvant2n || 0, a.verbal1n || 0, a.verbal2n || 0);
+  const bMax = Math.max(b.kvant1n || 0, b.kvant2n || 0, b.verbal1n || 0, b.verbal2n || 0);
+  return bMax - aMax;
+});
+
 function timeAgo(d: string) {
   const diff = Date.now() - new Date(d).getTime();
   const mins = Math.floor(diff / 60000);
@@ -121,79 +150,69 @@ function timeAgo(d: string) {
           <div class="admin-stat-label">Provresultat</div>
         </div>
         <div class="admin-stat">
+          <div class="admin-stat-num">{msgCount.count}</div>
+          <div class="admin-stat-label">Meddelanden</div>
+        </div>
+        <div class="admin-stat">
           <div class="admin-stat-num">{threadCount.count}</div>
           <div class="admin-stat-label">Forumtrådar</div>
         </div>
-        <div class="admin-stat">
-          <div class="admin-stat-num">{replyCount.count}</div>
-          <div class="admin-stat-label">Foruminlägg</div>
-        </div>
       </div>
 
-      <h2>Resultat per prov</h2>
-      <table>
-        <thead>
-          <tr><th>Prov</th><th>Antal</th><th>Snittpoäng</th></tr>
-        </thead>
-        <tbody>
-          {resultsByTest.map(r => (
-            <tr><td>{r.test_id}</td><td>{r.count}</td><td>{r.avg_score}</td></tr>
-          ))}
-        </tbody>
-      </table>
+      <details class="admin-section" open>
+        <summary>Resultat per prov</summary>
+        <table>
+          <thead><tr><th>Prov</th><th>Antal</th><th>Snittpoäng</th></tr></thead>
+          <tbody>{resultsByTest.map(r => <tr><td>{r.test_id}</td><td>{r.count}</td><td>{r.avg_score}</td></tr>)}</tbody>
+        </table>
+      </details>
 
-      <h2>Meddelanden ({msgCount.count})</h2>
-      <table>
-        <thead>
-          <tr><th>Namn</th><th>E-post</th><th>Meddelande</th><th>När</th></tr>
-        </thead>
-        <tbody>
-          {recentMessages.map(m => (
-            <tr>
-              <td>{m.name}</td>
-              <td style="font-size:0.85rem;">{m.email}</td>
-              <td style="font-size:0.85rem; max-width:300px;">{m.message}</td>
-              <td style="font-size:0.85rem;">{timeAgo(m.created_at)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <details class="admin-section" open>
+        <summary>Användarresultat med normering ({usersWithResults.length} st)</summary>
+        <table>
+          <thead><tr><th>Namn</th><th>Kvant 1</th><th>Kvant 2</th><th>K diff</th><th>Verb 1</th><th>Verb 2</th><th>V diff</th></tr></thead>
+          <tbody>{usersWithResults.map(u => {
+            const kDiff = (u.kvant1n != null && u.kvant2n != null) ? u.kvant2n - u.kvant1n : null;
+            const vDiff = (u.verbal1n != null && u.verbal2n != null) ? u.verbal2n - u.verbal1n : null;
+            return <tr>
+              <td title={u.email}>{u.name}</td>
+              <td>{u.kvant1n != null ? u.kvant1n.toFixed(1) : '—'}</td>
+              <td>{u.kvant2n != null ? u.kvant2n.toFixed(1) : '—'}</td>
+              <td style={`font-weight:700; color:${kDiff != null ? (kDiff > 0 ? '#22c55e' : kDiff < 0 ? '#ef4444' : 'var(--color-muted)') : 'var(--color-muted)'};`}>{kDiff != null ? (kDiff > 0 ? '+' : '') + kDiff.toFixed(1) : '—'}</td>
+              <td>{u.verbal1n != null ? u.verbal1n.toFixed(1) : '—'}</td>
+              <td>{u.verbal2n != null ? u.verbal2n.toFixed(1) : '—'}</td>
+              <td style={`font-weight:700; color:${vDiff != null ? (vDiff > 0 ? '#22c55e' : vDiff < 0 ? '#ef4444' : 'var(--color-muted)') : 'var(--color-muted)'};`}>{vDiff != null ? (vDiff > 0 ? '+' : '') + vDiff.toFixed(1) : '—'}</td>
+            </tr>;
+          })}</tbody>
+        </table>
+      </details>
 
-      <h2>Senaste användare</h2>
-      <table>
-        <thead>
-          <tr><th>Namn</th><th>E-post</th><th>Steg</th><th>Registrerad</th></tr>
-        </thead>
-        <tbody>
-          {recentUsers.map(u => (
-            <tr>
-              <td>{u.name}</td>
-              <td style="font-size:0.85rem; color:var(--color-muted);">{u.email}</td>
-              <td>{u.train_step || 1}</td>
-              <td style="font-size:0.85rem;">{timeAgo(u.created_at)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <details class="admin-section">
+        <summary>Meddelanden ({msgCount.count})</summary>
+        <table>
+          <thead><tr><th>Namn</th><th>E-post</th><th>Meddelande</th><th>När</th></tr></thead>
+          <tbody>{recentMessages.map(m => <tr><td>{m.name}</td><td style="font-size:0.85rem;">{m.email}</td><td style="font-size:0.85rem; max-width:300px;">{m.message}</td><td style="font-size:0.85rem;">{timeAgo(m.created_at)}</td></tr>)}</tbody>
+        </table>
+      </details>
 
-      <h2>Senaste provresultat</h2>
-      <table>
-        <thead>
-          <tr><th>Användare</th><th>Prov</th><th>Poäng</th><th>När</th></tr>
-        </thead>
-        <tbody>
-          {recentResults.map(r => (
-            <tr>
-              <td>{r.name}</td>
-              <td style="font-size:0.85rem;">{r.test_id}</td>
-              <td>{r.score}/{r.total}</td>
-              <td style="font-size:0.85rem;">{timeAgo(r.created_at)}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <details class="admin-section">
+        <summary>Senaste användare (20)</summary>
+        <table>
+          <thead><tr><th>Namn</th><th>E-post</th><th>Steg</th><th>Registrerad</th></tr></thead>
+          <tbody>{recentUsers.map(u => <tr><td>{u.name}</td><td style="font-size:0.85rem; color:var(--color-muted);">{u.email}</td><td>{u.train_step || 1}</td><td style="font-size:0.85rem;">{timeAgo(u.created_at)}</td></tr>)}</tbody>
+        </table>
+      </details>
 
-      <h2>Svåraste frågorna (min 3 svar)</h2>
+      <details class="admin-section">
+        <summary>Senaste provresultat (20)</summary>
+        <table>
+          <thead><tr><th>Användare</th><th>Prov</th><th>Poäng</th><th>När</th></tr></thead>
+          <tbody>{recentResults.map(r => <tr><td>{r.name}</td><td style="font-size:0.85rem;">{r.test_id}</td><td>{r.score}/{r.total}</td><td style="font-size:0.85rem;">{timeAgo(r.created_at)}</td></tr>)}</tbody>
+        </table>
+      </details>
+
+      <details class="admin-section">
+        <summary>Svåraste frågorna (topp 20)</summary>
       <table>
         <thead>
           <tr><th>Prov</th><th>Del</th><th>Fråga</th><th>Rätt</th><th>Svar</th><th>%</th></tr>
@@ -211,44 +230,23 @@ function timeAgo(d: string) {
           ))}
         </tbody>
       </table>
+      </details>
 
-      <h2>Lättaste frågorna</h2>
-      <table>
-        <thead>
-          <tr><th>Prov</th><th>Del</th><th>Fråga</th><th>Rätt</th><th>Svar</th><th>%</th></tr>
-        </thead>
-        <tbody>
-          {easiestQuestions.map(q => (
-            <tr>
-              <td style="font-size:0.8rem;">{q.testId}</td>
-              <td>{q.subTest}</td>
-              <td><strong>{q.num}</strong></td>
-              <td>{q.correctCount}/{q.answered}</td>
-              <td>{q.answered}</td>
-              <td style="font-weight:700; color:#22c55e;">{q.rate}%</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <details class="admin-section">
+        <summary>Lättaste frågorna (topp 10)</summary>
+        <table>
+          <thead><tr><th>Prov</th><th>Del</th><th>Fråga</th><th>Rätt</th><th>Svar</th><th>%</th></tr></thead>
+          <tbody>{easiestQuestions.map(q => <tr><td style="font-size:0.8rem;">{q.testId}</td><td>{q.subTest}</td><td><strong>{q.num}</strong></td><td>{q.correctCount}/{q.answered}</td><td>{q.answered}</td><td style="font-weight:700; color:#22c55e;">{q.rate}%</td></tr>)}</tbody>
+        </table>
+      </details>
 
-      <h2>Alla frågor ({qStats.length} st, sorterade svårast först)</h2>
-      <table>
-        <thead>
-          <tr><th>Prov</th><th>Del</th><th>Fråga</th><th>Rätt</th><th>Svar</th><th>%</th></tr>
-        </thead>
-        <tbody>
-          {[...qStats].sort((a, b) => a.rate - b.rate).map(q => (
-            <tr>
-              <td style="font-size:0.8rem;">{q.testId}</td>
-              <td>{q.subTest}</td>
-              <td><strong>{q.num}</strong></td>
-              <td>{q.correctCount}/{q.answered}</td>
-              <td>{q.answered}</td>
-              <td style={`font-weight:700; color:${q.rate < 30 ? '#ef4444' : q.rate < 50 ? '#f59e0b' : q.rate < 70 ? '#3b82f6' : '#22c55e'};`}>{q.rate}%</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+      <details class="admin-section">
+        <summary>Alla frågor ({qStats.length} st, svårast först)</summary>
+        <table>
+          <thead><tr><th>Prov</th><th>Del</th><th>Fråga</th><th>Rätt</th><th>Svar</th><th>%</th></tr></thead>
+          <tbody>{[...qStats].sort((a, b) => a.rate - b.rate).map(q => <tr><td style="font-size:0.8rem;">{q.testId}</td><td>{q.subTest}</td><td><strong>{q.num}</strong></td><td>{q.correctCount}/{q.answered}</td><td>{q.answered}</td><td style={`font-weight:700; color:${q.rate < 30 ? '#ef4444' : q.rate < 50 ? '#f59e0b' : q.rate < 70 ? '#3b82f6' : '#22c55e'};`}>{q.rate}%</td></tr>)}</tbody>
+        </table>
+      </details>
     </div>
   </div>
 </Base>
@@ -282,7 +280,36 @@ function timeAgo(d: string) {
 
   table {
     width: 100%;
-    margin-bottom: 2rem;
+    margin-bottom: 1rem;
+  }
+
+  .admin-section {
+    margin-bottom: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .admin-section summary {
+    padding: 0.8rem 1rem;
+    font-weight: 700;
+    font-size: 1.05rem;
+    cursor: pointer;
+    background: var(--color-surface);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .admin-section summary:hover {
+    background: #f8fafc;
+  }
+
+  .admin-section[open] summary {
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .admin-section > table,
+  .admin-section > div {
+    padding: 0.5rem;
   }
 
   @media (max-width: 600px) {

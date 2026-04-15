@@ -125,6 +125,16 @@ const usersWithResults = [...userMap.values()].filter(u => u.kvant1n || u.verbal
   return bMax - aMax;
 });
 
+// Daily stats for charts
+const { rows: dailyUsers } = await pool.query(`
+  SELECT DATE(created_at) as day, COUNT(*) as count
+  FROM users GROUP BY DATE(created_at) ORDER BY day
+`);
+const { rows: dailyResults } = await pool.query(`
+  SELECT DATE(created_at) as day, COUNT(*) as count
+  FROM test_results GROUP BY DATE(created_at) ORDER BY day
+`);
+
 function timeAgo(d: string) {
   const diff = Date.now() - new Date(d).getTime();
   const mins = Math.floor(diff / 60000);
@@ -159,6 +169,90 @@ function timeAgo(d: string) {
           <div class="admin-stat-label">Forumtrådar</div>
         </div>
       </div>
+
+      <details class="admin-section" open>
+        <summary>Tillväxt över tid</summary>
+        <div style="padding:1rem;">
+          <canvas id="growth-chart" width="800" height="300" style="width:100%; height:300px;"></canvas>
+          <div style="display:flex; gap:1.5rem; justify-content:center; margin-top:0.5rem; font-size:0.85rem;">
+            <span><span style="color:#3b82f6;">●</span> Nya användare</span>
+            <span><span style="color:#22c55e;">●</span> Nya provresultat</span>
+          </div>
+        </div>
+      </details>
+
+      <script define:vars={{ dailyUsers, dailyResults }}>
+        const canvas = document.getElementById('growth-chart');
+        if (canvas) {
+          const ctx = canvas.getContext('2d');
+          const dpr = window.devicePixelRatio || 1;
+          canvas.width = canvas.offsetWidth * dpr;
+          canvas.height = 300 * dpr;
+          ctx.scale(dpr, dpr);
+          const W = canvas.offsetWidth;
+          const H = 300;
+          const pad = { top: 20, right: 20, bottom: 40, left: 50 };
+
+          // Merge dates
+          const allDays = new Set();
+          dailyUsers.forEach(d => allDays.add(d.day.split('T')[0]));
+          dailyResults.forEach(d => allDays.add(d.day.split('T')[0]));
+          const days = [...allDays].sort();
+
+          const uMap = {};
+          dailyUsers.forEach(d => uMap[d.day.split('T')[0]] = Number(d.count));
+          const rMap = {};
+          dailyResults.forEach(d => rMap[d.day.split('T')[0]] = Number(d.count));
+
+          const uData = days.map(d => uMap[d] || 0);
+          const rData = days.map(d => rMap[d] || 0);
+          const maxVal = Math.max(...uData, ...rData, 1);
+
+          function drawLine(data, color) {
+            if (data.length < 2) return;
+            ctx.beginPath();
+            ctx.strokeStyle = color;
+            ctx.lineWidth = 2;
+            data.forEach((v, i) => {
+              const x = pad.left + (i / (data.length - 1)) * (W - pad.left - pad.right);
+              const y = pad.top + (1 - v / maxVal) * (H - pad.top - pad.bottom);
+              if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+            });
+            ctx.stroke();
+          }
+
+          // Background
+          ctx.fillStyle = '#fafbfc';
+          ctx.fillRect(0, 0, W, H);
+
+          // Grid lines
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1;
+          for (let i = 0; i <= 4; i++) {
+            const y = pad.top + (i / 4) * (H - pad.top - pad.bottom);
+            ctx.beginPath(); ctx.moveTo(pad.left, y); ctx.lineTo(W - pad.right, y); ctx.stroke();
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '11px sans-serif';
+            ctx.textAlign = 'right';
+            ctx.fillText(Math.round(maxVal * (1 - i / 4)).toString(), pad.left - 8, y + 4);
+          }
+
+          // Date labels
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '11px sans-serif';
+          ctx.textAlign = 'center';
+          const step = Math.max(1, Math.floor(days.length / 6));
+          days.forEach((d, i) => {
+            if (i % step === 0 || i === days.length - 1) {
+              const x = pad.left + (i / (days.length - 1)) * (W - pad.left - pad.right);
+              ctx.fillText(d.slice(5), x, H - 10);
+            }
+          });
+
+          drawLine(uData, '#3b82f6');
+          drawLine(rData, '#22c55e');
+        }
+      </script>
 
       <details class="admin-section" open>
         <summary>Resultat per prov</summary>

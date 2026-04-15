@@ -155,71 +155,118 @@ import Base from '../layouts/Base.astro';
     ];
 
     const root = document.getElementById('exercise-app')!;
+    let currentCat: Category | null = null;
+    let currentIdx = 0;
+    const answered: Map<string, Map<number, number>> = new Map(); // cat.id -> idx -> chosen option
 
-    function render() {
-      root.innerHTML = categories.map(cat => `
-        <details class="ex-category" id="cat-${cat.id}">
-          <summary>${cat.name} <span style="color:var(--color-muted); font-weight:400; font-size:0.85rem;">(${cat.exercises.length} uppgifter)</span></summary>
-          <div class="ex-list">
-            ${cat.exercises.map((ex, i) => `
-              <div class="ex-item" data-cat="${cat.id}" data-idx="${i}">
-                <p class="ex-question"><strong>${i+1}.</strong> ${ex.q}</p>
-                <div class="ex-options">
-                  ${ex.options.map((opt, oi) => `
-                    <button class="ex-opt" data-cat="${cat.id}" data-idx="${i}" data-oi="${oi}">${opt}</button>
-                  `).join('')}
-                </div>
-                <div class="ex-feedback" id="fb-${cat.id}-${i}" style="display:none;"></div>
-              </div>
-            `).join('')}
-          </div>
-        </details>
-      `).join('');
-
-      root.querySelectorAll('.ex-opt').forEach(btn => {
+    function renderCategoryList() {
+      root.innerHTML = `
+        <div class="ex-cats">
+          ${categories.map(cat => {
+            const done = answered.get(cat.id)?.size || 0;
+            return `<button class="ex-cat-btn" data-cat="${cat.id}">
+              <span class="ex-cat-name">${cat.name}</span>
+              <span class="ex-cat-count">${done}/${cat.exercises.length}</span>
+            </button>`;
+          }).join('')}
+        </div>
+      `;
+      root.querySelectorAll('.ex-cat-btn').forEach(btn => {
         btn.addEventListener('click', () => {
-          const catId = btn.getAttribute('data-cat')!;
-          const idx = Number(btn.getAttribute('data-idx'));
-          const oi = Number(btn.getAttribute('data-oi'));
-          const cat = categories.find(c => c.id === catId)!;
-          const ex = cat.exercises[idx];
-          const fb = document.getElementById(`fb-${catId}-${idx}`)!;
-          const correct = oi === ex.correct;
-
-          // Disable all buttons for this question
-          root.querySelectorAll(`[data-cat="${catId}"][data-idx="${idx}"]`).forEach(b => {
-            if (b.classList.contains('ex-opt')) {
-              (b as HTMLButtonElement).disabled = true;
-              const boi = Number(b.getAttribute('data-oi'));
-              if (boi === ex.correct) b.classList.add('ex-opt--correct');
-              if (boi === oi && !correct) b.classList.add('ex-opt--wrong');
-            }
-          });
-
-          fb.style.display = 'block';
-          fb.innerHTML = `<div class="ex-fb ${correct ? 'ex-fb--ok' : 'ex-fb--no'}">${correct ? '✓ Rätt!' : '✗ Fel.'} ${ex.explanation}</div>`;
+          currentCat = categories.find(c => c.id === btn.getAttribute('data-cat')!)!;
+          currentIdx = 0;
+          renderExercise();
         });
       });
     }
 
-    render();
+    function renderExercise() {
+      if (!currentCat) return;
+      const ex = currentCat.exercises[currentIdx];
+      const catAnswers = answered.get(currentCat.id) || new Map();
+      const chosen = catAnswers.get(currentIdx);
+      const isAnswered = chosen !== undefined;
+      const labels = ['A', 'B', 'C', 'D', 'E'];
+
+      root.innerHTML = `
+        <div class="prov-top-bar">
+          <span class="prov-section-tag">${currentCat.name}</span>
+          <button class="btn-timer-toggle" id="btn-back-cats" title="Alla kategorier">✕</button>
+        </div>
+        <div class="pq-progress">Uppgift ${currentIdx + 1} av ${currentCat.exercises.length}</div>
+        <div class="pq-card">
+          <div class="pq-question"><span class="pq-num">${currentIdx + 1}.</span><span class="pq-text">${ex.q}</span></div>
+          <div class="pq-options">
+            ${ex.options.map((opt, i) => {
+              let cls = 'pq-opt';
+              if (isAnswered && i === ex.correct) cls += ' ex-opt--correct';
+              if (isAnswered && i === chosen && i !== ex.correct) cls += ' ex-opt--wrong';
+              if (isAnswered && i === chosen) cls += ' pq-opt--sel';
+              return `<label class="${cls}" ${isAnswered ? '' : `data-oi="${i}"`}>
+                <span class="pq-letter" ${isAnswered && i === ex.correct ? 'style="background:#22c55e; color:#fff; border-color:#22c55e;"' : isAnswered && i === chosen && i !== ex.correct ? 'style="background:#ef4444; color:#fff; border-color:#ef4444;"' : ''}>${labels[i]}</span>
+                <span class="pq-opt-text">${opt}</span>
+              </label>`;
+            }).join('')}
+          </div>
+          ${isAnswered ? `<div class="ex-fb ${chosen === ex.correct ? 'ex-fb--ok' : 'ex-fb--no'}" style="margin-top:1rem;">${chosen === ex.correct ? '✓ Rätt!' : '✗ Fel.'} ${ex.explanation}</div>` : ''}
+        </div>
+        <div class="pq-nav">
+          <div class="pq-nav-main">
+            <button class="btn btn-outline btn-sm" id="btn-prev" ${currentIdx === 0 ? 'disabled' : ''}>Föregående</button>
+            <button class="btn btn-primary btn-sm" id="btn-next">${currentIdx === currentCat.exercises.length - 1 ? 'Tillbaka till kategorier' : 'Nästa'}</button>
+          </div>
+        </div>
+        <div class="pq-dots">${currentCat.exercises.map((_, i) => {
+          const a = catAnswers.get(i);
+          let dotCls = 'pq-dot';
+          if (i === currentIdx) dotCls += ' pq-dot--cur';
+          if (a !== undefined) dotCls += ' pq-dot--ans';
+          return `<span class="${dotCls}" data-i="${i}">${i+1}</span>`;
+        }).join('')}</div>
+      `;
+
+      // Bind events
+      if (!isAnswered) {
+        root.querySelectorAll('[data-oi]').forEach(el => {
+          el.addEventListener('click', () => {
+            const oi = Number(el.getAttribute('data-oi'));
+            if (!catAnswers.has(currentIdx)) {
+              if (!answered.has(currentCat!.id)) answered.set(currentCat!.id, new Map());
+              answered.get(currentCat!.id)!.set(currentIdx, oi);
+              renderExercise();
+            }
+          });
+        });
+      }
+
+      document.getElementById('btn-prev')?.addEventListener('click', () => { currentIdx--; renderExercise(); });
+      document.getElementById('btn-next')?.addEventListener('click', () => {
+        if (currentIdx === currentCat!.exercises.length - 1) {
+          currentCat = null;
+          renderCategoryList();
+        } else {
+          currentIdx++;
+          renderExercise();
+        }
+      });
+      document.getElementById('btn-back-cats')?.addEventListener('click', () => { currentCat = null; renderCategoryList(); });
+      root.querySelectorAll('.pq-dot').forEach(el => {
+        el.addEventListener('click', () => { currentIdx = Number(el.getAttribute('data-i')); renderExercise(); });
+      });
+    }
+
+    renderCategoryList();
   </script>
 
   <style>
-    .ex-category { margin-bottom: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); }
-    .ex-category summary { padding: 1rem 1.2rem; font-weight: 700; font-size: 1.1rem; cursor: pointer; background: var(--color-surface); }
-    .ex-category summary:hover { background: #f8fafc; }
-    .ex-list { padding: 1rem 1.2rem; }
-    .ex-item { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-border); }
-    .ex-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
-    .ex-question { font-size: 1.05rem; margin-bottom: 0.8rem; }
-    .ex-options { display: flex; flex-direction: column; gap: 0.4rem; }
-    .ex-opt { text-align: left; padding: 0.6rem 1rem; border: 1.5px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); cursor: pointer; font-size: 0.95rem; font-family: var(--font-sans); transition: border-color 0.15s; }
-    .ex-opt:hover:not(:disabled) { border-color: var(--color-primary); background: #f8fafc; }
-    .ex-opt:disabled { cursor: default; opacity: 0.7; }
-    .ex-opt--correct { border-color: #22c55e !important; background: #ecfdf5 !important; opacity: 1 !important; font-weight: 600; }
-    .ex-opt--wrong { border-color: #ef4444 !important; background: #fef2f2 !important; opacity: 1 !important; }
-    .ex-fb { margin-top: 0.6rem; padding: 0.6rem 1rem; border-radius: var(--radius); font-size: 0.9rem; line-height: 1.5; }
+    .ex-cats { display: flex; flex-direction: column; gap: 0.6rem; }
+    .ex-cat-btn { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius); cursor: pointer; font-family: var(--font-sans); transition: all 0.15s; }
+    .ex-cat-btn:hover { border-color: var(--color-primary); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+    .ex-cat-name { font-weight: 700; font-size: 1.05rem; }
+    .ex-cat-count { color: var(--color-muted); font-size: 0.85rem; font-weight: 600; }
+    .ex-opt--correct { background: #ecfdf5 !important; border-color: #22c55e !important; }
+    .ex-opt--wrong { background: #fef2f2 !important; border-color: #ef4444 !important; }
+    .ex-fb { padding: 0.8rem 1rem; border-radius: var(--radius); font-size: 0.9rem; line-height: 1.6; }
     .ex-fb--ok { background: #ecfdf5; color: #065f46; }
     .ex-fb--no { background: #fef2f2; color: #991b1b; }
   </style>

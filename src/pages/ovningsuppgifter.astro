@@ -91,7 +91,7 @@ import Base from '../layouts/Base.astro';
               </label>`;
             }).join('')}
           </div>
-          ${isAnswered ? `<div class="ex-fb ${chosen === ex.correct ? 'ex-fb--ok' : 'ex-fb--no'}" style="margin-top:1rem;">${chosen === ex.correct ? '✓ Rätt!' : '✗ Fel.'} ${ex.explanation}</div>` : ''}
+          ${isAnswered ? `<div class="ex-fb ${chosen === ex.correct ? 'ex-fb--ok' : 'ex-fb--no'}" style="margin-top:1rem;"><strong>Förklaring:</strong><br>${ex.explanation}</div>` : ''}
         </div>
         <div class="pq-nav">
           <div class="pq-nav-main">

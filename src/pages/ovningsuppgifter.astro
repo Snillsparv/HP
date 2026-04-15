@@ -20,7 +20,7 @@ import Base from '../layouts/Base.astro';
     import type { Exercise, Category } from '../lib/exercises.js';
 
     const categories: Category[] = [...cats1, ...part2, ...part3, ...part4];
-    /* Old data removed - see exercises.ts, exercises-part2.ts etc */
+    const root = document.getElementById('exercise-app')!;
     let currentCat: Category | null = null;
     let currentIdx = 0;
     const answered: Map<string, Map<number, number>> = new Map();

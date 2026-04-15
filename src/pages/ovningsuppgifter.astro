@@ -1,0 +1,226 @@
+---
+import Base from '../layouts/Base.astro';
+---
+
+<Base title="Övningsuppgifter – HPAkuten" description="Öva på matteuppgifter för högskoleprovet. Bråk, procent, ekvationer, geometri och mer.">
+  <div class="page-content">
+    <div class="container" style="max-width: 800px;">
+      <h1>Övningsuppgifter</h1>
+      <p class="page-intro">Öva på de viktigaste matteområdena för högskoleprovet. Klicka på ett svar för att se om det stämmer!</p>
+
+      <div id="exercise-app"></div>
+    </div>
+  </div>
+
+  <script>
+    interface Exercise {
+      q: string;
+      options: string[];
+      correct: number;
+      explanation: string;
+    }
+
+    interface Category {
+      id: string;
+      name: string;
+      exercises: Exercise[];
+    }
+
+    const categories: Category[] = [
+      {
+        id: 'brak', name: 'Bråk',
+        exercises: [
+          { q: 'Vad är 1/3 + 1/6?', options: ['1/2', '2/9', '1/9', '2/6'], correct: 0, explanation: '1/3 = 2/6, så 2/6 + 1/6 = 3/6 = 1/2.' },
+          { q: 'Vad är 2/5 · 3/4?', options: ['6/20', '5/9', '3/10', '6/9'], correct: 2, explanation: '2/5 · 3/4 = 6/20 = 3/10.' },
+          { q: 'Vad är 3/4 ÷ 1/2?', options: ['3/8', '3/2', '6/4', '1/2'], correct: 1, explanation: 'Division med bråk = multiplikation med det omvända: 3/4 · 2/1 = 6/4 = 3/2.' },
+          { q: 'Förenkla 0,6/0,3.', options: ['0,2', '2', '0,5', '3'], correct: 1, explanation: '0,6 ÷ 0,3 = 6/3 = 2.' },
+          { q: 'Vad är 5/8 − 1/4?', options: ['4/4', '3/8', '1/2', '4/8'], correct: 1, explanation: '1/4 = 2/8, så 5/8 − 2/8 = 3/8.' },
+        ]
+      },
+      {
+        id: 'procent', name: 'Procent',
+        exercises: [
+          { q: 'Vad är 15% av 200?', options: ['25', '30', '35', '40'], correct: 1, explanation: '0,15 · 200 = 30.' },
+          { q: 'En vara kostar 400 kr och sänks med 20%. Vad kostar den nu?', options: ['300 kr', '320 kr', '350 kr', '380 kr'], correct: 1, explanation: '400 · 0,80 = 320 kr.' },
+          { q: 'Andelen kvinnor ökade från 40% till 48%. Hur många procentenheter är ökningen?', options: ['8 procentenheter', '20%', '8%', '20 procentenheter'], correct: 0, explanation: '48 − 40 = 8 procentenheter. Procentuell ökning vore (8/40)·100 = 20%.' },
+          { q: 'En aktie går upp 50% och sedan ner 50%. Var är den nu jämfört med start?', options: ['Samma', 'Lägre', 'Högre', 'Beror på startpriset'], correct: 1, explanation: '100 → +50% → 150 → −50% → 75. Alltså 25% lägre.' },
+          { q: 'Vad är förändringsfaktorn för en ökning med 12%?', options: ['0,12', '1,12', '0,88', '12'], correct: 1, explanation: 'Förändringsfaktor = 1 + 0,12 = 1,12.' },
+        ]
+      },
+      {
+        id: 'ekvationer', name: 'Ekvationer',
+        exercises: [
+          { q: 'Lös 3x + 7 = 22.', options: ['x = 3', 'x = 5', 'x = 7', 'x = 15'], correct: 1, explanation: '3x = 22 − 7 = 15, x = 15/3 = 5.' },
+          { q: 'Förenkla 2(3x − 4) + x.', options: ['7x − 8', '6x − 4', '7x − 4', '5x − 8'], correct: 0, explanation: '6x − 8 + x = 7x − 8.' },
+          { q: 'Lös x/4 = 3.', options: ['x = 7', 'x = 12', 'x = 3/4', 'x = 0,75'], correct: 1, explanation: 'x = 3 · 4 = 12.' },
+          { q: 'Lös 5x − 3 = 2x + 9.', options: ['x = 2', 'x = 3', 'x = 4', 'x = 6'], correct: 2, explanation: '5x − 2x = 9 + 3, 3x = 12, x = 4.' },
+          { q: 'Vad är x om 2(x + 3) = x + 10?', options: ['x = 4', 'x = 7', 'x = 3', 'x = 5'], correct: 0, explanation: '2x + 6 = x + 10, x = 4.' },
+        ]
+      },
+      {
+        id: 'lagesmatt', name: 'Lägesmått (median, medelvärde)',
+        exercises: [
+          { q: 'Vad är medelvärdet av 3, 7, 8, 10, 12?', options: ['7', '8', '9', '10'], correct: 1, explanation: '(3+7+8+10+12)/5 = 40/5 = 8.' },
+          { q: 'Vad är medianen av 4, 1, 9, 3, 7?', options: ['3', '4', '5', '7'], correct: 1, explanation: 'Sorterat: 1, 3, 4, 7, 9. Mittersta = 4.' },
+          { q: 'Medelvärdet av 5 tal är 12. Summan av talen är?', options: ['50', '60', '70', '24'], correct: 1, explanation: 'Summa = medelvärde · antal = 12 · 5 = 60.' },
+          { q: 'Medianen av 2, 5, 8, 11 är?', options: ['5', '6,5', '7', '8'], correct: 1, explanation: 'Jämnt antal: (5+8)/2 = 6,5.' },
+        ]
+      },
+      {
+        id: 'geometri', name: 'Geometri',
+        exercises: [
+          { q: 'Två linjer skär varandra. En vinkel är 65°. Hur stor är den motstående vinkeln?', options: ['25°', '65°', '115°', '90°'], correct: 1, explanation: 'Motstående (vertikala) vinklar är lika stora.' },
+          { q: 'Vad är arean av en cirkel med radie 3?', options: ['6π', '9π', '3π', '12π'], correct: 1, explanation: 'A = πr² = π·9 = 9π.' },
+          { q: 'En rektangel har sidorna 5 och 8. Vad är arean?', options: ['13', '26', '40', '80'], correct: 2, explanation: 'A = 5 · 8 = 40.' },
+          { q: 'Vinkelsumman i en triangel är?', options: ['90°', '180°', '270°', '360°'], correct: 1, explanation: 'Alltid 180° i en triangel.' },
+          { q: 'En cylinder har radie 2 och höjd 5. Vad är volymen?', options: ['10π', '20π', '25π', '40π'], correct: 1, explanation: 'V = πr²h = π·4·5 = 20π.' },
+        ]
+      },
+      {
+        id: 'trianglar', name: 'Trianglar & Pythagoras',
+        exercises: [
+          { q: 'En rätvinklig triangel har kateter 3 och 4. Hur lång är hypotenusan?', options: ['5', '6', '7', '√7'], correct: 0, explanation: 'c² = 3² + 4² = 9 + 16 = 25, c = 5.' },
+          { q: 'En rätvinklig triangel har hypotenusan 13 och en katet 5. Den andra kateten?', options: ['8', '10', '12', '√144'], correct: 2, explanation: 'b² = 13² − 5² = 169 − 25 = 144, b = 12.' },
+          { q: 'Kan en triangel ha sidorna 3, 4, 8?', options: ['Ja', 'Nej'], correct: 1, explanation: '3 + 4 = 7 < 8. Triangelolikheten uppfylls inte.' },
+        ]
+      },
+      {
+        id: 'potenser', name: 'Potenser & roten ur',
+        exercises: [
+          { q: 'Vad är 2³ · 2⁴?', options: ['2⁷', '2¹²', '4⁷', '4¹²'], correct: 0, explanation: 'Samma bas: addera exponenterna. 2³⁺⁴ = 2⁷.' },
+          { q: 'Förenkla (3²)³.', options: ['3⁵', '3⁶', '9³', '3⁸'], correct: 1, explanation: '(aᵐ)ⁿ = aᵐⁿ = 3⁶.' },
+          { q: 'Vad är √50 förenklat?', options: ['5√2', '25√2', '√25', '10√5'], correct: 0, explanation: '√50 = √(25·2) = 5√2.' },
+          { q: 'Vad är 4⁰?', options: ['0', '1', '4', 'Odefinierat'], correct: 1, explanation: 'Allt upphöjt i 0 = 1 (utom 0⁰).' },
+          { q: 'Vad är 2⁻³?', options: ['−8', '−6', '1/8', '1/6'], correct: 2, explanation: '2⁻³ = 1/2³ = 1/8.' },
+        ]
+      },
+      {
+        id: 'olikheter', name: 'Olikheter',
+        exercises: [
+          { q: 'Lös 2x + 1 > 7.', options: ['x > 3', 'x > 4', 'x < 3', 'x > 6'], correct: 0, explanation: '2x > 6, x > 3.' },
+          { q: 'Lös −3x < 12.', options: ['x < −4', 'x > −4', 'x < 4', 'x > 4'], correct: 1, explanation: 'Dividera med −3 och vänd tecknet: x > −4.' },
+          { q: 'Om x > 2 och y < 0, vad gäller om xy?', options: ['xy > 0', 'xy < 0', 'xy = 0', 'Kan inte avgöras'], correct: 1, explanation: 'Positivt · negativt = negativt, alltså xy < 0.' },
+        ]
+      },
+      {
+        id: 'rorelse', name: 'Rörelse (svt)',
+        exercises: [
+          { q: 'En bil kör 90 km/h i 2 timmar. Hur långt?', options: ['45 km', '90 km', '180 km', '360 km'], correct: 2, explanation: 's = v · t = 90 · 2 = 180 km.' },
+          { q: 'Du springer 400 m på 80 sekunder. Vad är hastigheten i m/s?', options: ['3 m/s', '4 m/s', '5 m/s', '6 m/s'], correct: 2, explanation: 'v = s/t = 400/80 = 5 m/s.' },
+          { q: 'En cyklist cyklar 15 km/h. Hur lång tid tar 45 km?', options: ['2 h', '2,5 h', '3 h', '3,5 h'], correct: 2, explanation: 't = s/v = 45/15 = 3 h.' },
+        ]
+      },
+      {
+        id: 'sannolikhet', name: 'Sannolikhet',
+        exercises: [
+          { q: 'Du kastar en tärning. Vad är sannolikheten att få 6?', options: ['1/3', '1/6', '1/2', '1/12'], correct: 1, explanation: '1 gynnsamt utfall av 6 möjliga = 1/6.' },
+          { q: 'I en påse finns 3 röda och 7 blå kulor. Sannolikheten att dra en röd?', options: ['3/7', '7/10', '3/10', '1/3'], correct: 2, explanation: '3/(3+7) = 3/10.' },
+          { q: 'Du kastar två mynt. Sannolikheten för två krona?', options: ['1/2', '1/3', '1/4', '1/8'], correct: 2, explanation: '1/2 · 1/2 = 1/4.' },
+        ]
+      },
+      {
+        id: 'prioritering', name: 'Prioriteringsordning',
+        exercises: [
+          { q: 'Vad är 3 + 4 · 2?', options: ['14', '11', '10', '9'], correct: 1, explanation: 'Multiplikation före addition: 3 + 8 = 11.' },
+          { q: 'Vad är (3 + 4) · 2?', options: ['11', '14', '10', '24'], correct: 1, explanation: 'Parentesen först: 7 · 2 = 14.' },
+          { q: 'Vad är 20 − 3 · 4 + 2?', options: ['10', '70', '8', '12'], correct: 0, explanation: '20 − 12 + 2 = 10.' },
+        ]
+      },
+      {
+        id: 'heltal', name: 'Heltal & negativa tal',
+        exercises: [
+          { q: 'Vad är (−3) · (−4)?', options: ['−12', '12', '−7', '7'], correct: 1, explanation: 'Minus gånger minus = plus. (−3)·(−4) = 12.' },
+          { q: 'Vad är −5 − (−3)?', options: ['−8', '−2', '2', '8'], correct: 1, explanation: '−5 − (−3) = −5 + 3 = −2.' },
+          { q: 'Vilket tal är jämnt: 17, 24, 31, 43?', options: ['17', '24', '31', '43'], correct: 1, explanation: '24 är delbart med 2.' },
+        ]
+      },
+      {
+        id: 'funktioner', name: 'Funktioner',
+        exercises: [
+          { q: 'f(x) = 2x + 3. Vad är f(4)?', options: ['8', '11', '14', '7'], correct: 1, explanation: 'f(4) = 2·4 + 3 = 11.' },
+          { q: 'En linje har k = 3 och m = −1. Vilken punkt ligger på linjen?', options: ['(0, −1)', '(0, 3)', '(1, 1)', '(−1, 0)'], correct: 0, explanation: 'y = 3x − 1. Vid x=0: y = −1. Alltså (0, −1).' },
+          { q: 'Var skär y = 2x − 4 x-axeln?', options: ['x = −2', 'x = 2', 'x = 4', 'x = −4'], correct: 1, explanation: '0 = 2x − 4, 2x = 4, x = 2.' },
+          { q: 'Vad är lutningen (k) för linjen y = −3x + 7?', options: ['7', '−3', '3', '−7'], correct: 1, explanation: 'k är koefficienten framför x, alltså −3.' },
+        ]
+      },
+      {
+        id: 'huvudrakning', name: 'Huvudräkning & uppskattning',
+        exercises: [
+          { q: 'Uppskatta 498 · 21.', options: ['Ca 5 000', 'Ca 10 000', 'Ca 15 000', 'Ca 20 000'], correct: 1, explanation: '500 · 20 = 10 000. (Exakt: 10 458)' },
+          { q: 'Förenkla bråket 24/36.', options: ['2/3', '4/6', '3/4', '12/18'], correct: 0, explanation: 'GCD(24,36) = 12. 24/12 = 2, 36/12 = 3. Alltså 2/3.' },
+          { q: 'Vad är ungefär √90?', options: ['Ca 8', 'Ca 9', 'Ca 9,5', 'Ca 10'], correct: 2, explanation: '9² = 81, 10² = 100. √90 ≈ 9,5.' },
+          { q: 'Förläng 3/5 så att nämnaren blir 20.', options: ['12/20', '6/20', '15/20', '9/20'], correct: 0, explanation: '5 · 4 = 20, så 3 · 4 = 12. Alltså 12/20.' },
+        ]
+      },
+    ];
+
+    const root = document.getElementById('exercise-app')!;
+
+    function render() {
+      root.innerHTML = categories.map(cat => `
+        <details class="ex-category" id="cat-${cat.id}">
+          <summary>${cat.name} <span style="color:var(--color-muted); font-weight:400; font-size:0.85rem;">(${cat.exercises.length} uppgifter)</span></summary>
+          <div class="ex-list">
+            ${cat.exercises.map((ex, i) => `
+              <div class="ex-item" data-cat="${cat.id}" data-idx="${i}">
+                <p class="ex-question"><strong>${i+1}.</strong> ${ex.q}</p>
+                <div class="ex-options">
+                  ${ex.options.map((opt, oi) => `
+                    <button class="ex-opt" data-cat="${cat.id}" data-idx="${i}" data-oi="${oi}">${opt}</button>
+                  `).join('')}
+                </div>
+                <div class="ex-feedback" id="fb-${cat.id}-${i}" style="display:none;"></div>
+              </div>
+            `).join('')}
+          </div>
+        </details>
+      `).join('');
+
+      root.querySelectorAll('.ex-opt').forEach(btn => {
+        btn.addEventListener('click', () => {
+          const catId = btn.getAttribute('data-cat')!;
+          const idx = Number(btn.getAttribute('data-idx'));
+          const oi = Number(btn.getAttribute('data-oi'));
+          const cat = categories.find(c => c.id === catId)!;
+          const ex = cat.exercises[idx];
+          const fb = document.getElementById(`fb-${catId}-${idx}`)!;
+          const correct = oi === ex.correct;
+
+          // Disable all buttons for this question
+          root.querySelectorAll(`[data-cat="${catId}"][data-idx="${idx}"]`).forEach(b => {
+            if (b.classList.contains('ex-opt')) {
+              (b as HTMLButtonElement).disabled = true;
+              const boi = Number(b.getAttribute('data-oi'));
+              if (boi === ex.correct) b.classList.add('ex-opt--correct');
+              if (boi === oi && !correct) b.classList.add('ex-opt--wrong');
+            }
+          });
+
+          fb.style.display = 'block';
+          fb.innerHTML = `<div class="ex-fb ${correct ? 'ex-fb--ok' : 'ex-fb--no'}">${correct ? '✓ Rätt!' : '✗ Fel.'} ${ex.explanation}</div>`;
+        });
+      });
+    }
+
+    render();
+  </script>
+
+  <style>
+    .ex-category { margin-bottom: 1rem; border: 1px solid var(--color-border); border-radius: var(--radius); }
+    .ex-category summary { padding: 1rem 1.2rem; font-weight: 700; font-size: 1.1rem; cursor: pointer; background: var(--color-surface); }
+    .ex-category summary:hover { background: #f8fafc; }
+    .ex-list { padding: 1rem 1.2rem; }
+    .ex-item { margin-bottom: 1.5rem; padding-bottom: 1.5rem; border-bottom: 1px solid var(--color-border); }
+    .ex-item:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+    .ex-question { font-size: 1.05rem; margin-bottom: 0.8rem; }
+    .ex-options { display: flex; flex-direction: column; gap: 0.4rem; }
+    .ex-opt { text-align: left; padding: 0.6rem 1rem; border: 1.5px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); cursor: pointer; font-size: 0.95rem; font-family: var(--font-sans); transition: border-color 0.15s; }
+    .ex-opt:hover:not(:disabled) { border-color: var(--color-primary); background: #f8fafc; }
+    .ex-opt:disabled { cursor: default; opacity: 0.7; }
+    .ex-opt--correct { border-color: #22c55e !important; background: #ecfdf5 !important; opacity: 1 !important; font-weight: 600; }
+    .ex-opt--wrong { border-color: #ef4444 !important; background: #fef2f2 !important; opacity: 1 !important; }
+    .ex-fb { margin-top: 0.6rem; padding: 0.6rem 1rem; border-radius: var(--radius); font-size: 0.9rem; line-height: 1.5; }
+    .ex-fb--ok { background: #ecfdf5; color: #065f46; }
+    .ex-fb--no { background: #fef2f2; color: #991b1b; }
+  </style>
+</Base>

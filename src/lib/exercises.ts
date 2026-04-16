@@ -90,6 +90,11 @@ export const categories: Category[] = [
       { q: 'En kvadrat har arean 49 cm². Hur lång är sidan?', options: ['7 cm', '12,25 cm', '24,5 cm', '98 cm'], correct: 0, explanation: `Kvadratens area = sida². Alltså sida = ${T('\\sqrt{49} = 7')} cm.` },
       { q: 'Två parallella linjer skärs av en transversal. Alternatvinklarna är:', options: ['Lika stora', 'Supplementära (180°)', 'Räta (90°)', 'Komplement (90°)'], correct: 0, explanation: 'Alternatvinklar vid parallella linjer är alltid lika stora. Sammalägesvinklar är också lika stora. Detta är en klassisk HP-fråga!' },
       { q: `Vad är arean av en halvcirkel med radie 4?`, options: [T('4\\pi'), T('8\\pi'), T('16\\pi'), T('32\\pi')], correct: 1, explanation: `Hel cirkel: ${T('\\pi r^2 = 16\\pi')}. Halva: ${T('\\frac{16\\pi}{2} = 8\\pi')}.` },
+      { q: 'En rätvinklig triangel har kateter 3 och 4. Hur lång är hypotenusan?', options: ['5', '6', '7', T('\\sqrt{7}')], correct: 0, explanation: `Pythagoras sats: ${T('c^2 = a^2 + b^2 = 3^2 + 4^2 = 9 + 16 = 25')}. Alltså ${T('c = \\sqrt{25} = 5')}. Tips: 3-4-5 är den vanligaste pythagorastrippeln!` },
+      { q: 'En rätvinklig triangel har hypotenusan 13 och en katet 5. Den andra kateten?', options: ['8', '10', '12', T('\\sqrt{144}')], correct: 2, explanation: `Använd Pythagoras "baklänges": ${T('b^2 = c^2 - a^2 = 13^2 - 5^2 = 169 - 25 = 144')}. Alltså ${T('b = \\sqrt{144} = 12')}. 5-12-13 är en annan vanlig trippel!` },
+      { q: 'En stege lutar mot en vägg. Stegen är 5 m och foten står 3 m från väggen. Hur högt når stegen?', options: ['2 m', '3 m', '4 m', T('\\sqrt{34}')+' m'], correct: 2, explanation: `Stegen, väggen och marken bildar en rätvinklig triangel. ${T('h^2 = 5^2 - 3^2 = 25 - 9 = 16')}, alltså ${T('h = 4')} m.` },
+      { q: `Är triangeln med sidor 7, 24, 25 rätvinklig?`, options: ['Ja', 'Nej'], correct: 0, explanation: `Kolla: ${T('7^2 + 24^2 = 49 + 576 = 625 = 25^2')} ✓ Ja! Pythagoras sats uppfylls, alltså är den rätvinklig.` },
+      { q: 'Du går 8 m rakt österut och sedan 6 m rakt norrut. Hur långt är det fågelvägen tillbaka till startpunkten?', options: ['10 m', '14 m', '7 m', '12 m'], correct: 0, explanation: `Din väg bildar en rätvinklig triangel. Fågelvägen = hypotenusan: ${T('c^2 = 8^2 + 6^2 = 64 + 36 = 100')}, alltså ${T('c = 10')} m.` },
     ]
   },
   {

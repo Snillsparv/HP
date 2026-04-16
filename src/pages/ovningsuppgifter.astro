@@ -2,14 +2,18 @@
 import Base from '../layouts/Base.astro';
 ---
 
-<Base title="Övningsuppgifter – HPAkuten" description="Öva på matteuppgifter för högskoleprovet. Bråk, procent, ekvationer, geometri och mer.">
+<Base title="Matterepetition – HPAkuten" description="Repetera matten inför högskoleprovet. Bråk, procent, ekvationer, geometri och mer.">
   <div class="page-content">
     <div class="container" style="max-width: 800px;">
-      <h1>Övningsuppgifter</h1>
-      <p class="page-intro">Öva på de viktigaste matteområdena för högskoleprovet. Klicka på ett svar för att se om det stämmer!</p>
+      <h1>Matterepetition</h1>
+      <p class="page-intro">Repetera de viktigaste matteområdena för högskoleprovet. Klicka på ett svar för att se om det stämmer!</p>
+
+      <a href="/trana" class="btn btn-primary" id="btn-back-train" onclick="localStorage.setItem('hp-train-step', Math.max(Number(localStorage.getItem('hp-train-step')||'1'),5).toString()); fetch('/api/auth/train-step',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({step:5})}).catch(()=>{});" style="display:block; text-align:center; margin-bottom:1.5rem;">Fortsätt med provträningen</a>
 
       <div id="exercise-video"></div>
       <div id="exercise-app"></div>
+
+      <a href="/trana" class="btn btn-primary" id="btn-back-train-bottom" onclick="localStorage.setItem('hp-train-step', Math.max(Number(localStorage.getItem('hp-train-step')||'1'),5).toString()); fetch('/api/auth/train-step',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({step:5})}).catch(()=>{});" style="display:block; text-align:center; margin-top:1.5rem;">Fortsätt med provträningen</a>
     </div>
   </div>
 
@@ -74,10 +78,12 @@ import Base from '../layouts/Base.astro';
           }
         }
         if (data.currentIdx) {
-          // Store per-category index
           for (const [catId, idx] of Object.entries(data.currentIdx)) {
             catProgress.set(catId, idx as number);
           }
+        }
+        if (data.mastered) {
+          for (const id of data.mastered) mastered.add(id);
         }
       } catch {}
     }
@@ -87,9 +93,10 @@ import Base from '../layouts/Base.astro';
         ans[catId] = Object.fromEntries(qs);
       }
       const idx: Record<string, number> = Object.fromEntries(catProgress);
-      localStorage.setItem(EXERCISE_KEY, JSON.stringify({ answered: ans, currentIdx: idx }));
+      localStorage.setItem(EXERCISE_KEY, JSON.stringify({ answered: ans, currentIdx: idx, mastered: [...mastered] }));
     }
     const catProgress: Map<string, number> = new Map();
+    const mastered: Set<string> = new Set();
 
     // Load KaTeX
     const css = document.createElement('link');
@@ -124,7 +131,7 @@ import Base from '../layouts/Base.astro';
         <div class="ex-cats">
           ${categories.map(cat => {
             const done = answered.get(cat.id)?.size || 0;
-            const isDone = done === cat.exercises.length;
+            const isDone = done === cat.exercises.length || mastered.has(cat.id);
             return `<button class="ex-cat-btn ${isDone ? 'ex-cat-btn--done' : ''}" data-cat="${cat.id}">
               <span class="ex-cat-name">${isDone ? '✓ ' : ''}${cat.name}</span>
               <span class="ex-cat-count">${done}/${cat.exercises.length}</span>
@@ -197,6 +204,7 @@ import Base from '../layouts/Base.astro';
           if (a !== undefined) dotCls += ' pq-dot--ans';
           return `<span class="${dotCls}" data-i="${i}">${i+1}</span>`;
         }).join('')}</div>
+        <button class="btn btn-outline btn-sm" id="btn-mastered" style="display:block; width:100%; margin-top:1rem; color:#16a34a; border-color:#16a34a;">${mastered.has(currentCat.id) ? '✓ Du har koll på detta!' : 'Jag har koll på detta'}</button>
       `;
 
       renderTex();
@@ -229,6 +237,10 @@ import Base from '../layouts/Base.astro';
       });
       document.getElementById('btn-back-top')?.addEventListener('click', () => { currentCat = null; renderCategoryList(); });
       document.getElementById('btn-back-bottom')?.addEventListener('click', () => { currentCat = null; renderCategoryList(); });
+      document.getElementById('btn-mastered')?.addEventListener('click', () => {
+        mastered.add(currentCat!.id); saveProgress();
+        currentCat = null; renderCategoryList();
+      });
       root.querySelectorAll('.pq-dot').forEach(el => {
         el.addEventListener('click', () => { currentIdx = Number(el.getAttribute('data-i')); renderExercise(); });
       });

@@ -132,13 +132,10 @@ import Base from '../layouts/Base.astro';
           ${categories.map(cat => {
             const done = answered.get(cat.id)?.size || 0;
             const isDone = done === cat.exercises.length || mastered.has(cat.id);
-            return `<div class="ex-cat-row">
-              <button class="ex-cat-btn ${isDone ? 'ex-cat-btn--done' : ''}" data-cat="${cat.id}">
-                <span class="ex-cat-name">${isDone ? '✓ ' : ''}${cat.name}</span>
-                <span class="ex-cat-count">${done}/${cat.exercises.length}</span>
-              </button>
-              ${!isDone ? `<button class="ex-master-btn" data-master="${cat.id}" title="Markera som klar">Jag har koll</button>` : ''}
-            </div>`;
+            return `<button class="ex-cat-btn ${isDone ? 'ex-cat-btn--done' : ''}" data-cat="${cat.id}">
+                <span class="ex-cat-left"><span class="ex-cat-name">${isDone ? '✓ ' : ''}${cat.name}</span><span class="ex-cat-count">${done}/${cat.exercises.length}</span></span>
+                ${!isDone ? `<span class="ex-master-btn" data-master="${cat.id}" title="Markera som klar">Jag har koll</span>` : ''}
+              </button>`;
           }).join('')}
         </div>
       `;
@@ -284,11 +281,10 @@ import Base from '../layouts/Base.astro';
 
     /* Exercise-specific */
     .ex-cats { display: flex; flex-direction: column; gap: 0.6rem; }
-    .ex-cat-row { display: flex; gap: 0.5rem; align-items: stretch; }
-    .ex-cat-row .ex-cat-btn { flex: 1; }
-    .ex-master-btn { background: none; border: 1.5px solid #16a34a; color: #16a34a; border-radius: var(--radius); padding: 0 0.8rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans); white-space: nowrap; transition: all 0.15s; }
+    .ex-master-btn { background: none; border: 1.5px solid #16a34a; color: #16a34a; border-radius: var(--radius); padding: 0.3rem 0.8rem; font-size: 0.75rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans); white-space: nowrap; transition: all 0.15s; flex-shrink: 0; }
     .ex-master-btn:hover { background: #f0fdf4; }
-    .ex-cat-btn { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius); cursor: pointer; font-family: var(--font-sans); transition: all 0.15s; }
+    .ex-cat-btn { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius); cursor: pointer; font-family: var(--font-sans); transition: all 0.15s; width: 100%; }
+    .ex-cat-left { display: flex; flex-direction: column; align-items: flex-start; gap: 0.15rem; }
     .ex-cat-btn:hover { border-color: var(--color-primary); transform: translateY(-1px); box-shadow: var(--shadow-md); }
     .ex-cat-btn--done { border-color: #22c55e; background: #f0fdf4; }
     .ex-cat-btn--done .ex-cat-name { color: #16a34a; }

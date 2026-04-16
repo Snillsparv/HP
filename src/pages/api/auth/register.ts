@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { createUser, findUserByEmail, createSession } from '../../../lib/auth.js';
+import { checkNewUser } from '../../../lib/alerts.js';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -23,6 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
     }
 
     const user = await createUser(name, email, password);
+    checkNewUser(name, email).catch(() => {});
     const token = await createSession(user.id);
     const redirect = form.get('redirect')?.toString() || '/forum';
 

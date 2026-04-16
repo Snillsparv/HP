@@ -11,6 +11,12 @@ if (!user || user.email !== ADMIN_EMAIL) {
   return Astro.redirect('/');
 }
 
+// Alerts
+import '../lib/alerts.js';
+const { rows: unseenAlerts } = await pool.query(
+  "SELECT * FROM admin_alerts WHERE seen = false ORDER BY created_at DESC"
+);
+
 // Stats
 const { rows: [userCount] } = await pool.query('SELECT COUNT(*) as count FROM users');
 const { rows: [resultCount] } = await pool.query('SELECT COUNT(*) as count FROM test_results');
@@ -150,6 +156,19 @@ function timeAgo(d: string) {
   <div class="page-content">
     <div class="container">
       <h1>Admin</h1>
+
+      {unseenAlerts.length > 0 && (
+        <div class="admin-alerts">
+          <h3>🔔 {unseenAlerts.length} ny{unseenAlerts.length === 1 ? 'tt' : 'a'} meddelande{unseenAlerts.length === 1 ? '' : 'n'}</h3>
+          {unseenAlerts.map(a => (
+            <div class="admin-alert-item">
+              <span>{a.message}</span>
+              <span style="font-size:0.8rem; color:var(--color-muted); white-space:nowrap;">{timeAgo(a.created_at)}</span>
+            </div>
+          ))}
+          <button class="btn btn-sm btn-outline" id="dismiss-alerts" style="margin-top:0.5rem;">Markera som lästa</button>
+        </div>
+      )}
 
       <div class="admin-stats">
         <div class="admin-stat">
@@ -382,6 +401,11 @@ function timeAgo(d: string) {
 
     btn.addEventListener('click', search);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
+
+    document.getElementById('dismiss-alerts')?.addEventListener('click', async () => {
+      await fetch('/api/admin/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'dismiss-all' }) });
+      document.querySelector('.admin-alerts')?.remove();
+    });
   </script>
 </Base>
 
@@ -444,6 +468,29 @@ function timeAgo(d: string) {
   .admin-section > table,
   .admin-section > div {
     padding: 0.5rem;
+  }
+
+  .admin-alerts {
+    padding: 1rem 1.2rem;
+    background: #fffbeb;
+    border: 1.5px solid #f59e0b;
+    border-radius: var(--radius);
+    margin-bottom: 1.5rem;
+  }
+
+  .admin-alerts h3 {
+    margin: 0 0 0.5rem;
+    font-size: 1rem;
+  }
+
+  .admin-alert-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.5rem 0;
+    border-top: 1px solid #fde68a;
+    font-size: 0.9rem;
   }
 
   .admin-search {

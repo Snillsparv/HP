@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { findUserByGoogleId, findUserByEmail, createGoogleUser, createSession } from '../../../../lib/auth.js';
 import pool from '../../../../lib/db.js';
+import { checkNewUser } from '../../../../lib/alerts.js';
 
 const GOOGLE_CLIENT_ID = import.meta.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = import.meta.env.GOOGLE_CLIENT_SECRET || '';
@@ -43,6 +44,7 @@ export const GET: APIRoute = async ({ request }) => {
         user = { ...existing, google_id: profile.id };
       } else {
         user = await createGoogleUser(profile.name || profile.email, profile.email, profile.id);
+        checkNewUser(profile.name || '', profile.email).catch(() => {});
       }
     }
 

@@ -59,6 +59,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       <button class="nav-toggle" aria-label="Meny" id="nav-toggle">☰</button>
       <nav class="site-nav" id="site-nav">
         <a href="/trana" class:list={['nav-cta', { active: currentPath.startsWith('/trana') || currentPath.startsWith('/prov') || currentPath.startsWith('/delprov') }]}>Träna</a>
+        <a href="/ovningsuppgifter" class:list={[{ active: currentPath.startsWith('/ovningsuppgifter') }]}>Matterepetition</a>
         <a href="/forum" class:list={[{ active: currentPath.startsWith('/forum') }]}>Forum</a>
         <a href="/om-hp" class:list={[{ active: currentPath.startsWith('/om-hp') }]}>Om HP</a>
         <a href="/om" class:list={[{ active: currentPath === '/om' }]}>Om Jonas</a>

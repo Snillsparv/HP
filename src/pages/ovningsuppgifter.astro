@@ -19,7 +19,22 @@ import Base from '../layouts/Base.astro';
     import { part4 } from '../lib/exercises-part4.js';
     import type { Exercise, Category } from '../lib/exercises.js';
 
-    const categories: Category[] = [...cats1, ...part2, ...part3, ...part4];
+    const allCats = [...cats1, ...part2, ...part3, ...part4];
+    const find = (id: string) => allCats.find(c => c.id === id)!;
+
+    // Ordered and renamed per specification
+    const categories: Category[] = [
+      { ...find('prioritering'), name: '1. Prioriteringsordning' },
+      { ...find('brak'), name: '2. Bråkräkning' },
+      { ...find('potenser'), name: '3. Potenser och rötter' },
+      { ...find('ekvationer'), name: '4. Ekvationer och uttryck' },
+      { ...find('procent'), name: '5. Procent' },
+      { ...find('lagesmatt'), name: '6. Medelvärde och median' },
+      { ...find('geometri'), name: '7. Geometri' },
+      { ...find('rorelse'), name: '8. Rörelse' },
+      { ...find('sannolikhet'), name: '9. Sannolikhet' },
+      { ...find('funktioner'), name: '10. Funktioner och grafer' },
+    ];
     const root = document.getElementById('exercise-app')!;
     let currentCat: Category | null = null;
     let currentIdx = 0;

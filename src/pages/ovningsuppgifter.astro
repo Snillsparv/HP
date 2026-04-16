@@ -130,10 +130,13 @@ import Base from '../layouts/Base.astro';
           ${categories.map(cat => {
             const done = answered.get(cat.id)?.size || 0;
             const isDone = done === cat.exercises.length || mastered.has(cat.id);
-            return `<button class="ex-cat-btn ${isDone ? 'ex-cat-btn--done' : ''}" data-cat="${cat.id}">
-              <span class="ex-cat-name">${isDone ? '✓ ' : ''}${cat.name}</span>
-              <span class="ex-cat-count">${done}/${cat.exercises.length}</span>
-            </button>`;
+            return `<div class="ex-cat-row">
+              <button class="ex-cat-btn ${isDone ? 'ex-cat-btn--done' : ''}" data-cat="${cat.id}">
+                <span class="ex-cat-name">${isDone ? '✓ ' : ''}${cat.name}</span>
+                <span class="ex-cat-count">${done}/${cat.exercises.length}</span>
+              </button>
+              ${!isDone ? `<button class="ex-master-btn" data-master="${cat.id}" title="Markera som klar">Jag har koll</button>` : ''}
+            </div>`;
           }).join('')}
         </div>
       `;
@@ -142,6 +145,14 @@ import Base from '../layouts/Base.astro';
           currentCat = categories.find(c => c.id === btn.getAttribute('data-cat')!)!;
           currentIdx = catProgress.get(currentCat.id) || 0;
           renderExercise();
+        });
+      });
+      root.querySelectorAll('.ex-master-btn').forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          mastered.add(btn.getAttribute('data-master')!);
+          saveProgress();
+          renderCategoryList();
         });
       });
       initVideoPlaceholders();
@@ -202,7 +213,6 @@ import Base from '../layouts/Base.astro';
           if (a !== undefined) dotCls += ' pq-dot--ans';
           return `<span class="${dotCls}" data-i="${i}">${i+1}</span>`;
         }).join('')}</div>
-        <button class="btn btn-outline btn-sm" id="btn-mastered" style="display:block; width:100%; margin-top:1rem; color:#16a34a; border-color:#16a34a;">${mastered.has(currentCat.id) ? '✓ Du har koll på detta!' : 'Jag har koll på detta'}</button>
       `;
 
       renderTex();
@@ -235,10 +245,6 @@ import Base from '../layouts/Base.astro';
       });
       document.getElementById('btn-back-top')?.addEventListener('click', () => { currentCat = null; renderCategoryList(); });
       document.getElementById('btn-back-bottom')?.addEventListener('click', () => { currentCat = null; renderCategoryList(); });
-      document.getElementById('btn-mastered')?.addEventListener('click', () => {
-        mastered.add(currentCat!.id); saveProgress();
-        currentCat = null; renderCategoryList();
-      });
       root.querySelectorAll('.pq-dot').forEach(el => {
         el.addEventListener('click', () => { currentIdx = Number(el.getAttribute('data-i')); renderExercise(); });
       });
@@ -276,6 +282,10 @@ import Base from '../layouts/Base.astro';
 
     /* Exercise-specific */
     .ex-cats { display: flex; flex-direction: column; gap: 0.6rem; }
+    .ex-cat-row { display: flex; gap: 0.5rem; align-items: stretch; }
+    .ex-cat-row .ex-cat-btn { flex: 1; }
+    .ex-master-btn { background: none; border: 1.5px solid #16a34a; color: #16a34a; border-radius: var(--radius); padding: 0 0.8rem; font-size: 0.8rem; font-weight: 600; cursor: pointer; font-family: var(--font-sans); white-space: nowrap; transition: all 0.15s; }
+    .ex-master-btn:hover { background: #f0fdf4; }
     .ex-cat-btn { display: flex; justify-content: space-between; align-items: center; padding: 1rem 1.2rem; background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius); cursor: pointer; font-family: var(--font-sans); transition: all 0.15s; }
     .ex-cat-btn:hover { border-color: var(--color-primary); transform: translateY(-1px); box-shadow: var(--shadow-md); }
     .ex-cat-btn--done { border-color: #22c55e; background: #f0fdf4; }

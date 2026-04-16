@@ -8,8 +8,6 @@ import Base from '../layouts/Base.astro';
       <h1>Matterepetition</h1>
       <p class="page-intro">Repetera de viktigaste matteområdena för högskoleprovet. Klicka på ett svar för att se om det stämmer!</p>
 
-      <a href="/trana" class="btn btn-primary" id="btn-back-train" onclick="localStorage.setItem('hp-train-step', Math.max(Number(localStorage.getItem('hp-train-step')||'1'),5).toString()); fetch('/api/auth/train-step',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({step:5})}).catch(()=>{});" style="display:block; text-align:center; margin-bottom:1.5rem;">Fortsätt med provträningen</a>
-
       <div id="exercise-video"></div>
       <div id="exercise-app"></div>
 

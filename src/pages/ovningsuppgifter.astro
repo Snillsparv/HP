@@ -8,6 +8,7 @@ import Base from '../layouts/Base.astro';
       <h1>Övningsuppgifter</h1>
       <p class="page-intro">Öva på de viktigaste matteområdena för högskoleprovet. Klicka på ett svar för att se om det stämmer!</p>
 
+      <div id="exercise-video"></div>
       <div id="exercise-app"></div>
     </div>
   </div>
@@ -53,7 +54,9 @@ import Base from '../layouts/Base.astro';
     };
     const introVideo = '1183677252';
 
+    const videoRoot = document.getElementById('exercise-video')!;
     const root = document.getElementById('exercise-app')!;
+    let currentVideoId: string | null = null;
     let currentCat: Category | null = null;
     let currentIdx = 0;
     const answered: Map<string, Map<number, number>> = new Map();
@@ -83,13 +86,11 @@ import Base from '../layouts/Base.astro';
     }
 
     function renderCategoryList() {
+      // Show intro video
+      currentVideoId = null;
+      videoRoot.innerHTML = `<div style="margin-bottom:1.5rem;"><div class="video-embed"><iframe src="https://player.vimeo.com/video/${introVideo}?dnt=1&title=0&byline=0&portrait=0" title="Introduktion" frameborder="0" allow="fullscreen; picture-in-picture" allowfullscreen></iframe></div><p style="text-align:center; color:var(--color-muted); font-size:0.85rem; margin-top:0.5rem;">Se min introduktion till matten på HP</p></div>`;
+
       root.innerHTML = `
-        <div style="margin-bottom:1.5rem;">
-          <div class="video-placeholder" data-vimeo="${introVideo}" style="border-radius:var(--radius); overflow:hidden;">
-            <div class="video-placeholder-play">&#9654;</div>
-          </div>
-          <p style="text-align:center; color:var(--color-muted); font-size:0.85rem; margin-top:0.5rem;">Se min introduktion till matten på HP</p>
-        </div>
         <div class="ex-cats">
           ${categories.map(cat => {
             const done = answered.get(cat.id)?.size || 0;
@@ -119,12 +120,22 @@ import Base from '../layouts/Base.astro';
       const isAnswered = chosen !== undefined;
       const labels = ['A', 'B', 'C', 'D', 'E'];
 
+      // Update video only if category changed
+      const newVideoId = catVideos[currentCat.id] || null;
+      if (newVideoId !== currentVideoId) {
+        currentVideoId = newVideoId;
+        if (newVideoId) {
+          videoRoot.innerHTML = `<div style="margin-bottom:1rem;"><div class="video-embed"><iframe src="https://player.vimeo.com/video/${newVideoId}?dnt=1&title=0&byline=0&portrait=0" title="Video" frameborder="0" allow="fullscreen; picture-in-picture" allowfullscreen></iframe></div><p style="text-align:center; color:var(--color-muted); font-size:0.8rem; margin-top:0.3rem;">Se min genomgång av ${currentCat.name.replace(/^\d+\.\s*/, '').replace(/^Bonus:\s*/, '')}</p></div>`;
+        } else {
+          videoRoot.innerHTML = '';
+        }
+      }
+
       root.innerHTML = `
         <div class="prov-top-bar">
           <span class="prov-section-tag">${currentCat.name}</span>
           <button class="btn-timer-toggle" id="btn-back-top" title="Tillbaka">✕</button>
         </div>
-        ${catVideos[currentCat.id] ? `<div style="margin-bottom:1rem;"><div class="video-placeholder" data-vimeo="${catVideos[currentCat.id]}" style="border-radius:var(--radius); overflow:hidden;"><div class="video-placeholder-play">&#9654;</div></div><p style="text-align:center; color:var(--color-muted); font-size:0.8rem; margin-top:0.3rem;">Se min genomgång av ${currentCat.name.replace(/^\d+\.\s*/, '').replace(/^Bonus:\s*/, '')}</p></div>` : ''}
         <div class="pq-progress">Uppgift ${currentIdx + 1} av ${currentCat.exercises.length}</div>
         <div class="pq-card">
           <div class="pq-question"><span class="pq-num">${currentIdx + 1}.</span><span class="pq-text">${ex.q}</span></div>

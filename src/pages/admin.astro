@@ -198,6 +198,16 @@ function timeAgo(d: string) {
         <div id="user-search-results" style="margin-top:0.75rem;"></div>
       </div>
 
+      <div class="admin-search">
+        <h3>Exportera e-postlista</h3>
+        <p style="font-size:0.85rem; color:var(--color-muted); margin:0 0 0.6rem;">Kopiera alla registrerade e-postadresser (kommaseparerade), t.ex. för nyhetsbrev via Brevo.</p>
+        <div style="display:flex; gap:0.5rem;">
+          <button id="export-emails-btn" class="btn btn-primary btn-sm">Hämta e-postlista</button>
+          <button id="copy-emails-btn" class="btn btn-outline btn-sm" style="display:none;">Kopiera till urklipp</button>
+        </div>
+        <div id="export-emails-result" style="margin-top:0.75rem;"></div>
+      </div>
+
       <details class="admin-section" open>
         <summary>Tillväxt över tid</summary>
         <div style="padding:1rem;">
@@ -401,6 +411,23 @@ function timeAgo(d: string) {
 
     btn.addEventListener('click', search);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
+
+    // Email export
+    let exportedEmails = '';
+    document.getElementById('export-emails-btn')?.addEventListener('click', async () => {
+      const res = await fetch('/api/admin/users?q=@');
+      const data = await res.json();
+      exportedEmails = data.users.map((u: any) => u.email).join(', ');
+      const result = document.getElementById('export-emails-result')!;
+      result.innerHTML = `<p style="font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">${data.count} adresser</p><textarea readonly style="width:100%; height:100px; padding:0.5rem; font-size:0.8rem; border:1px solid var(--color-border); border-radius:var(--radius); font-family:var(--font-sans); resize:vertical;">${exportedEmails}</textarea>`;
+      document.getElementById('copy-emails-btn')!.style.display = '';
+    });
+    document.getElementById('copy-emails-btn')?.addEventListener('click', async () => {
+      await navigator.clipboard.writeText(exportedEmails);
+      const btn = document.getElementById('copy-emails-btn')!;
+      btn.textContent = 'Kopierat!';
+      setTimeout(() => btn.textContent = 'Kopiera till urklipp', 2000);
+    });
 
     document.getElementById('dismiss-alerts')?.addEventListener('click', async () => {
       await fetch('/api/admin/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'dismiss-all' }) });

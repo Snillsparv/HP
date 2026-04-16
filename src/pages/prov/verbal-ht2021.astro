@@ -471,7 +471,14 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       }
       generateResultImage('Verbalt prov 1', normered, totalScore, allQuestions.length, stScores, getYrkeForScore(normered)).then(dataUrl => {
         const preview = document.getElementById('share-preview')!;
-        preview.innerHTML = `<img src="${dataUrl}" style="max-width:300px; width:100%; border-radius:var(--radius); box-shadow:var(--shadow);" />`;
+        preview.innerHTML = `<img src="${dataUrl}" id="share-preview-img" style="max-width:300px; width:100%; border-radius:var(--radius); box-shadow:var(--shadow); cursor:pointer;" title="Klicka för att förstora" />`;
+        document.getElementById('share-preview-img')?.addEventListener('click', () => {
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:pointer;padding:1rem;';
+          overlay.innerHTML = `<img src="${dataUrl}" style="max-height:90vh;max-width:90vw;border-radius:8px;" />`;
+          overlay.addEventListener('click', () => overlay.remove());
+          document.body.appendChild(overlay);
+        });
 
         document.getElementById('btn-share-img')?.addEventListener('click', async () => {
           try {

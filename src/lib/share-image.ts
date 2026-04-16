@@ -10,13 +10,31 @@ export function generateResultImage(
 ): Promise<string> {
   return new Promise((resolve) => {
     const W = 1080;
-    const H = 1350;
     const canvas = document.createElement('canvas');
-    canvas.width = W;
-    canvas.height = H;
     const ctx = canvas.getContext('2d')!;
 
     function draw(yrkeImg?: HTMLImageElement) {
+      // Calculate layout positions
+      const barY = 530;
+      const barH = 40;
+      const barGap = 14;
+      const barsEnd = barY + subtestScores.length * (barH + barGap) + 20;
+
+      // Calculate total height based on content
+      let H = 1350;
+      let imgDrawH = 0;
+      const imgPad = 60;
+      const imgW = W - 120;
+
+      if (yrke && yrkeImg) {
+        const imgAspect = yrkeImg.naturalHeight / yrkeImg.naturalWidth;
+        imgDrawH = imgW * imgAspect;
+        H = Math.max(1350, barsEnd + 60 + imgDrawH + imgPad + 140);
+      }
+
+      canvas.width = W;
+      canvas.height = H;
+
       // Background gradient
       const grad = ctx.createLinearGradient(0, 0, W, H);
       grad.addColorStop(0, '#1e3a5f');
@@ -71,9 +89,6 @@ export function generateResultImage(
       ctx.fillText(`${score} / ${total} rätt`, W / 2, 470);
 
       // Subtest bars
-      const barY = 530;
-      const barH = 40;
-      const barGap = 14;
       const barMaxW = W - 300;
       const barX = 200;
 
@@ -112,10 +127,8 @@ export function generateResultImage(
       }
 
       // Yrke section
-      const barsEnd = barY + subtestScores.length * (barH + barGap) + 20;
-
       if (yrke && yrkeImg) {
-        // Yrke label above image
+        // Label
         ctx.textAlign = 'center';
         ctx.font = '600 34px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = '#fff';
@@ -124,10 +137,7 @@ export function generateResultImage(
           : `Jag kan t.ex. bli ${yrke.label}!`;
         ctx.fillText(labelText, W / 2, barsEnd + 40);
 
-        // Large yrke image with rounded corners
-        const imgW = W - 120;
-        const imgAspect = yrkeImg.naturalHeight / yrkeImg.naturalWidth;
-        const imgH = Math.min(imgW * imgAspect, H - barsEnd - 180);
+        // Image at native aspect ratio
         const imgX = (W - imgW) / 2;
         const imgY = barsEnd + 60;
         const imgR = 20;
@@ -137,15 +147,15 @@ export function generateResultImage(
         ctx.moveTo(imgX + imgR, imgY);
         ctx.lineTo(imgX + imgW - imgR, imgY);
         ctx.quadraticCurveTo(imgX + imgW, imgY, imgX + imgW, imgY + imgR);
-        ctx.lineTo(imgX + imgW, imgY + imgH - imgR);
-        ctx.quadraticCurveTo(imgX + imgW, imgY + imgH, imgX + imgW - imgR, imgY + imgH);
-        ctx.lineTo(imgX + imgR, imgY + imgH);
-        ctx.quadraticCurveTo(imgX, imgY + imgH, imgX, imgY + imgH - imgR);
+        ctx.lineTo(imgX + imgW, imgY + imgDrawH - imgR);
+        ctx.quadraticCurveTo(imgX + imgW, imgY + imgDrawH, imgX + imgW - imgR, imgY + imgDrawH);
+        ctx.lineTo(imgX + imgR, imgY + imgDrawH);
+        ctx.quadraticCurveTo(imgX, imgY + imgDrawH, imgX, imgY + imgDrawH - imgR);
         ctx.lineTo(imgX, imgY + imgR);
         ctx.quadraticCurveTo(imgX, imgY, imgX + imgR, imgY);
         ctx.closePath();
         ctx.clip();
-        ctx.drawImage(yrkeImg, imgX, imgY, imgW, imgH);
+        ctx.drawImage(yrkeImg, imgX, imgY, imgW, imgDrawH);
         ctx.restore();
       }
 

@@ -75,11 +75,10 @@ import Base from '../layouts/Base.astro';
     }
 
     function initVideoPlaceholders() {
+      // On exercises page, load Vimeo embeds directly (not lazy placeholders)
       root.querySelectorAll('.video-placeholder').forEach(el => {
-        el.addEventListener('click', () => {
-          const id = el.getAttribute('data-vimeo');
-          el.outerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${id}?dnt=1&autoplay=1&title=0&byline=0&portrait=0" title="Video" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
-        });
+        const id = el.getAttribute('data-vimeo');
+        el.outerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${id}?dnt=1&title=0&byline=0&portrait=0" title="Video" frameborder="0" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
       });
     }
 

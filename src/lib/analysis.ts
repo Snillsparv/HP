@@ -169,7 +169,7 @@ export function analyzeResults(
   if (normered !== undefined && normered >= 0.5) {
     const yrke = getYrkeForScore(normered);
     if (yrke) {
-      summaryParts.push(`</p><div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:1rem; margin-top:0.8rem; color:#1e40af; font-size:0.95rem; display:flex; align-items:center; gap:1rem;"><img src="${yrke.image}" alt="${yrke.label}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; flex-shrink:0; border:2px solid #bfdbfe;" /><div><strong>${normered.toFixed(1)}</strong> räcker t.ex. till att bli ${yrke.label}!</div></div><p style="margin:0;">`);
+      summaryParts.push(`</p><div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:1rem; margin-top:0.8rem; color:#1e40af; font-size:0.95rem; text-align:center;"><div style="margin-bottom:0.8rem;"><strong>${normered.toFixed(1)}</strong> räcker t.ex. till att bli ${yrke.label}!</div><img src="${yrke.image}" alt="${yrke.label}" style="width:100%; max-width:400px; border-radius:10px; object-fit:cover;" /></div><p style="margin:0;">`);
     }
   }
 

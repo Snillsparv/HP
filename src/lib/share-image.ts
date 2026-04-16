@@ -115,36 +115,38 @@ export function generateResultImage(
       const barsEnd = barY + subtestScores.length * (barH + barGap) + 20;
 
       if (yrke && yrkeImg) {
-        const yrkeY = barsEnd + 10;
-
-        // Draw circular yrke image
-        const imgSize = 240;
-        const imgX = W / 2;
-        const imgY = yrkeY + imgSize / 2;
-
-        ctx.save();
-        ctx.beginPath();
-        ctx.arc(imgX, imgY, imgSize / 2, 0, Math.PI * 2);
-        ctx.closePath();
-        ctx.clip();
-        ctx.drawImage(yrkeImg, imgX - imgSize / 2, imgY - imgSize / 2, imgSize, imgSize);
-        ctx.restore();
-
-        // Circle border
-        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
-        ctx.lineWidth = 3;
-        ctx.beginPath();
-        ctx.arc(imgX, imgY, imgSize / 2, 0, Math.PI * 2);
-        ctx.stroke();
-
-        // Yrke label
+        // Yrke label above image
         ctx.textAlign = 'center';
-        ctx.font = '600 32px system-ui, -apple-system, sans-serif';
+        ctx.font = '600 34px system-ui, -apple-system, sans-serif';
         ctx.fillStyle = '#fff';
         const labelText = normered >= 2.0
           ? `Jag kan bli ${yrke.label}!`
           : `Jag kan t.ex. bli ${yrke.label}!`;
-        ctx.fillText(labelText, W / 2, imgY + imgSize / 2 + 45);
+        ctx.fillText(labelText, W / 2, barsEnd + 40);
+
+        // Large yrke image with rounded corners
+        const imgW = W - 120;
+        const imgAspect = yrkeImg.naturalHeight / yrkeImg.naturalWidth;
+        const imgH = Math.min(imgW * imgAspect, H - barsEnd - 180);
+        const imgX = (W - imgW) / 2;
+        const imgY = barsEnd + 60;
+        const imgR = 20;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.moveTo(imgX + imgR, imgY);
+        ctx.lineTo(imgX + imgW - imgR, imgY);
+        ctx.quadraticCurveTo(imgX + imgW, imgY, imgX + imgW, imgY + imgR);
+        ctx.lineTo(imgX + imgW, imgY + imgH - imgR);
+        ctx.quadraticCurveTo(imgX + imgW, imgY + imgH, imgX + imgW - imgR, imgY + imgH);
+        ctx.lineTo(imgX + imgR, imgY + imgH);
+        ctx.quadraticCurveTo(imgX, imgY + imgH, imgX, imgY + imgH - imgR);
+        ctx.lineTo(imgX, imgY + imgR);
+        ctx.quadraticCurveTo(imgX, imgY, imgX + imgR, imgY);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(yrkeImg, imgX, imgY, imgW, imgH);
+        ctx.restore();
       }
 
       // Bottom CTA

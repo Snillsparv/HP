@@ -24,13 +24,13 @@ export const part2: Category[] = [
       { q: 'En bil kör 90 km/h i 2 timmar. Hur långt?', options: ['45 km', '90 km', '180 km', '360 km'], correct: 2, explanation: 'Formeln: sträcka = hastighet · tid. s = 90 · 2 = 180 km.' },
       { q: 'Du springer 400 m på 80 sekunder. Vad är hastigheten?', options: ['3 m/s', '4 m/s', '5 m/s', '6 m/s'], correct: 2, explanation: 'Hastighet = sträcka / tid = 400/80 = 5 m/s.' },
       { q: 'En cyklist cyklar 15 km/h. Hur lång tid tar 45 km?', options: ['2 h', '2,5 h', '3 h', '3,5 h'], correct: 2, explanation: 'Tid = sträcka / hastighet = 45/15 = 3 timmar.' },
-      { q: 'Omvandla 72 km/h till m/s.', options: ['7,2 m/s', '20 m/s', '72 m/s', '2 m/s'], correct: 1, explanation: 'Dela med 3,6: 72/3,6 = 20 m/s. Kom ihåg: km/h till m/s = dela med 3,6.' },
+      { q: 'En bil kör 80 km/h. Hur långt hinner den på 30 minuter?', options: ['30 km', '40 km', '60 km', '80 km'], correct: 1, explanation: '30 minuter = 0,5 timmar. Sträcka = hastighet · tid = 80 · 0,5 = 40 km.' },
       { q: 'Två bilar kör mot varandra med 60 km/h vardera. Avståndet är 240 km. När möts de?', options: ['1 h', '2 h', '3 h', '4 h'], correct: 1, explanation: 'De närmar sig varandra med 60 + 60 = 120 km/h. Tid = 240/120 = 2 h.' },
       { q: 'En person går 5 km/h i 30 minuter. Hur långt?', options: ['1,5 km', '2,5 km', '5 km', '15 km'], correct: 1, explanation: '30 minuter = 0,5 timmar. Sträcka = 5 · 0,5 = 2,5 km.' },
       { q: 'En tågresenär åker 450 km på 3 timmar. Medelhastighet?', options: ['135 km/h', '150 km/h', '180 km/h', '200 km/h'], correct: 1, explanation: 'Medelhastighet = total sträcka / total tid = 450/3 = 150 km/h.' },
       { q: 'Du cyklar 12 km/h i 45 min. Hur långt?', options: ['6 km', '8 km', '9 km', '12 km'], correct: 2, explanation: '45 min = 0,75 h. Sträcka = 12 · 0,75 = 9 km.' },
       { q: 'En löpare springer 100 m på 12,5 s. Hastighet i m/s?', options: ['6 m/s', '8 m/s', '10 m/s', '12,5 m/s'], correct: 1, explanation: 'v = 100/12,5 = 8 m/s.' },
-      { q: 'Omvandla 10 m/s till km/h.', options: ['27,8 km/h', '36 km/h', '100 km/h', '3,6 km/h'], correct: 1, explanation: 'Multiplicera med 3,6: 10 · 3,6 = 36 km/h. (Omvänt mot förut: m/s till km/h = gånger 3,6.)' },
+      { q: 'En buss kör 60 km/h. Hur lång tid tar det att köra 15 km?', options: ['10 min', '15 min', '20 min', '25 min'], correct: 1, explanation: 'Tid = sträcka / hastighet = 15/60 = 0,25 timmar = 15 minuter.' },
     ]
   },
 ];

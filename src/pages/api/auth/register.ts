@@ -11,16 +11,16 @@ export const POST: APIRoute = async ({ request }) => {
     const password2 = form.get('password2')?.toString();
 
     if (!name || !email || !password || !password2) {
-      return new Response(null, { status: 302, headers: { Location: '/konto/registrera?error=Fyll+i+alla+fält' } });
+      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Fyll i alla fält')}` } });
     }
     if (password.length < 8) {
-      return new Response(null, { status: 302, headers: { Location: '/konto/registrera?error=Lösenordet+måste+vara+minst+8+tecken' } });
+      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Lösenordet måste vara minst 8 tecken')}` } });
     }
     if (password !== password2) {
-      return new Response(null, { status: 302, headers: { Location: '/konto/registrera?error=Lösenorden+matchar+inte' } });
+      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Lösenorden matchar inte')}` } });
     }
     if (await findUserByEmail(email)) {
-      return new Response(null, { status: 302, headers: { Location: '/konto/registrera?error=E-postadressen+används+redan' } });
+      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('E-postadressen används redan')}` } });
     }
 
     const user = await createUser(name, email, password);
@@ -36,6 +36,6 @@ export const POST: APIRoute = async ({ request }) => {
       },
     });
   } catch {
-    return new Response(null, { status: 302, headers: { Location: '/konto/registrera?error=Något+gick+fel' } });
+    return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Något gick fel')}` } });
   }
 };

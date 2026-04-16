@@ -36,6 +36,23 @@ import Base from '../layouts/Base.astro';
       { ...find('funktioner'), name: '10. Funktioner och grafer' },
       { ...find('huvudrakning'), name: 'Bonus: Huvudräkning' },
     ];
+
+    // Video per category (Vimeo IDs)
+    const catVideos: Record<string, string> = {
+      'prioritering': '1183556210',
+      'brak': '1183557361',
+      'potenser': '1183651464',
+      'ekvationer': '1183653545',
+      'procent': '1183654955',
+      'lagesmatt': '1183657756',
+      'geometri': '1183659193',
+      'rorelse': '1183662551',
+      'sannolikhet': '1183663962',
+      'funktioner': '1183665016',
+      'huvudrakning': '1183667894',
+    };
+    const introVideo = '1183677252';
+
     const root = document.getElementById('exercise-app')!;
     let currentCat: Category | null = null;
     let currentIdx = 0;
@@ -59,6 +76,12 @@ import Base from '../layouts/Base.astro';
 
     function renderCategoryList() {
       root.innerHTML = `
+        <div style="margin-bottom:1.5rem;">
+          <div class="video-placeholder" data-vimeo="${introVideo}" style="border-radius:var(--radius); overflow:hidden;">
+            <div class="video-placeholder-play">&#9654;</div>
+          </div>
+          <p style="text-align:center; color:var(--color-muted); font-size:0.85rem; margin-top:0.5rem;">Se min introduktion till matten på HP</p>
+        </div>
         <div class="ex-cats">
           ${categories.map(cat => {
             const done = answered.get(cat.id)?.size || 0;
@@ -92,6 +115,7 @@ import Base from '../layouts/Base.astro';
           <span class="prov-section-tag">${currentCat.name}</span>
           <button class="btn-timer-toggle" id="btn-back-cats" title="Alla kategorier">✕</button>
         </div>
+        ${currentIdx === 0 && catVideos[currentCat.id] ? `<div style="margin-bottom:1rem;"><div class="video-placeholder" data-vimeo="${catVideos[currentCat.id]}" style="border-radius:var(--radius); overflow:hidden;"><div class="video-placeholder-play">&#9654;</div></div><p style="text-align:center; color:var(--color-muted); font-size:0.8rem; margin-top:0.3rem;">Se min genomgång av ${currentCat.name.replace(/^\d+\.\s*/, '').replace(/^Bonus:\s*/, '')}</p></div>` : ''}
         <div class="pq-progress">Uppgift ${currentIdx + 1} av ${currentCat.exercises.length}</div>
         <div class="pq-card">
           <div class="pq-question"><span class="pq-num">${currentIdx + 1}.</span><span class="pq-text">${ex.q}</span></div>

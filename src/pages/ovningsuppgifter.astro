@@ -124,7 +124,7 @@ import Base from '../layouts/Base.astro';
           <span class="prov-section-tag">${currentCat.name}</span>
           <button class="btn-timer-toggle" id="btn-back-top" title="Tillbaka">✕</button>
         </div>
-        ${currentIdx === 0 && catVideos[currentCat.id] ? `<div style="margin-bottom:1rem;"><div class="video-placeholder" data-vimeo="${catVideos[currentCat.id]}" style="border-radius:var(--radius); overflow:hidden;"><div class="video-placeholder-play">&#9654;</div></div><p style="text-align:center; color:var(--color-muted); font-size:0.8rem; margin-top:0.3rem;">Se min genomgång av ${currentCat.name.replace(/^\d+\.\s*/, '').replace(/^Bonus:\s*/, '')}</p></div>` : ''}
+        ${catVideos[currentCat.id] ? `<div style="margin-bottom:1rem;"><div class="video-placeholder" data-vimeo="${catVideos[currentCat.id]}" style="border-radius:var(--radius); overflow:hidden;"><div class="video-placeholder-play">&#9654;</div></div><p style="text-align:center; color:var(--color-muted); font-size:0.8rem; margin-top:0.3rem;">Se min genomgång av ${currentCat.name.replace(/^\d+\.\s*/, '').replace(/^Bonus:\s*/, '')}</p></div>` : ''}
         <div class="pq-progress">Uppgift ${currentIdx + 1} av ${currentCat.exercises.length}</div>
         <div class="pq-card">
           <div class="pq-question"><span class="pq-num">${currentIdx + 1}.</span><span class="pq-text">${ex.q}</span></div>

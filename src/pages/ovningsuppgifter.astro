@@ -61,6 +61,36 @@ import Base from '../layouts/Base.astro';
     let currentIdx = 0;
     const answered: Map<string, Map<number, number>> = new Map();
 
+    // Load/save progress from localStorage
+    const EXERCISE_KEY = 'hp-exercise-progress';
+    function loadProgress() {
+      try {
+        const raw = localStorage.getItem(EXERCISE_KEY);
+        if (!raw) return;
+        const data = JSON.parse(raw);
+        if (data.answered) {
+          for (const [catId, qs] of Object.entries(data.answered)) {
+            answered.set(catId, new Map(Object.entries(qs as Record<string, number>).map(([k, v]) => [Number(k), v])));
+          }
+        }
+        if (data.currentIdx) {
+          // Store per-category index
+          for (const [catId, idx] of Object.entries(data.currentIdx)) {
+            catProgress.set(catId, idx as number);
+          }
+        }
+      } catch {}
+    }
+    function saveProgress() {
+      const ans: Record<string, Record<number, number>> = {};
+      for (const [catId, qs] of answered) {
+        ans[catId] = Object.fromEntries(qs);
+      }
+      const idx: Record<string, number> = Object.fromEntries(catProgress);
+      localStorage.setItem(EXERCISE_KEY, JSON.stringify({ answered: ans, currentIdx: idx }));
+    }
+    const catProgress: Map<string, number> = new Map();
+
     // Load KaTeX
     const css = document.createElement('link');
     css.rel = 'stylesheet';
@@ -105,7 +135,7 @@ import Base from '../layouts/Base.astro';
       root.querySelectorAll('.ex-cat-btn').forEach(btn => {
         btn.addEventListener('click', () => {
           currentCat = categories.find(c => c.id === btn.getAttribute('data-cat')!)!;
-          currentIdx = 0;
+          currentIdx = catProgress.get(currentCat.id) || 0;
           renderExercise();
         });
       });
@@ -179,19 +209,21 @@ import Base from '../layouts/Base.astro';
             if (!catAnswers.has(currentIdx)) {
               if (!answered.has(currentCat!.id)) answered.set(currentCat!.id, new Map());
               answered.get(currentCat!.id)!.set(currentIdx, oi);
+              saveProgress();
               renderExercise();
             }
           });
         });
       }
 
-      document.getElementById('btn-prev')?.addEventListener('click', () => { currentIdx--; renderExercise(); });
+      document.getElementById('btn-prev')?.addEventListener('click', () => { currentIdx--; catProgress.set(currentCat!.id, currentIdx); saveProgress(); renderExercise(); });
       document.getElementById('btn-next')?.addEventListener('click', () => {
         if (currentIdx === currentCat!.exercises.length - 1) {
           currentCat = null;
           renderCategoryList();
         } else {
           currentIdx++;
+          catProgress.set(currentCat!.id, currentIdx); saveProgress();
           renderExercise();
         }
       });
@@ -203,6 +235,7 @@ import Base from '../layouts/Base.astro';
       initVideoPlaceholders();
     }
 
+    loadProgress();
     renderCategoryList();
   </script>
 

@@ -5,126 +5,171 @@ export function generateResultImage(
   normered: number,
   score: number,
   total: number,
-  subtestScores: { name: string; correct: number; total: number }[]
+  subtestScores: { name: string; correct: number; total: number }[],
+  yrke?: { label: string; image: string } | null
 ): Promise<string> {
   return new Promise((resolve) => {
     const W = 1080;
-    const H = 1350; // Instagram story ratio
+    const H = 1350;
     const canvas = document.createElement('canvas');
     canvas.width = W;
     canvas.height = H;
     const ctx = canvas.getContext('2d')!;
 
-    // Background gradient
-    const grad = ctx.createLinearGradient(0, 0, W, H);
-    grad.addColorStop(0, '#1e3a5f');
-    grad.addColorStop(1, '#0f172a');
-    ctx.fillStyle = grad;
-    ctx.fillRect(0, 0, W, H);
+    function draw(yrkeImg?: HTMLImageElement) {
+      // Background gradient
+      const grad = ctx.createLinearGradient(0, 0, W, H);
+      grad.addColorStop(0, '#1e3a5f');
+      grad.addColorStop(1, '#0f172a');
+      ctx.fillStyle = grad;
+      ctx.fillRect(0, 0, W, H);
 
-    // Decorative circles
-    ctx.globalAlpha = 0.06;
-    ctx.fillStyle = '#fff';
-    ctx.beginPath();
-    ctx.arc(W * 0.85, H * 0.15, 300, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(W * 0.15, H * 0.75, 250, 0, Math.PI * 2);
-    ctx.fill();
-    ctx.globalAlpha = 1;
+      // Decorative circles
+      ctx.globalAlpha = 0.06;
+      ctx.fillStyle = '#fff';
+      ctx.beginPath();
+      ctx.arc(W * 0.85, H * 0.15, 300, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(W * 0.15, H * 0.75, 250, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.globalAlpha = 1;
 
-    // HPAkuten logo
-    ctx.font = '700 42px system-ui, -apple-system, sans-serif';
-    ctx.textAlign = 'left';
-    const hpText = 'HP';
-    const akutenText = 'Akuten';
-    const hpW = ctx.measureText(hpText).width;
-    const akutenW = ctx.measureText(akutenText).width;
-    const logoTotalW = hpW + akutenW;
-    const logoX = (W - logoTotalW) / 2;
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(hpText, logoX, 90);
-    ctx.fillStyle = '#3b82f6';
-    ctx.fillText(akutenText, logoX + hpW, 90);
+      // HPAkuten logo
+      ctx.font = '700 42px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'left';
+      const hpText = 'HP';
+      const akutenText = 'Akuten';
+      const hpW = ctx.measureText(hpText).width;
+      const akutenW = ctx.measureText(akutenText).width;
+      const logoTotalW = hpW + akutenW;
+      const logoX = (W - logoTotalW) / 2;
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(hpText, logoX, 80);
+      ctx.fillStyle = '#3b82f6';
+      ctx.fillText(akutenText, logoX + hpW, 80);
 
-    // Test name
-    ctx.font = '600 36px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#94a3b8';
-    ctx.textAlign = 'center';
-    ctx.fillText(testName.toUpperCase(), W / 2, 170);
+      // Test name
+      ctx.font = '600 32px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.textAlign = 'center';
+      ctx.fillText(testName.toUpperCase(), W / 2, 140);
 
-    // Big normered score
-    ctx.font = '800 200px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#fff';
-    ctx.fillText(normered.toFixed(1), W / 2, 400);
+      // Big normered score
+      ctx.font = '800 180px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#fff';
+      ctx.fillText(normered.toFixed(1), W / 2, 350);
 
-    // "normerad poäng"
-    ctx.font = '400 32px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#64748b';
-    ctx.fillText('normerad poäng', W / 2, 460);
+      // "normerad poäng"
+      ctx.font = '400 30px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('normerad poäng', W / 2, 400);
 
-    // Raw score
-    ctx.font = '600 48px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#94a3b8';
-    ctx.fillText(`${score} / ${total} rätt`, W / 2, 540);
+      // Raw score
+      ctx.font = '600 42px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#94a3b8';
+      ctx.fillText(`${score} / ${total} rätt`, W / 2, 470);
 
-    // Subtest bars
-    if (subtestScores.length > 0) {
-      const barY = 620;
-      const barH = 44;
-      const barGap = 16;
+      // Subtest bars
+      const barY = 530;
+      const barH = 40;
+      const barGap = 14;
       const barMaxW = W - 300;
       const barX = 200;
 
-      ctx.font = '700 26px system-ui, -apple-system, sans-serif';
-      ctx.textAlign = 'right';
-
-      subtestScores.forEach((st, i) => {
-        const y = barY + i * (barH + barGap);
-        const pct = st.total > 0 ? st.correct / st.total : 0;
-        const fillW = pct * barMaxW;
-
-        // Label
-        ctx.fillStyle = '#94a3b8';
-        ctx.fillText(st.name, barX - 20, y + barH / 2 + 9);
-
-        // Track
-        ctx.fillStyle = 'rgba(255,255,255,0.08)';
-        roundRect(ctx, barX, y, barMaxW, barH, 8);
-
-        // Fill
-        const barColor = pct >= 0.8 ? '#22c55e' : pct >= 0.6 ? '#3b82f6' : pct >= 0.4 ? '#f59e0b' : '#ef4444';
-        ctx.fillStyle = barColor;
-        if (fillW > 0) roundRect(ctx, barX, y, Math.max(fillW, 16), barH, 8);
-
-        // Score text
-        ctx.fillStyle = '#fff';
-        ctx.textAlign = 'center';
-        ctx.font = '700 22px system-ui, -apple-system, sans-serif';
-        if (fillW > 60) {
-          ctx.fillText(`${st.correct}/${st.total}`, barX + fillW / 2, y + barH / 2 + 8);
-        } else {
-          ctx.textAlign = 'left';
-          ctx.fillStyle = '#94a3b8';
-          ctx.fillText(`${st.correct}/${st.total}`, barX + fillW + 12, y + barH / 2 + 8);
-        }
+      if (subtestScores.length > 0) {
+        ctx.font = '700 24px system-ui, -apple-system, sans-serif';
         ctx.textAlign = 'right';
-        ctx.font = '700 26px system-ui, -apple-system, sans-serif';
-      });
+
+        subtestScores.forEach((st, i) => {
+          const y = barY + i * (barH + barGap);
+          const pct = st.total > 0 ? st.correct / st.total : 0;
+          const fillW = pct * barMaxW;
+
+          ctx.fillStyle = '#94a3b8';
+          ctx.fillText(st.name, barX - 20, y + barH / 2 + 8);
+
+          ctx.fillStyle = 'rgba(255,255,255,0.08)';
+          roundRect(ctx, barX, y, barMaxW, barH, 8);
+
+          const barColor = pct >= 0.8 ? '#22c55e' : pct >= 0.6 ? '#3b82f6' : pct >= 0.4 ? '#f59e0b' : '#ef4444';
+          ctx.fillStyle = barColor;
+          if (fillW > 0) roundRect(ctx, barX, y, Math.max(fillW, 16), barH, 8);
+
+          ctx.fillStyle = '#fff';
+          ctx.textAlign = 'center';
+          ctx.font = '700 20px system-ui, -apple-system, sans-serif';
+          if (fillW > 60) {
+            ctx.fillText(`${st.correct}/${st.total}`, barX + fillW / 2, y + barH / 2 + 7);
+          } else {
+            ctx.textAlign = 'left';
+            ctx.fillStyle = '#94a3b8';
+            ctx.fillText(`${st.correct}/${st.total}`, barX + fillW + 12, y + barH / 2 + 7);
+          }
+          ctx.textAlign = 'right';
+          ctx.font = '700 24px system-ui, -apple-system, sans-serif';
+        });
+      }
+
+      // Yrke section
+      const barsEnd = barY + subtestScores.length * (barH + barGap) + 20;
+
+      if (yrke && yrkeImg) {
+        const yrkeY = barsEnd + 10;
+
+        // Draw circular yrke image
+        const imgSize = 240;
+        const imgX = W / 2;
+        const imgY = yrkeY + imgSize / 2;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(imgX, imgY, imgSize / 2, 0, Math.PI * 2);
+        ctx.closePath();
+        ctx.clip();
+        ctx.drawImage(yrkeImg, imgX - imgSize / 2, imgY - imgSize / 2, imgSize, imgSize);
+        ctx.restore();
+
+        // Circle border
+        ctx.strokeStyle = 'rgba(255,255,255,0.2)';
+        ctx.lineWidth = 3;
+        ctx.beginPath();
+        ctx.arc(imgX, imgY, imgSize / 2, 0, Math.PI * 2);
+        ctx.stroke();
+
+        // Yrke label
+        ctx.textAlign = 'center';
+        ctx.font = '600 32px system-ui, -apple-system, sans-serif';
+        ctx.fillStyle = '#fff';
+        const labelText = normered >= 2.0
+          ? `Jag kan bli ${yrke.label}!`
+          : `Jag kan t.ex. bli ${yrke.label}!`;
+        ctx.fillText(labelText, W / 2, imgY + imgSize / 2 + 45);
+      }
+
+      // Bottom CTA
+      ctx.textAlign = 'center';
+      ctx.font = '500 30px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#64748b';
+      ctx.fillText('Träna gratis på www.hpakuten.se', W / 2, H - 80);
+
+      ctx.font = '400 24px system-ui, -apple-system, sans-serif';
+      ctx.fillStyle = '#475569';
+      ctx.fillText('med Jonas von Essen, 2.0 tolv gånger i rad', W / 2, H - 40);
+
+      resolve(canvas.toDataURL('image/png'));
     }
 
-    // Bottom CTA
-    ctx.textAlign = 'center';
-    ctx.font = '500 30px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#64748b';
-    ctx.fillText('Träna gratis på www.hpakuten.se', W / 2, H - 80);
-
-    // Small tagline
-    ctx.font = '400 24px system-ui, -apple-system, sans-serif';
-    ctx.fillStyle = '#475569';
-    ctx.fillText('med Jonas von Essen, 2.0 tolv gånger i rad', W / 2, H - 40);
-
-    resolve(canvas.toDataURL('image/png'));
+    // Load yrke image if available, then draw
+    if (yrke) {
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      img.onload = () => draw(img);
+      img.onerror = () => draw();
+      img.src = yrke.image;
+    } else {
+      draw();
+    }
   });
 }
 

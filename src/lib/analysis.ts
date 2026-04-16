@@ -23,15 +23,42 @@ interface CategoryResult {
   subTest: string;
 }
 
+export interface YrkeInfo {
+  score: number;
+  label: string;
+  image: string;
+}
+
+export const yrken: YrkeInfo[] = [
+  { score: 0.5, label: 'teolog', image: '/yrken/0.5.webp' },
+  { score: 0.6, label: 'förskollärare', image: '/yrken/0.6.webp' },
+  { score: 0.7, label: 'kriminolog', image: '/yrken/0.7.webp' },
+  { score: 0.8, label: 'sjuksköterska', image: '/yrken/0.8.webp' },
+  { score: 0.9, label: 'grundskollärare', image: '/yrken/0.9.webp' },
+  { score: 1.0, label: 'ekonom', image: '/yrken/1.0.webp' },
+  { score: 1.1, label: 'logoped', image: '/yrken/1.1.webp' },
+  { score: 1.2, label: 'jurist i Umeå', image: '/yrken/1.2.webp' },
+  { score: 1.3, label: 'sjökapten', image: '/yrken/1.3.webp' },
+  { score: 1.4, label: 'tandläkare', image: '/yrken/1.4.webp' },
+  { score: 1.5, label: 'arkitekt', image: '/yrken/1.5.webp' },
+  { score: 1.6, label: 'läkare i Umeå', image: '/yrken/1.6.webp' },
+  { score: 1.7, label: 'psykolog', image: '/yrken/1.7.webp' },
+  { score: 1.8, label: 'civilingenjör i teknisk fysik', image: '/yrken/1.8.webp' },
+  { score: 1.9, label: 'student på Handels i Stockholm', image: '/yrken/1.9.webp' },
+  { score: 2.0, label: 'vad du vill i hela Sverige', image: '/yrken/2.0.webp' },
+];
+
+export function getYrkeForScore(normered: number): YrkeInfo | null {
+  const rounded = Math.min(2.0, Math.floor(normered * 10) / 10);
+  if (rounded < 0.5) return null;
+  return yrken.find(y => Math.abs(y.score - rounded) < 0.01) || null;
+}
+
 function getEducationExample(norm: number): string {
-  if (norm >= 2.0) return 'Alla utbildningar i Sverige, inklusive läkarprogrammet och juristprogrammet!';
-  if (norm >= 1.8) return 'De allra flesta utbildningar, t.ex. läkarprogrammet, psykologprogrammet och juridik.';
-  if (norm >= 1.5) return 'Många populära utbildningar, t.ex. civilingenjör, civilekonom och socionom.';
-  if (norm >= 1.2) return 'De flesta utbildningar i Sverige, t.ex. sjuksköterska, lärare och samhällsvetare.';
-  if (norm >= 1.0) return 'Många programutbildningar runt om i landet.';
-  if (norm >= 0.8) return 'Flera programutbildningar, särskilt utanför storstäderna.';
-  if (norm >= 0.5) return 'Vissa utbildningar med lägre antagningspoäng.';
-  return '';
+  const yrke = getYrkeForScore(norm);
+  if (!yrke) return '';
+  if (norm >= 2.0) return `Med den här poängen kan du bli ${yrke.label}!`;
+  return `Med den här poängen kan du t.ex. bli ${yrke.label}!`;
 }
 
 function barColor(pct: number): string {
@@ -140,9 +167,9 @@ export function analyzeResults(
 
   // Add education example based on normered score
   if (normered !== undefined && normered >= 0.5) {
-    const eduExample = getEducationExample(normered);
-    if (eduExample) {
-      summaryParts.push(`</p><div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:8px; padding:0.8rem 1rem; margin-top:0.8rem; color:#1e40af; font-size:0.95rem;"><strong>${normered.toFixed(1)}</strong> räcker till: ${eduExample}</div><p style="margin:0;">`);
+    const yrke = getYrkeForScore(normered);
+    if (yrke) {
+      summaryParts.push(`</p><div style="background:#eff6ff; border:1px solid #bfdbfe; border-radius:12px; padding:1rem; margin-top:0.8rem; color:#1e40af; font-size:0.95rem; display:flex; align-items:center; gap:1rem;"><img src="${yrke.image}" alt="${yrke.label}" style="width:80px; height:80px; border-radius:50%; object-fit:cover; flex-shrink:0; border:2px solid #bfdbfe;" /><div><strong>${normered.toFixed(1)}</strong> räcker t.ex. till att bli ${yrke.label}!</div></div><p style="margin:0;">`);
     }
   }
 

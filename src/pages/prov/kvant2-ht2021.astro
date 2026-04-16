@@ -30,7 +30,7 @@ if (user) {
     import { subTests } from '../../lib/questions-kvant2-ht2021.js';
     import type { Question, SubTest } from '../../lib/questions-kvant2-ht2021.js';
     import { getNormering } from '../../lib/normering.js';
-    import { analyzeResults } from '../../lib/analysis.js';
+    import { analyzeResults, getYrkeForScore } from '../../lib/analysis.js';
     import { generateResultImage } from '../../lib/share-image.js';
 
     const root = document.getElementById('prov-root')!;
@@ -510,7 +510,7 @@ if (user) {
         qs.forEach((q, i) => { if (answers[startIdx + i] === q.correct) sc++; });
         stScores.push({ name: st.shortName, correct: sc, total: qs.length });
       }
-      generateResultImage('Kvantitativt prov 2', normered, totalScore, allQuestions.length, stScores).then(dataUrl => {
+      generateResultImage('Kvantitativt prov 2', normered, totalScore, allQuestions.length, stScores, getYrkeForScore(normered)).then(dataUrl => {
         const preview = document.getElementById('share-preview')!;
         preview.innerHTML = `<img src="${dataUrl}" style="max-width:300px; width:100%; border-radius:var(--radius); box-shadow:var(--shadow);" />`;
 

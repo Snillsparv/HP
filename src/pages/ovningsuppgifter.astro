@@ -74,6 +74,15 @@ import Base from '../layouts/Base.astro';
       });
     }
 
+    function initVideoPlaceholders() {
+      root.querySelectorAll('.video-placeholder').forEach(el => {
+        el.addEventListener('click', () => {
+          const id = el.getAttribute('data-vimeo');
+          el.outerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${id}?dnt=1&autoplay=1&title=0&byline=0&portrait=0" title="Video" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+        });
+      });
+    }
+
     function renderCategoryList() {
       root.innerHTML = `
         <div style="margin-bottom:1.5rem;">
@@ -100,6 +109,7 @@ import Base from '../layouts/Base.astro';
           renderExercise();
         });
       });
+      initVideoPlaceholders();
     }
 
     function renderExercise() {
@@ -179,6 +189,7 @@ import Base from '../layouts/Base.astro';
       root.querySelectorAll('.pq-dot').forEach(el => {
         el.addEventListener('click', () => { currentIdx = Number(el.getAttribute('data-i')); renderExercise(); });
       });
+      initVideoPlaceholders();
     }
 
     renderCategoryList();

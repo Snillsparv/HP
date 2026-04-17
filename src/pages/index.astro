@@ -192,7 +192,7 @@ import Base from '../layouts/Base.astro';
       const tHours = Math.floor((diff % 86400000) / 3600000);
       const tMins = Math.floor((diff % 3600000) / 60000);
       const parts = [];
-      if (tDays > 0) parts.push(`${tDays} dagar`);
+      if (tDays > 0) parts.push(`${tDays} ${tDays === 1 ? 'dag' : 'dagar'}`);
       if (tHours > 0) parts.push(`${tHours} timmar`);
       parts.push(`${tMins} minuter`);
       el.title = parts.join(', ');
@@ -201,7 +201,7 @@ import Base from '../layouts/Base.astro';
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
         const examDay = new Date(target.getFullYear(), target.getMonth(), target.getDate());
         const daysUntil = Math.round((examDay.getTime() - today.getTime()) / 86400000);
-        el.textContent = `${daysUntil} dagar`;
+        el.textContent = daysUntil === 1 ? '1 dag' : `${daysUntil} dagar`;
       } else if (hours > 0) {
         el.textContent = `${hours} timmar`;
       } else {

@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ request }) => {
      FROM users
      WHERE name ILIKE $1 OR email ILIKE $1
      ORDER BY created_at DESC
-     LIMIT 5000`,
+     LIMIT 100000`,
     [`%${q}%`]
   );
 

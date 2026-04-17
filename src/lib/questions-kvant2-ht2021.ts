@@ -46,7 +46,7 @@ export const subTests: SubTest[] = [
     id: 'xyz2', name: 'XYZ — Matematisk problemlösning', shortName: 'XYZ',
     type: 'standard', timeMinutes: 12,
     questions: [
-      { num: 1, text: `${tex('2x + 9 = x - 7')}<br><br><b>Vilket värde har <i>x</i>?</b>`, options: ['−16', tex('-\\frac{2}{3}'), tex('\\frac{2}{3}'), '16'], correct: 0, category: 'algebra', videoId: '1183888613' },
+      { num: 1, text: `${tex('2x + 9 = x - 7')}<br><br><b>Vilket värde har <i>x</i>?</b>`, options: ['−16', tex('-\\frac{2}{3}'), tex('\\frac{2}{3}'), '16'], correct: 0, category: 'algebra', videoId: '1183984771' },
       { num: 2, text: `<b>Vad är</b> ${tex('\\frac{1}{8} + \\frac{3}{4} + \\frac{1}{2}')} ?`, options: [tex('\\frac{13}{12}'), tex('\\frac{9}{8}'), tex('\\frac{11}{8}'), tex('\\frac{5}{14}')], correct: 2, category: 'aritmetik', videoId: '1183888958' },
       { num: 3, text: '<b>Vilket värde har <i>x</i>?</b><div style="text-align:center;margin:1.2rem 0;"><img src="/prov-xyz2-q3.png" alt="Figur med mått" data-fadein style="max-width:340px;" /></div>', options: [tex('\\frac{7}{3}'), '3', '3,5', tex('\\sqrt{13}')], correct: 1, category: 'geometri', videoId: '1183889172' },
       { num: 4, text: `Grafen till funktionen <i>f</i> är en rät linje som går genom origo, och ${tex('f(8) = -6')}.<br><br><b>Vilket svarsalternativ anger <i>f</i>(<i>x</i>)?</b>`, options: [tex('f(x) = 8x - 6'), tex('f(x) = -6x + 8'), tex('f(x) = -\\frac{4}{3}x'), tex('f(x) = -\\frac{3}{4}x')], correct: 3, category: 'funktioner', videoId: '1183889295' },

@@ -466,13 +466,14 @@ function timeAgo(d: string) {
   table {
     width: 100%;
     margin-bottom: 1rem;
+    min-width: 500px;
   }
 
   .admin-section {
     margin-bottom: 1rem;
     border: 1px solid var(--color-border);
     border-radius: var(--radius);
-    overflow: hidden;
+    overflow-x: auto;
   }
 
   .admin-section summary {
@@ -495,6 +496,7 @@ function timeAgo(d: string) {
   .admin-section > table,
   .admin-section > div {
     padding: 0.5rem;
+    overflow-x: auto;
   }
 
   .admin-alerts {

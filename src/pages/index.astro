@@ -200,7 +200,7 @@ import Base from '../layouts/Base.astro';
         if (nextExam) {
           const nextDay = new Date(nextExam.getFullYear(), nextExam.getMonth(), nextExam.getDate());
           const daysToNext = Math.round((nextDay.getTime() - today.getTime()) / 86400000);
-          cdTitle.textContent = `Hoppas att det går utmärkt idag! Men ta det lugnt och kom ihåg att du har ${daysToNext} dagar på dig att förbereda dig för nästa prov om du inte blev nöjd!`;
+          cdTitle.innerHTML = `Hoppas att det går utmärkt idag! Men ta det lugnt och kom ihåg att du har <span class="countdown-inline">${daysToNext} dagar</span> på dig att förbereda dig för nästa prov om du inte blev nöjd!`;
         }
       }
 

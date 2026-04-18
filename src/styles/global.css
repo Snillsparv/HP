@@ -776,6 +776,14 @@ tr:hover {
   text-decoration: none !important;
 }
 
+.nav-login--bb {
+  background: #dc2626 !important;
+}
+
+.nav-login--bb:hover {
+  background: #b91c1c !important;
+}
+
 /* === Footer contact === */
 .footer-contact {
   margin-bottom: 1.5rem;

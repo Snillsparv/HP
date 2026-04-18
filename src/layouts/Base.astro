@@ -11,6 +11,7 @@ const { title, description = 'Jonas von Essen hjälper dig nå ditt drömresulta
 const currentPath = Astro.url.pathname;
 const canonicalUrl = new URL(currentPath, 'https://www.hpakuten.se').href;
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const isBB = user?.email?.includes('jessica.ahrling') ?? false;
 ---
 
 <!DOCTYPE html>
@@ -55,18 +56,18 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 <body>
   <header class="site-header">
     <div class="container container--wide">
-      <a href="/" class="site-logo">HP<span>Akuten</span></a>
+      <a href="/" class="site-logo">{isBB ? 'BB' : 'HP'}<span>Akuten</span></a>
       <button class="nav-toggle" aria-label="Meny" id="nav-toggle">☰</button>
       <nav class="site-nav" id="site-nav">
-        <a href="/trana" class:list={['nav-cta', { active: currentPath.startsWith('/trana') || currentPath.startsWith('/prov') || currentPath.startsWith('/delprov') }]}>Träna</a>
-        <a href="/ovningsuppgifter" class:list={[{ active: currentPath.startsWith('/ovningsuppgifter') }]}>Matterepetition</a>
-        <a href="/forum" class:list={[{ active: currentPath.startsWith('/forum') }]}>Forum</a>
-        <a href="/om-hp" class:list={[{ active: currentPath.startsWith('/om-hp') }]}>Om HP</a>
-        <a href="/om" class:list={[{ active: currentPath === '/om' }]}>Om Jonas</a>
+        <a href="/trana" class:list={['nav-cta', { active: currentPath.startsWith('/trana') || currentPath.startsWith('/prov') || currentPath.startsWith('/delprov') }]}>{isBB ? 'Förbereda' : 'Träna'}</a>
+        <a href="/ovningsuppgifter" class:list={[{ active: currentPath.startsWith('/ovningsuppgifter') }]}>{isBB ? 'Blöjrepetition' : 'Matterepetition'}</a>
+        <a href="/forum" class:list={[{ active: currentPath.startsWith('/forum') }]}>{isBB ? 'Mammaforumet' : 'Forum'}</a>
+        <a href="/om-hp" class:list={[{ active: currentPath.startsWith('/om-hp') }]}>{isBB ? 'Om BB' : 'Om HP'}</a>
+        <a href="/om" class:list={[{ active: currentPath === '/om' }]}>{isBB ? 'Om Pappan' : 'Om Jonas'}</a>
         {user ? (
-          <a href="/konto/profil" class="nav-login">{user.name}</a>
+          <a href="/konto/profil" class:list={['nav-login', { 'nav-login--bb': isBB }]}>{user.name}</a>
         ) : (
-          <a href="/konto/login" class="nav-login">Logga in</a>
+          <a href="/konto/login" class:list={['nav-login', { 'nav-login--bb': isBB }]}>Logga in</a>
         )}
       </nav>
     </div>
@@ -80,7 +81,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     <div class="container">
       <div class="footer-contact">
         <h3>Hör av dig!</h3>
-        <p>Allt på den här sidan är helt gratis, men jag skulle bli jätteglad om du som ett litet tack skrev och berättade om du gillar innehållet och hur det gick på provet! :)</p>
+        <p>{isBB ? 'Allt på den här sidan är helt gratis, men jag skulle bli jätteglad om du som ett litet tack skrev och berättade om du gillar innehållet och hur det gick på förlossningen! :)' : 'Allt på den här sidan är helt gratis, men jag skulle bli jätteglad om du som ett litet tack skrev och berättade om du gillar innehållet och hur det gick på provet! :)'}</p>
         <form class="contact-form" action="/api/contact" method="POST">
           <div class="contact-row">
             <input type="text" name="name" placeholder="Ditt namn" required />
@@ -90,7 +91,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
           <button type="submit" class="btn btn-primary">Skicka</button>
         </form>
       </div>
-      <p>&copy; {new Date().getFullYear()} Jonas von Essen · HPAkuten</p>
+      <p>&copy; {new Date().getFullYear()} Jonas von Essen · {isBB ? 'BBAkuten' : 'HPAkuten'}</p>
     </div>
   </footer>
 

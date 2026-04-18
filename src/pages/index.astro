@@ -8,6 +8,17 @@ const isBB = user?.email?.includes('jessica.ahrling');
 
 {isBB ? (
 <Base title="BBAkuten – Nedräkning till Smultron">
+  <style is:global>
+    .bb-page .hero-stat .number,
+    .bb-page .countdown-inline,
+    .bb-page .site-logo span,
+    .bb-page .hero-tag,
+    .bb-page h1,
+    .bb-page .btn-primary { color: #dc2626 !important; }
+    .bb-page .btn-primary { background: #dc2626 !important; border-color: #dc2626 !important; color: #fff !important; }
+    .bb-page .site-logo span { color: #dc2626 !important; }
+  </style>
+
   <div class="hero hero--minimal">
     <div class="hero-content">
       <div class="hero-peek-wrapper">
@@ -25,8 +36,8 @@ const isBB = user?.email?.includes('jessica.ahrling');
           <span class="label">Första barnet</span>
         </div>
         <div class="hero-stat">
-          <span class="number" id="bb-countdown">--</span>
-          <span class="label">Dagar kvar till Smultron</span>
+          <span class="number">3/3</span>
+          <span class="label">Lyckade befruktningar</span>
         </div>
         <div class="hero-stat">
           <span class="number">∞</span>
@@ -45,35 +56,27 @@ const isBB = user?.email?.includes('jessica.ahrling');
     </div>
   </section>
 
-  <script>
-    // BBAkuten: replace all HPAkuten branding
+  <script is:inline>
+    document.body.classList.add('bb-page');
+
+    // Replace logo
     document.querySelectorAll('.site-logo').forEach(el => {
       el.innerHTML = 'BB<span>Akuten</span>';
     });
     document.title = 'BBAkuten – Nedräkning till Smultron';
 
-    // Countdown to Smultron
-    const smultronDate = new Date(2026, 3, 28, 0, 0, 0); // 28 april 2026
-    function updateBBCountdown() {
+    // Countdown to Smultron (28 april 2026)
+    (function() {
       const now = new Date();
       const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const target = new Date(smultronDate.getFullYear(), smultronDate.getMonth(), smultronDate.getDate());
-      const diff = target.getTime() - today.getTime();
-      const days = Math.round(diff / 86400000);
-      const el = document.getElementById('bb-countdown');
-      const el2 = document.getElementById('bb-cd-inline');
-      if (days > 0) {
-        if (el) el.textContent = days.toString();
-        if (el2) el2.textContent = `${days} ${days === 1 ? 'dag' : 'dagar'}`;
-      } else if (days === 0) {
-        if (el) el.textContent = '🍓';
-        if (el2) el2.textContent = 'IDAG';
-      } else {
-        if (el) el.textContent = '🍓';
-        if (el2) el2.textContent = `${Math.abs(days)} ${Math.abs(days) === 1 ? 'dag' : 'dagar'} sedan`;
-      }
-    }
-    updateBBCountdown();
+      const target = new Date(2026, 3, 28);
+      const days = Math.round((target.getTime() - today.getTime()) / 86400000);
+      const el = document.getElementById('bb-cd-inline');
+      if (!el) return;
+      if (days > 0) el.textContent = `${days} ${days === 1 ? 'dag' : 'dagar'}`;
+      else if (days === 0) el.textContent = 'IDAG 🍓';
+      else el.textContent = `${Math.abs(days)} ${Math.abs(days) === 1 ? 'dag' : 'dagar'} sedan`;
+    })();
   </script>
 </Base>
 ) : (

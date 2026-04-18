@@ -36,7 +36,7 @@ import Base from '../layouts/Base.astro';
   <!-- Intro -->
   <section class="section" id="guide">
     <div class="container">
-      <h2 class="section-title">Bara <span id="cd-inline" class="countdown-inline" style="cursor:default;">--</span> kvar och du är helt oförberedd?</h2>
+      <h2 id="countdown-title" class="section-title">Bara <span id="cd-inline" class="countdown-inline" style="cursor:default;">--</span> kvar och du är helt oförberedd?</h2>
       <p class="section-subtitle" style="max-width: 700px; margin-left: auto; margin-right: auto;">
         Lugn, följ stegen nedan och du kommer att vara betydligt mer redo än du är just nu!
       </p>
@@ -184,6 +184,22 @@ import Base from '../layouts/Base.astro';
       const heroTitle = document.getElementById('hero-title');
       if (heroImg) heroImg.src = '/jonas_redo.webp';
       if (heroTitle) heroTitle.textContent = 'Lycka till idag!';
+
+      // Replace countdown title with well-wishing message
+      const cdTitle = document.getElementById('countdown-title');
+      if (cdTitle) {
+        const now2 = new Date();
+        const today = new Date(now2.getFullYear(), now2.getMonth(), now2.getDate());
+        const nextExam = examDates.find(d => {
+          const dDay = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+          return dDay.getTime() > today.getTime();
+        });
+        if (nextExam) {
+          const nextDay = new Date(nextExam.getFullYear(), nextExam.getMonth(), nextExam.getDate());
+          const daysToNext = Math.round((nextDay.getTime() - today.getTime()) / 86400000);
+          cdTitle.textContent = `Hoppas att det går utmärkt idag! Men ta det lugnt och kom ihåg att du har ${daysToNext} dagar på dig att förbereda dig för nästa prov om du inte blev nöjd!`;
+        }
+      }
 
       // Confetti
       const canvas = document.createElement('canvas');

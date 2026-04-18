@@ -11,12 +11,12 @@ const isBB = user?.email?.includes('jessica.ahrling');
   <style is:global>
     .bb-page .hero-stat .number,
     .bb-page .countdown-inline,
-    .bb-page .site-logo span,
     .bb-page .hero-tag,
-    .bb-page h1,
-    .bb-page .btn-primary { color: #dc2626 !important; }
+    .bb-page .hero h1 { color: #dc2626 !important; }
+    .bb-page .hero-tag { background: rgba(220, 38, 38, 0.1) !important; color: #dc2626 !important; }
     .bb-page .btn-primary { background: #dc2626 !important; border-color: #dc2626 !important; color: #fff !important; }
     .bb-page .site-logo span { color: #dc2626 !important; }
+    .bb-page .section-title { color: #dc2626; }
   </style>
 
   <div class="hero hero--minimal">
@@ -24,7 +24,7 @@ const isBB = user?.email?.includes('jessica.ahrling');
       <div class="hero-peek-wrapper">
         <img src="/jonas_bb.webp" alt="Jonas" class="hero-peek-img" data-fadein />
       </div>
-      <span class="hero-tag">Från Sveriges mest nervösa blivande pappa</span>
+      <span class="hero-tag">FRÅN SVERIGES MEST TAGGADE BLIVANDE PAPPA</span>
       <h1>Välkommen till BBAkuten</h1>
       <p class="subtitle">
         Strategier och andningstekniker från Jonas von Essen, som nu ska ta sig an sitt livs största utmaning.
@@ -51,8 +51,25 @@ const isBB = user?.email?.includes('jessica.ahrling');
     <div class="container">
       <h2 class="section-title">Bara <span id="bb-cd-inline" class="countdown-inline" style="cursor:default;">--</span> kvar tills Smultron är här! 🍓</h2>
       <p class="section-subtitle" style="max-width: 700px; margin-left: auto; margin-right: auto;">
-        Vi kan knappt bärga oss!
+        Lugn, följ stegen nedan och du kommer att vara betydligt mer redo än du är just nu!
       </p>
+
+      <div style="max-width: 800px; margin: 2rem auto;">
+        <img src="/jonas_bb_yt.png" alt="BBAkuten – Introduktionsvideo" style="width:100%; border-radius:var(--radius); box-shadow:var(--shadow);" />
+      </div>
+
+      <div class="guide-text">
+        <p>
+          Det som snabbast kan göra en redo för att bli förälder är ironiskt nog just att <strong>bli förälder!</strong> Men eftersom det här är första gången vill vi vara så förberedda som möjligt. Om du dessutom förbereder dig på ett strategiskt sätt så kan det gå ännu smidigare!
+        </p>
+        <p>
+          Innebär det här att vi måste vänta nio månader till för att bli redo? <strong>Absolut inte!</strong> Vi har redan gjort allt vi kan — nu är det bara att vänta på Smultron! 🍓
+        </p>
+        <div class="tip-box success">
+          <strong>Allt är helt gratis</strong>
+          Vi har försökt knåpa ihop en perfekt guide för vad vi ska göra under de sista dagarna. Till skillnad från nästan alla andra BB-kurser finns det ingen del som kostar något. Vi vill bara hjälpa varandra att vara så redo som möjligt.
+        </div>
+      </div>
     </div>
   </section>
 

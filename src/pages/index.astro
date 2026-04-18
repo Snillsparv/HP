@@ -10,10 +10,9 @@ const isBB = user?.email?.includes('jessica.ahrling');
 <Base title="BBAkuten – Nedräkning till Smultron">
   <style is:global>
     .bb-page .hero-stat .number,
-    .bb-page .countdown-inline,
-    .bb-page .hero-tag,
-    .bb-page .hero h1 { color: #dc2626 !important; }
+    .bb-page .countdown-inline { color: #dc2626 !important; }
     .bb-page .hero-tag { background: rgba(220, 38, 38, 0.1) !important; color: #dc2626 !important; }
+    .bb-page .hero--minimal h1 { background: linear-gradient(135deg, var(--color-text) 0%, #dc2626 100%) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
     .bb-page .btn-primary { background: #dc2626 !important; border-color: #dc2626 !important; color: #fff !important; }
     .bb-page .site-logo span { color: #dc2626 !important; }
     .bb-page .section-title { color: #dc2626; }

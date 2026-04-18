@@ -1,7 +1,82 @@
 ---
 import Base from '../layouts/Base.astro';
+import { getSessionFromCookies } from '../lib/auth.js';
+
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const isBB = user?.email?.includes('jessica.ahrling');
 ---
 
+{isBB ? (
+<Base title="BBAkuten – Nedräkning till Smultron">
+  <div class="hero hero--minimal">
+    <div class="hero-content">
+      <div class="hero-peek-wrapper">
+        <img src="/jonas_bb.webp" alt="Jonas" class="hero-peek-img" data-fadein />
+      </div>
+      <span class="hero-tag">Från Sveriges mest nervösa blivande pappa</span>
+      <h1>Välkommen till BBAkuten</h1>
+      <p class="subtitle">
+        Strategier och andningstekniker från Jonas von Essen, som nu ska ta sig an sitt livs största utmaning.
+      </p>
+
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="number">1</span>
+          <span class="label">Första barnet</span>
+        </div>
+        <div class="hero-stat">
+          <span class="number" id="bb-countdown">--</span>
+          <span class="label">Dagar kvar till Smultron</span>
+        </div>
+        <div class="hero-stat">
+          <span class="number">∞</span>
+          <span class="label">Kärlek</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="section" id="guide">
+    <div class="container">
+      <h2 class="section-title">Bara <span id="bb-cd-inline" class="countdown-inline" style="cursor:default;">--</span> kvar tills Smultron är här! 🍓</h2>
+      <p class="section-subtitle" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+        Vi kan knappt bärga oss!
+      </p>
+    </div>
+  </section>
+
+  <script>
+    // BBAkuten: replace all HPAkuten branding
+    document.querySelectorAll('.site-logo').forEach(el => {
+      el.innerHTML = 'BB<span>Akuten</span>';
+    });
+    document.title = 'BBAkuten – Nedräkning till Smultron';
+
+    // Countdown to Smultron
+    const smultronDate = new Date(2026, 3, 28, 0, 0, 0); // 28 april 2026
+    function updateBBCountdown() {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const target = new Date(smultronDate.getFullYear(), smultronDate.getMonth(), smultronDate.getDate());
+      const diff = target.getTime() - today.getTime();
+      const days = Math.round(diff / 86400000);
+      const el = document.getElementById('bb-countdown');
+      const el2 = document.getElementById('bb-cd-inline');
+      if (days > 0) {
+        if (el) el.textContent = days.toString();
+        if (el2) el2.textContent = `${days} ${days === 1 ? 'dag' : 'dagar'}`;
+      } else if (days === 0) {
+        if (el) el.textContent = '🍓';
+        if (el2) el2.textContent = 'IDAG';
+      } else {
+        if (el) el.textContent = '🍓';
+        if (el2) el2.textContent = `${Math.abs(days)} ${Math.abs(days) === 1 ? 'dag' : 'dagar'} sedan`;
+      }
+    }
+    updateBBCountdown();
+  </script>
+</Base>
+) : (
 <Base title="HPAkuten – Förbered dig snabbt och gratis inför Högskoleprovet" description="Träna gratis på högskoleprovet med Jonas von Essen, 2.0 tolv gånger i rad. Strategier, övningsprov och videogenomgångar som höjer ditt HP-resultat snabbt.">
   <div class="hero hero--minimal">
     <div class="hero-content">
@@ -291,3 +366,4 @@ import Base from '../layouts/Base.astro';
     setInterval(updateCountdown, 30000);
   </script>
 </Base>
+)}

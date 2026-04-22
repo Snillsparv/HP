@@ -24,37 +24,85 @@ const isBB = user?.email?.includes('jessica.ahrling');
       <p style="color:#666; font-size:0.85rem; margin:0.3rem 0 0;">STUDSMATTAN · KLASSIFICERAD OPERATION</p>
     </div>
 
-    <!-- Video container -->
-    <div style="position:relative; z-index:2; width:100%; max-width:700px;">
-      <div style="border:2px solid #333; border-radius:8px; overflow:hidden; position:relative; background:#000;">
-        <div id="video-wrap" style="position:relative; overflow:hidden;">
-          <video id="launch-video" preload="auto" playsinline style="width:100%; display:block;">
-            <source src="/studsmattan.mp4" type="video/mp4" />
-          </video>
+    <!-- Main console layout -->
+    <div class="mission-console">
+      <!-- Left panel: Systems -->
+      <div class="mission-panel">
+        <div class="panel-title">Systems</div>
+        <div class="panel-row"><span class="led led-green"></span> CORE</div>
+        <div class="panel-row"><span class="led led-green"></span> FUEL</div>
+        <div class="panel-row"><span class="led led-green"></span> COMMS</div>
+        <div class="panel-row"><span class="led led-amber"></span> GYRO</div>
+        <div class="panel-row"><span class="led led-green"></span> GPS</div>
+        <div class="panel-divider"></div>
+        <div class="panel-title">Payload</div>
+        <div class="panel-small">STUDSMATTA v2.0</div>
+        <div class="panel-small">Mass: 42 kg</div>
+        <div class="panel-small">Size: 3.6 m</div>
+      </div>
+
+      <!-- Video container -->
+      <div class="mission-screen">
+        <div style="border:2px solid #333; border-radius:8px; overflow:hidden; position:relative; background:#000;">
+          <div id="video-wrap" style="position:relative; overflow:hidden;">
+            <video id="launch-video" preload="auto" playsinline style="width:100%; display:block;">
+              <source src="/studsmattan.mp4" type="video/mp4" />
+            </video>
+          </div>
+          <div id="launch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);cursor:pointer;transition:opacity 0.3s;">
+            <button id="launch-btn" style="width:110px;height:110px;border-radius:50%;border:4px solid #fca5a5;background:radial-gradient(circle at 35% 35%,#ef4444,#991b1b);color:#fff;font-size:0.95rem;font-weight:800;letter-spacing:0.1em;cursor:pointer;box-shadow:0 0 40px rgba(239,68,68,0.5),0 0 80px rgba(239,68,68,0.2);transition:all 0.15s;font-family:system-ui,-apple-system,sans-serif;text-transform:uppercase;">LAUNCH</button>
+            <p style="color:#ccc;font-size:0.75rem;margin-top:0.7rem;text-transform:uppercase;letter-spacing:0.15em;">Tryck för att starta</p>
+          </div>
         </div>
-        <!-- Launch button overlay -->
-        <div id="launch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);cursor:pointer;transition:opacity 0.3s;">
-          <button id="launch-btn" style="width:120px;height:120px;border-radius:50%;border:4px solid #fca5a5;background:radial-gradient(circle at 35% 35%,#ef4444,#991b1b);color:#fff;font-size:1rem;font-weight:800;letter-spacing:0.1em;cursor:pointer;box-shadow:0 0 40px rgba(239,68,68,0.5),0 0 80px rgba(239,68,68,0.2);transition:all 0.15s;font-family:system-ui,-apple-system,sans-serif;text-transform:uppercase;">LAUNCH</button>
-          <p style="color:#ccc;font-size:0.8rem;margin-top:0.8rem;text-transform:uppercase;letter-spacing:0.15em;">Tryck för att starta</p>
-        </div>
-        <!-- Mission successful overlay -->
-        <div id="mission-success" style="position:absolute;inset:0;display:none;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.6);">
-          <h2 id="success-text" style="font-size:clamp(2rem,8vw,4rem);font-weight:900;color:#22c55e;text-shadow:0 0 30px rgba(34,197,94,0.6);letter-spacing:0.1em;margin:0;text-transform:uppercase;opacity:0;transition:opacity 0.8s;">MISSION SUCCESSFUL!</h2>
-        </div>
+      </div>
+
+      <!-- Right panel: Telemetry -->
+      <div class="mission-panel">
+        <div class="panel-title">Telemetry</div>
+        <div class="telemetry-row"><span class="tel-label">VEL</span><span id="tel-vel" class="tel-value">000 m/s</span></div>
+        <div class="telemetry-row"><span class="tel-label">ALT</span><span id="tel-alt" class="tel-value">0000 m</span></div>
+        <div class="telemetry-row"><span class="tel-label">THR</span><span id="tel-thr" class="tel-value">000%</span></div>
+        <div class="telemetry-row"><span class="tel-label">T</span><span id="tel-t" class="tel-value">T-00:10</span></div>
+        <div class="panel-divider"></div>
+        <div class="panel-title">Weather</div>
+        <div class="panel-small">WIND: 3 m/s NE</div>
+        <div class="panel-small">TEMP: 14 °C</div>
+        <div class="panel-small">VIS: GOOD</div>
       </div>
     </div>
 
     <!-- Status bar -->
     <div style="margin-top:1.5rem; text-align:center; z-index:2;">
       <p id="status-text" style="color:#ef4444; font-size:0.85rem; font-weight:600; text-transform:uppercase; letter-spacing:0.15em;">⏳ Väntar på godkännande...</p>
+      <h2 id="success-text" style="display:none; font-size:clamp(1.5rem,6vw,3rem);font-weight:900;color:#22c55e;text-shadow:0 0 30px rgba(34,197,94,0.6);letter-spacing:0.1em;margin:0.5rem 0 0;text-transform:uppercase;opacity:0;transition:opacity 0.8s;">MISSION SUCCESSFUL!</h2>
     </div>
   </div>
+
+  <style>
+    .mission-console { display:flex; gap:1rem; align-items:stretch; z-index:2; position:relative; width:100%; max-width:960px; }
+    .mission-panel { flex:0 0 180px; background:#111; border:2px solid #333; border-radius:8px; padding:0.8rem; font-family:'Courier New',monospace; font-size:0.75rem; color:#ccc; }
+    .panel-title { color:#ef4444; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; font-size:0.7rem; border-bottom:1px solid #333; padding-bottom:0.3rem; margin-bottom:0.5rem; }
+    .panel-row { display:flex; align-items:center; gap:0.5rem; padding:0.2rem 0; text-transform:uppercase; letter-spacing:0.1em; }
+    .panel-small { color:#888; font-size:0.7rem; padding:0.15rem 0; letter-spacing:0.05em; }
+    .panel-divider { height:1px; background:#333; margin:0.7rem 0; }
+    .led { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; }
+    .led-green { background:#22c55e; box-shadow:0 0 6px #22c55e; animation: blink 2s infinite; }
+    .led-amber { background:#f59e0b; box-shadow:0 0 6px #f59e0b; animation: blink 1.2s infinite; }
+    .led-red { background:#ef4444; box-shadow:0 0 6px #ef4444; animation: blink 0.6s infinite; }
+    @keyframes blink { 0%,85%,100% { opacity:1; } 90% { opacity:0.3; } }
+    .telemetry-row { display:flex; justify-content:space-between; padding:0.25rem 0; border-bottom:1px dashed #222; }
+    .tel-label { color:#666; }
+    .tel-value { color:#22c55e; font-weight:700; }
+    .mission-screen { flex:1; max-width:520px; }
+    @media (max-width: 768px) {
+      .mission-panel { display:none; }
+    }
+  </style>
 
   <script is:inline>
     const video = document.getElementById('launch-video');
     const videoWrap = document.getElementById('video-wrap');
     const overlay = document.getElementById('launch-overlay');
-    const successDiv = document.getElementById('mission-success');
     const successText = document.getElementById('success-text');
     const statusText = document.getElementById('status-text');
     const launchBtn = document.getElementById('launch-btn');
@@ -76,19 +124,40 @@ const isBB = user?.email?.includes('jessica.ahrling');
       launchBtn.style.boxShadow = '0 0 40px rgba(239,68,68,0.5),0 0 80px rgba(239,68,68,0.2)';
     });
 
+    const telVel = document.getElementById('tel-vel');
+    const telAlt = document.getElementById('tel-alt');
+    const telThr = document.getElementById('tel-thr');
+    const telT = document.getElementById('tel-t');
+
+    let telInterval = null;
+    function animateTelemetry() {
+      const start = Date.now();
+      telInterval = setInterval(() => {
+        const t = (Date.now() - start) / 1000;
+        const vel = Math.min(999, Math.round(40 * t + Math.random() * 20));
+        const alt = Math.min(9999, Math.round(10 * t * t + Math.random() * 5));
+        const thr = Math.min(100, Math.round(60 + t * 8 + Math.random() * 4));
+        if (telVel) telVel.textContent = String(vel).padStart(3, '0') + ' m/s';
+        if (telAlt) telAlt.textContent = String(alt).padStart(4, '0') + ' m';
+        if (telThr) telThr.textContent = String(thr).padStart(3, '0') + '%';
+        if (telT) telT.textContent = 'T+' + String(Math.floor(t/60)).padStart(2,'0') + ':' + String(Math.floor(t%60)).padStart(2,'0');
+      }, 100);
+    }
+
     overlay.addEventListener('click', () => {
       overlay.style.opacity = '0';
       setTimeout(() => overlay.style.display = 'none', 300);
       statusText.textContent = '🚀 LAUNCH SEQUENCE INITIATED';
       statusText.style.color = '#f59e0b';
+      animateTelemetry();
       video.play();
     });
 
     video.addEventListener('ended', () => {
-      successDiv.style.display = 'flex';
+      if (telInterval) clearInterval(telInterval);
+      statusText.style.display = 'none';
+      successText.style.display = 'block';
       setTimeout(() => successText.style.opacity = '1', 100);
-      statusText.textContent = '✅ MISSION SUCCESSFUL';
-      statusText.style.color = '#22c55e';
     });
   </script>
 </Base>

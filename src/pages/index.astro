@@ -27,9 +27,11 @@ const isBB = user?.email?.includes('jessica.ahrling');
     <!-- Video container -->
     <div style="position:relative; z-index:2; width:100%; max-width:700px;">
       <div style="border:2px solid #333; border-radius:8px; overflow:hidden; position:relative; background:#000;">
-        <video id="launch-video" preload="auto" playsinline muted style="width:100%; display:block;">
-          <source src="/studsmattan.mp4" type="video/mp4" />
-        </video>
+        <div id="video-wrap" style="position:relative; overflow:hidden;">
+          <video id="launch-video" preload="auto" playsinline style="width:100%; display:block;">
+            <source src="/studsmattan.mp4" type="video/mp4" />
+          </video>
+        </div>
         <!-- Launch button overlay -->
         <div id="launch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);cursor:pointer;transition:opacity 0.3s;">
           <button id="launch-btn" style="width:120px;height:120px;border-radius:50%;border:4px solid #fca5a5;background:radial-gradient(circle at 35% 35%,#ef4444,#991b1b);color:#fff;font-size:1rem;font-weight:800;letter-spacing:0.1em;cursor:pointer;box-shadow:0 0 40px rgba(239,68,68,0.5),0 0 80px rgba(239,68,68,0.2);transition:all 0.15s;font-family:system-ui,-apple-system,sans-serif;text-transform:uppercase;">LAUNCH</button>
@@ -50,11 +52,20 @@ const isBB = user?.email?.includes('jessica.ahrling');
 
   <script is:inline>
     const video = document.getElementById('launch-video');
+    const videoWrap = document.getElementById('video-wrap');
     const overlay = document.getElementById('launch-overlay');
     const successDiv = document.getElementById('mission-success');
     const successText = document.getElementById('success-text');
     const statusText = document.getElementById('status-text');
     const launchBtn = document.getElementById('launch-btn');
+
+    // Crop 8% from the bottom (hides VEO logo)
+    function cropVideo() {
+      const h = video.offsetHeight;
+      if (h > 0) videoWrap.style.height = (h * 0.92) + 'px';
+    }
+    video.addEventListener('loadedmetadata', cropVideo);
+    window.addEventListener('resize', cropVideo);
 
     launchBtn.addEventListener('mouseenter', () => {
       launchBtn.style.transform = 'scale(1.08)';

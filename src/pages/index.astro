@@ -35,6 +35,14 @@ const isBB = user?.email?.includes('jessica.ahrling');
         <div class="panel-row"><span class="led led-amber"></span> GYRO</div>
         <div class="panel-row"><span class="led led-green"></span> GPS</div>
         <div class="panel-divider"></div>
+        <div style="text-align:center; padding:0.6rem 0;">
+          <p style="color:#ef4444;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;margin:0 0 0.6rem;">Launch</p>
+          <button id="launch-btn" class="launch-btn-3d">
+            <span class="launch-btn-face">GO</span>
+          </button>
+          <p style="color:#555;font-size:0.6rem;margin:0.5rem 0 0;text-transform:uppercase;letter-spacing:0.1em;">Tryck för att starta</p>
+        </div>
+        <div class="panel-divider"></div>
         <div class="panel-title">Payload</div>
         <div class="panel-small">STUDSMATTA v2.0</div>
         <div class="panel-small">Mass: 42 kg</div>
@@ -49,9 +57,8 @@ const isBB = user?.email?.includes('jessica.ahrling');
               <source src="/studsmattan.mp4" type="video/mp4" />
             </video>
           </div>
-          <div id="launch-overlay" style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;background:rgba(0,0,0,0.4);cursor:pointer;transition:opacity 0.3s;">
-            <button id="launch-btn" style="width:110px;height:110px;border-radius:50%;border:4px solid #fca5a5;background:radial-gradient(circle at 35% 35%,#ef4444,#991b1b);color:#fff;font-size:0.95rem;font-weight:800;letter-spacing:0.1em;cursor:pointer;box-shadow:0 0 40px rgba(239,68,68,0.5),0 0 80px rgba(239,68,68,0.2);transition:all 0.15s;font-family:system-ui,-apple-system,sans-serif;text-transform:uppercase;">LAUNCH</button>
-            <p style="color:#ccc;font-size:0.75rem;margin-top:0.7rem;text-transform:uppercase;letter-spacing:0.15em;">Tryck för att starta</p>
+          <div id="launch-overlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);transition:opacity 0.3s;">
+            <p style="color:#fff;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.2em;text-shadow:0 2px 8px rgba(0,0,0,0.8);">Awaiting launch command...</p>
           </div>
         </div>
       </div>
@@ -94,6 +101,35 @@ const isBB = user?.email?.includes('jessica.ahrling');
     .tel-label { color:#666; }
     .tel-value { color:#22c55e; font-weight:700; }
     .mission-screen { flex:1; max-width:520px; }
+    .launch-btn-3d {
+      width: 80px; height: 80px; border-radius: 50%; border: none; cursor: pointer; padding: 0;
+      background: radial-gradient(circle at 50% 110%, #440a0a 0%, #333 60%);
+      box-shadow: 0 6px 0 #111, 0 8px 15px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
+      transform: translateY(0); transition: all 0.08s; position: relative;
+    }
+    .launch-btn-face {
+      display: flex; align-items: center; justify-content: center;
+      width: 62px; height: 62px; border-radius: 50%; margin: 9px auto;
+      background: radial-gradient(circle at 35% 30%, #f87171, #dc2626 40%, #7f1d1d);
+      box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.25), inset 0 -2px 3px rgba(0,0,0,0.3);
+      color: #fff; font-family: system-ui, sans-serif; font-weight: 900; font-size: 1rem;
+      letter-spacing: 0.1em; text-shadow: 0 1px 2px rgba(0,0,0,0.4);
+    }
+    .launch-btn-3d:hover .launch-btn-face {
+      background: radial-gradient(circle at 35% 30%, #fca5a5, #ef4444 40%, #991b1b);
+    }
+    .launch-btn-3d:active {
+      transform: translateY(4px);
+      box-shadow: 0 2px 0 #111, 0 3px 8px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
+    }
+    .launch-btn-3d.launched {
+      transform: translateY(4px); pointer-events: none;
+      box-shadow: 0 2px 0 #111, 0 3px 8px rgba(0,0,0,0.5);
+    }
+    .launch-btn-3d.launched .launch-btn-face {
+      background: radial-gradient(circle at 35% 30%, #888, #555 40%, #333);
+    }
+
     @media (max-width: 768px) {
       .mission-panel { display:none; }
     }
@@ -144,14 +180,20 @@ const isBB = user?.email?.includes('jessica.ahrling');
       }, 100);
     }
 
-    overlay.addEventListener('click', () => {
+    let launched = false;
+    function doLaunch() {
+      if (launched) return;
+      launched = true;
+      launchBtn.classList.add('launched');
       overlay.style.opacity = '0';
       setTimeout(() => overlay.style.display = 'none', 300);
       statusText.textContent = '🚀 LAUNCH SEQUENCE INITIATED';
       statusText.style.color = '#f59e0b';
       animateTelemetry();
       video.play();
-    });
+    }
+    launchBtn.addEventListener('click', doLaunch);
+    overlay.addEventListener('click', doLaunch);
 
     video.addEventListener('ended', () => {
       if (telInterval) clearInterval(telInterval);

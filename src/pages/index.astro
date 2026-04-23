@@ -7,200 +7,147 @@ const isBB = user?.email?.includes('jessica.ahrling');
 ---
 
 {isBB ? (
-<Base title="MISSION CONTROL">
+<Base title="BBAkuten – Nedräkning till Smultron">
   <style is:global>
-    body { margin: 0; background: #0a0a0a !important; }
-    .site-header, .site-footer { display: none !important; }
-    main { padding: 0 !important; }
+    .bb-page .hero-stat .number,
+    .bb-page .countdown-inline { color: #dc2626 !important; }
+    .bb-page .hero-tag { background: rgba(220, 38, 38, 0.1) !important; color: #dc2626 !important; }
+    .bb-page .hero--minimal h1 { background: linear-gradient(135deg, var(--color-text) 0%, #dc2626 100%) !important; -webkit-background-clip: text !important; -webkit-text-fill-color: transparent !important; background-clip: text !important; }
+    .bb-page .btn-primary { background: #dc2626 !important; border-color: #dc2626 !important; color: #fff !important; }
+    .bb-page .site-logo span { color: #dc2626 !important; }
+    .bb-page .section-title { color: #dc2626; }
   </style>
-  <div id="launch-page" style="min-height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:radial-gradient(ellipse at center, #1a1a2e 0%, #0a0a0a 100%); color:#fff; font-family:system-ui,-apple-system,sans-serif; position:relative; overflow:hidden; padding:1rem;">
-    <!-- Scanlines overlay -->
-    <div style="position:absolute;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 2px,rgba(0,0,0,0.15) 2px,rgba(0,0,0,0.15) 4px);pointer-events:none;z-index:1;"></div>
 
-    <!-- Header -->
-    <div style="text-align:center; margin-bottom:1.5rem; z-index:2;">
-      <div style="font-size:0.75rem; text-transform:uppercase; letter-spacing:0.3em; color:#ef4444; font-weight:700; margin-bottom:0.3rem;">🔴 LIVE</div>
-      <h1 style="font-size:clamp(1.5rem,5vw,2.5rem); font-weight:800; letter-spacing:0.08em; margin:0; text-transform:uppercase;">Mission Control</h1>
-      <p style="color:#666; font-size:0.85rem; margin:0.3rem 0 0;">STUDSMATTAN · KLASSIFICERAD OPERATION</p>
-    </div>
-
-    <!-- Main console layout -->
-    <div class="mission-console">
-      <!-- Left panel: Systems -->
-      <div class="mission-panel">
-        <div class="panel-title">Systems</div>
-        <div class="panel-row"><span class="led led-green"></span> CORE</div>
-        <div class="panel-row"><span class="led led-green"></span> FUEL</div>
-        <div class="panel-row"><span class="led led-green"></span> COMMS</div>
-        <div class="panel-row"><span class="led led-amber"></span> GYRO</div>
-        <div class="panel-row"><span class="led led-green"></span> GPS</div>
-        <div class="panel-divider"></div>
-        <div style="text-align:center; padding:0.6rem 0;">
-          <p style="color:#ef4444;font-size:0.65rem;font-weight:700;text-transform:uppercase;letter-spacing:0.15em;margin:0 0 0.6rem;">Launch</p>
-          <button id="launch-btn" class="launch-btn-3d">
-            <span class="launch-btn-face">GO</span>
-          </button>
-          <p style="color:#555;font-size:0.6rem;margin:0.5rem 0 0;text-transform:uppercase;letter-spacing:0.1em;">Tryck för att starta</p>
-        </div>
-        <div class="panel-divider"></div>
-        <div class="panel-title">Payload</div>
-        <div class="panel-small">STUDSMATTA v2.0</div>
-        <div class="panel-small">Mass: 42 kg</div>
-        <div class="panel-small">Size: 3.6 m</div>
+  <div class="hero hero--minimal">
+    <div class="hero-content">
+      <div class="hero-peek-wrapper">
+        <img src="/jonas_bb.webp" alt="Jonas" class="hero-peek-img" data-fadein />
       </div>
+      <span class="hero-tag">FRÅN SVERIGES MEST TAGGADE BLIVANDE PAPPA</span>
+      <h1>Välkommen till BBAkuten</h1>
+      <p class="subtitle">
+        Strategier och andningstekniker från Jonas von Essen, som nu ska ta sig an sitt livs största utmaning.
+      </p>
 
-      <!-- Video container -->
-      <div class="mission-screen">
-        <div style="border:2px solid #333; border-radius:8px; overflow:hidden; position:relative; background:#000;">
-          <div id="video-wrap" style="position:relative; overflow:hidden;">
-            <video id="launch-video" preload="auto" playsinline style="width:100%; display:block;">
-              <source src="/studsmattan.mp4" type="video/mp4" />
-            </video>
-          </div>
-          <div id="launch-overlay" style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:rgba(0,0,0,0.3);transition:opacity 0.3s;">
-            <p style="color:#fff;font-size:0.9rem;text-transform:uppercase;letter-spacing:0.2em;text-shadow:0 2px 8px rgba(0,0,0,0.8);">Awaiting launch command...</p>
-          </div>
+      <div class="hero-stats">
+        <div class="hero-stat">
+          <span class="number">1</span>
+          <span class="label">Första barnet</span>
+        </div>
+        <div class="hero-stat">
+          <span class="number">3/3</span>
+          <span class="label">Lyckade befruktningar</span>
+        </div>
+        <div class="hero-stat">
+          <span class="number">∞</span>
+          <span class="label">Kärlek</span>
         </div>
       </div>
-
-      <!-- Right panel: Telemetry -->
-      <div class="mission-panel">
-        <div class="panel-title">Telemetry</div>
-        <div class="telemetry-row"><span class="tel-label">VEL</span><span id="tel-vel" class="tel-value">000 m/s</span></div>
-        <div class="telemetry-row"><span class="tel-label">ALT</span><span id="tel-alt" class="tel-value">0000 m</span></div>
-        <div class="telemetry-row"><span class="tel-label">THR</span><span id="tel-thr" class="tel-value">000%</span></div>
-        <div class="telemetry-row"><span class="tel-label">T</span><span id="tel-t" class="tel-value">T-00:10</span></div>
-        <div class="panel-divider"></div>
-        <div class="panel-title">Weather</div>
-        <div class="panel-small">WIND: 3 m/s NE</div>
-        <div class="panel-small">TEMP: 14 °C</div>
-        <div class="panel-small">VIS: GOOD</div>
-      </div>
-    </div>
-
-    <!-- Status bar -->
-    <div style="margin-top:1.5rem; text-align:center; z-index:2;">
-      <p id="status-text" style="color:#ef4444; font-size:0.85rem; font-weight:600; text-transform:uppercase; letter-spacing:0.15em;">⏳ Väntar på godkännande...</p>
-      <h2 id="success-text" style="display:none; font-size:clamp(1.5rem,6vw,3rem);font-weight:900;color:#22c55e;text-shadow:0 0 30px rgba(34,197,94,0.6);letter-spacing:0.1em;margin:0.5rem 0 0;text-transform:uppercase;opacity:0;transition:opacity 0.8s;">MISSION SUCCESSFUL!</h2>
     </div>
   </div>
 
-  <style>
-    .mission-console { display:flex; gap:1rem; align-items:stretch; z-index:2; position:relative; width:100%; max-width:960px; }
-    .mission-panel { flex:0 0 180px; background:#111; border:2px solid #333; border-radius:8px; padding:0.8rem; font-family:'Courier New',monospace; font-size:0.75rem; color:#ccc; }
-    .panel-title { color:#ef4444; font-weight:700; text-transform:uppercase; letter-spacing:0.15em; font-size:0.7rem; border-bottom:1px solid #333; padding-bottom:0.3rem; margin-bottom:0.5rem; }
-    .panel-row { display:flex; align-items:center; gap:0.5rem; padding:0.2rem 0; text-transform:uppercase; letter-spacing:0.1em; }
-    .panel-small { color:#888; font-size:0.7rem; padding:0.15rem 0; letter-spacing:0.05em; }
-    .panel-divider { height:1px; background:#333; margin:0.7rem 0; }
-    .led { width:10px; height:10px; border-radius:50%; display:inline-block; flex-shrink:0; }
-    .led-green { background:#22c55e; box-shadow:0 0 6px #22c55e; animation: blink 2s infinite; }
-    .led-amber { background:#f59e0b; box-shadow:0 0 6px #f59e0b; animation: blink 1.2s infinite; }
-    .led-red { background:#ef4444; box-shadow:0 0 6px #ef4444; animation: blink 0.6s infinite; }
-    @keyframes blink { 0%,85%,100% { opacity:1; } 90% { opacity:0.3; } }
-    .telemetry-row { display:flex; justify-content:space-between; padding:0.25rem 0; border-bottom:1px dashed #222; }
-    .tel-label { color:#666; }
-    .tel-value { color:#22c55e; font-weight:700; }
-    .mission-screen { flex:1; max-width:520px; }
-    .launch-btn-3d {
-      width: 80px; height: 80px; border-radius: 50%; border: none; cursor: pointer; padding: 0;
-      background: radial-gradient(circle at 50% 110%, #440a0a 0%, #333 60%);
-      box-shadow: 0 6px 0 #111, 0 8px 15px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
-      transform: translateY(0); transition: all 0.08s; position: relative;
-    }
-    .launch-btn-face {
-      display: flex; align-items: center; justify-content: center;
-      width: 62px; height: 62px; border-radius: 50%; margin: 9px auto;
-      background: radial-gradient(circle at 35% 30%, #f87171, #dc2626 40%, #7f1d1d);
-      box-shadow: 0 2px 6px rgba(0,0,0,0.4), inset 0 2px 3px rgba(255,255,255,0.25), inset 0 -2px 3px rgba(0,0,0,0.3);
-      color: #fff; font-family: system-ui, sans-serif; font-weight: 900; font-size: 1rem;
-      letter-spacing: 0.1em; text-shadow: 0 1px 2px rgba(0,0,0,0.4);
-    }
-    .launch-btn-3d:hover .launch-btn-face {
-      background: radial-gradient(circle at 35% 30%, #fca5a5, #ef4444 40%, #991b1b);
-    }
-    .launch-btn-3d:active {
-      transform: translateY(4px);
-      box-shadow: 0 2px 0 #111, 0 3px 8px rgba(0,0,0,0.5), inset 0 -2px 4px rgba(0,0,0,0.3);
-    }
-    .launch-btn-3d.launched {
-      transform: translateY(4px); pointer-events: none;
-      box-shadow: 0 2px 0 #111, 0 3px 8px rgba(0,0,0,0.5);
-    }
-    .launch-btn-3d.launched .launch-btn-face {
-      background: radial-gradient(circle at 35% 30%, #888, #555 40%, #333);
-    }
+  <section class="section" id="guide">
+    <div class="container">
+      <h2 class="section-title">Bara <span id="bb-cd-inline" class="countdown-inline" style="cursor:default;">--</span> kvar tills Smultron är här! 🍓</h2>
+      <p class="section-subtitle" style="max-width: 700px; margin-left: auto; margin-right: auto;">
+        Lugn, följ stegen nedan och du kommer att vara betydligt mer redo än du är just nu!
+      </p>
 
-    @media (max-width: 768px) {
-      .mission-panel { display:none; }
-    }
-  </style>
+      <div style="max-width: 800px; margin: 2rem auto;">
+        <img src="/jonas_bb_yt.png" alt="BBAkuten – Introduktionsvideo" style="width:100%; border-radius:var(--radius); box-shadow:var(--shadow);" />
+      </div>
+
+      <div class="guide-text">
+        <p>
+          Det som snabbast kan göra en redo för att bli förälder är ironiskt nog just att <strong>bli förälder!</strong> Men eftersom det här är första gången vill vi vara så förberedda som möjligt. Om du dessutom förbereder dig på ett strategiskt sätt så kan det gå ännu smidigare!
+        </p>
+        <p>
+          Innebär det här att vi måste vänta nio månader till för att bli redo? <strong>Absolut inte!</strong> Vi har redan gjort allt vi kan — nu är det bara att vänta på Smultron! 🍓
+        </p>
+        <div class="tip-box success">
+          <strong>Allt är helt gratis</strong>
+          Vi har försökt knåpa ihop en perfekt guide för vad vi ska göra under de sista dagarna. Till skillnad från nästan alla andra BB-kurser finns det ingen del som kostar något. Vi vill bara hjälpa varandra att vara så redo som möjligt.
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" style="background: #f1f5f9;">
+    <div class="container">
+      <h2 class="section-title" style="color: #dc2626;">Följ de här 5 stegen och du kommer vara helt redo</h2>
+
+      <div class="steps">
+        <div class="step">
+          <span class="step-number" style="background:#dc2626;">1</span>
+          <div class="step-content">
+            <h3>Packa BB-väskan</h3>
+            <p>
+              Se till att väskan är packad och redo vid dörren. Kläder till Smultron, laddare, snacks, och något mysigt att ha på sjukhuset.
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <span class="step-number" style="background:#dc2626;">2</span>
+          <div class="step-content">
+            <h3>Repetera andningstekniker</h3>
+            <p>
+              Öva på de andningstekniker ni lärt er på förlossningsförberedelserna. Pappans viktigaste uppgift: håll lugnet och andas med!
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <span class="step-number" style="background:#dc2626;">3</span>
+          <div class="step-content">
+            <h3>Planera vägen till BB</h3>
+            <p>
+              Kolla rutten till sjukhuset, var man parkerar, och ha ett backup-alternativ ifall det är rusningstrafik. Tänk på att det kan gå fort!
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <span class="step-number" style="background:#dc2626;">4</span>
+          <div class="step-content">
+            <h3>Fixa hemmet för hemkomsten</h3>
+            <p>
+              Skötbordet, spjälsängen, blöjor och lite mat i frysen. Allt som gör det lättare de första dagarna hemma med Smultron.
+            </p>
+          </div>
+        </div>
+
+        <div class="step">
+          <span class="step-number step-number--final" style="background:#dc2626;">5</span>
+          <div class="step-content">
+            <h3>Vila och njut av de sista dagarna</h3>
+            <p>
+              Snart förändras allt — på det bästa möjliga sättet! Sov ut, mysa ihop och ladda batterierna inför livets stora äventyr. 🍓
+            </p>
+          </div>
+        </div>
+      </div>
+
+      <div class="tip-box success" style="max-width:700px; margin: 1.5rem auto 0; text-align:center;">
+        <strong>Ni är mer redo än ni tror! Smultron har världens bästa föräldrar. ❤️</strong>
+      </div>
+    </div>
+  </section>
 
   <script is:inline>
-    const video = document.getElementById('launch-video');
-    const videoWrap = document.getElementById('video-wrap');
-    const overlay = document.getElementById('launch-overlay');
-    const successText = document.getElementById('success-text');
-    const statusText = document.getElementById('status-text');
-    const launchBtn = document.getElementById('launch-btn');
+    document.body.classList.add('bb-page');
 
-    // Crop 8% from the bottom (hides VEO logo)
-    function cropVideo() {
-      const h = video.offsetHeight;
-      if (h > 0) videoWrap.style.height = (h * 0.92) + 'px';
-    }
-    video.addEventListener('loadedmetadata', cropVideo);
-    window.addEventListener('resize', cropVideo);
-
-    launchBtn.addEventListener('mouseenter', () => {
-      launchBtn.style.transform = 'scale(1.08)';
-      launchBtn.style.boxShadow = '0 0 60px rgba(239,68,68,0.7),0 0 120px rgba(239,68,68,0.3)';
-    });
-    launchBtn.addEventListener('mouseleave', () => {
-      launchBtn.style.transform = 'scale(1)';
-      launchBtn.style.boxShadow = '0 0 40px rgba(239,68,68,0.5),0 0 80px rgba(239,68,68,0.2)';
-    });
-
-    const telVel = document.getElementById('tel-vel');
-    const telAlt = document.getElementById('tel-alt');
-    const telThr = document.getElementById('tel-thr');
-    const telT = document.getElementById('tel-t');
-
-    let telInterval = null;
-    function animateTelemetry() {
-      const start = Date.now();
-      telInterval = setInterval(() => {
-        const t = (Date.now() - start) / 1000;
-        const vel = Math.min(999, Math.round(40 * t + Math.random() * 20));
-        const alt = Math.min(9999, Math.round(10 * t * t + Math.random() * 5));
-        const thr = Math.min(100, Math.round(60 + t * 8 + Math.random() * 4));
-        if (telVel) telVel.textContent = String(vel).padStart(3, '0') + ' m/s';
-        if (telAlt) telAlt.textContent = String(alt).padStart(4, '0') + ' m';
-        if (telThr) telThr.textContent = String(thr).padStart(3, '0') + '%';
-        if (telT) telT.textContent = 'T+' + String(Math.floor(t/60)).padStart(2,'0') + ':' + String(Math.floor(t%60)).padStart(2,'0');
-      }, 100);
-    }
-
-    let launched = false;
-    function doLaunch() {
-      if (launched) return;
-      launched = true;
-      launchBtn.classList.add('launched');
-      overlay.style.opacity = '0';
-      setTimeout(() => overlay.style.display = 'none', 300);
-      statusText.textContent = '🚀 LAUNCH SEQUENCE INITIATED';
-      statusText.style.color = '#f59e0b';
-      animateTelemetry();
-      video.play();
-    }
-    launchBtn.addEventListener('click', doLaunch);
-    overlay.addEventListener('click', doLaunch);
-
-    video.addEventListener('ended', () => {
-      if (telInterval) clearInterval(telInterval);
-      statusText.style.display = 'none';
-      successText.style.display = 'block';
-      setTimeout(() => successText.style.opacity = '1', 100);
-    });
+    (function() {
+      const now = new Date();
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const target = new Date(2026, 3, 28);
+      const days = Math.round((target.getTime() - today.getTime()) / 86400000);
+      const el = document.getElementById('bb-cd-inline');
+      if (!el) return;
+      if (days > 0) el.textContent = `${days} ${days === 1 ? 'dag' : 'dagar'}`;
+      else if (days === 0) el.textContent = 'IDAG 🍓';
+      else el.textContent = `${Math.abs(days)} ${Math.abs(days) === 1 ? 'dag' : 'dagar'} sedan`;
+    })();
   </script>
 </Base>
 ) : (

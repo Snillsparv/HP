@@ -68,5 +68,21 @@ await pool.query(`
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
 `);
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS mnemonic_words (
+    id SERIAL PRIMARY KEY,
+    word TEXT NOT NULL,
+    definition TEXT NOT NULL DEFAULT '',
+    mnemonic TEXT NOT NULL DEFAULT '',
+    extra JSONB,
+    position INTEGER NOT NULL DEFAULT 0,
+    status TEXT NOT NULL DEFAULT 'unreviewed',
+    note TEXT NOT NULL DEFAULT '',
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
+  ALTER TABLE mnemonic_words DROP CONSTRAINT IF EXISTS mnemonic_words_word_key;
+  CREATE UNIQUE INDEX IF NOT EXISTS mnemonic_words_word_lower_idx ON mnemonic_words (lower(word));
+`);
 
 export default pool;

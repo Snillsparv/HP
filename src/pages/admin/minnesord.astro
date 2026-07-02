@@ -1,0 +1,1068 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import pool from '../../lib/db.js';
+
+const ADMIN_EMAIL = 'snillsparv@gmail.com';
+
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+
+if (!user || user.email !== ADMIN_EMAIL) {
+  return Astro.redirect('/');
+}
+
+interface WordRow {
+  id: number;
+  word: string;
+  definition: string;
+  mnemonic: string;
+  extra: Record<string, string> | null;
+  position: number;
+  status: string;
+  note: string;
+}
+
+const { rows: words } = await pool.query(
+  'SELECT id, word, definition, mnemonic, extra, position, status, note FROM mnemonic_words ORDER BY position, id'
+) as { rows: WordRow[] };
+
+const total = words.length;
+const okCount = words.filter(w => w.status === 'ok').length;
+const flagCount = words.filter(w => w.status === 'needs_work').length;
+const unreviewedCount = total - okCount - flagCount;
+const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100) : 0;
+---
+
+<Base title="Minnesord — granskning – HPAkuten">
+  <div class="page-content">
+    <div class="container">
+      <h1>Minnesord — granskning</h1>
+      <p class="page-intro">
+        Gå igenom minnesreglerna för högskoleprovsorden och markera de som behöver förbättras.
+        Markeringar och kommentarer sparas automatiskt.
+      </p>
+
+      <details class="import-box" open={total === 0}>
+        <summary>📥 {total === 0 ? 'Importera ordlistan från Google Sheets' : 'Uppdatera ordlistan från Google Sheets'}</summary>
+        <div class="import-body">
+          <ol class="import-steps">
+            <li>Öppna arket i Google Sheets.</li>
+            <li>Markera alla celler (Ctrl+A / ⌘+A) och kopiera (Ctrl+C / ⌘+C).</li>
+            <li>Klistra in i rutan nedan — eller ladda upp en CSV-fil (Arkiv → Ladda ned → Kommaavgränsade värden).</li>
+          </ol>
+          {total > 0 && (
+            <p class="import-hint">Vid ny import behålls dina markeringar och kommentarer — betydelser och minnesregler uppdateras från arket.</p>
+          )}
+
+          <textarea id="paste-area" rows="5" placeholder="Klistra in hela arket här…"></textarea>
+          <div class="import-file-row">
+            <span>eller</span>
+            <input type="file" id="csv-file" accept=".csv,.tsv,.txt" />
+          </div>
+
+          <div id="mapping-box" hidden>
+            <div class="mapping-row">
+              <label>Kolumn för <strong>ord</strong>
+                <select id="map-word"></select>
+              </label>
+              <label>Kolumn för <strong>betydelse</strong>
+                <select id="map-def"></select>
+              </label>
+              <label>Kolumn för <strong>minnesregel</strong>
+                <select id="map-mnemo"></select>
+              </label>
+              <label class="header-toggle">
+                <input type="checkbox" id="header-toggle" checked />
+                Första raden är rubriker
+              </label>
+            </div>
+            <p class="import-hint">Övriga kolumner följer med som extrainformation. Förhandsgranskning av de första raderna:</p>
+            <div class="preview-scroll">
+              <table id="preview-table"></table>
+            </div>
+            {total > 0 && (
+              <label class="sync-toggle">
+                <input type="checkbox" id="sync-toggle" />
+                Ta även bort ord som inte finns med i importen (använd när hela arket klistras in)
+              </label>
+            )}
+            <button id="import-btn" class="btn btn-primary">Importera <span id="import-count"></span> ord</button>
+          </div>
+
+          <div id="import-result"></div>
+
+          {total > 0 && (
+            <div class="danger-zone">
+              <button id="clear-btn" class="btn btn-outline btn-sm">Rensa alla ord</button>
+              <span class="import-hint">Tar bort alla importerade ord inklusive markeringar och kommentarer.</span>
+            </div>
+          )}
+        </div>
+      </details>
+
+      {total > 0 && (
+        <>
+          <div class="review-stats">
+            <div class="review-stat">
+              <div class="review-stat-num">{total}</div>
+              <div class="review-stat-label">Ord totalt</div>
+            </div>
+            <div class="review-stat">
+              <div class="review-stat-num" id="stat-ok" style="color: var(--color-success);">{okCount}</div>
+              <div class="review-stat-label">Bra</div>
+            </div>
+            <div class="review-stat">
+              <div class="review-stat-num" id="stat-flag" style="color: var(--color-accent);">{flagCount}</div>
+              <div class="review-stat-label">Behöver förbättras</div>
+            </div>
+            <div class="review-stat">
+              <div class="review-stat-num" id="stat-unreviewed" style="color: var(--color-muted);">{unreviewedCount}</div>
+              <div class="review-stat-label">Ogranskade</div>
+            </div>
+          </div>
+
+          <div class="progress-wrap" title="Andel granskade">
+            <div class="progress-bar" id="progress-bar" style={`width:${reviewedPct}%;`}></div>
+          </div>
+          <p class="progress-text" id="progress-text">{okCount + flagCount} av {total} granskade ({reviewedPct}%)</p>
+
+          <div class="review-toolbar">
+            <input type="search" id="word-search" placeholder="Sök ord, betydelse eller minnesregel…" />
+            <div class="filter-chips">
+              <button class="chip active" data-filter="all">Alla <span class="chip-count" id="count-all">{total}</span></button>
+              <button class="chip" data-filter="unreviewed">Ogranskade <span class="chip-count" id="count-unreviewed">{unreviewedCount}</span></button>
+              <button class="chip" data-filter="needs_work">Behöver förbättras <span class="chip-count" id="count-needs_work">{flagCount}</span></button>
+              <button class="chip" data-filter="ok">Bra <span class="chip-count" id="count-ok">{okCount}</span></button>
+            </div>
+            <button id="copy-flagged" class="btn btn-outline btn-sm">Kopiera flaggade</button>
+          </div>
+
+          <div id="word-list">
+            {words.map(w => (
+              <article
+                class="word-card"
+                data-id={w.id}
+                data-status={w.status}
+                data-search={`${w.word} ${w.definition} ${w.mnemonic}`.toLowerCase()}
+              >
+                <div class="word-head">
+                  <h3 class="word-title">{w.word}</h3>
+                  <span class="word-status-badge"></span>
+                </div>
+                {w.definition && <p class="word-def">{w.definition}</p>}
+                {w.mnemonic
+                  ? <p class="word-mnemonic">{w.mnemonic}</p>
+                  : <p class="word-mnemonic word-mnemonic--missing">Minnesregel saknas</p>}
+                {w.extra && Object.keys(w.extra).length > 0 && (
+                  <dl class="word-extra">
+                    {Object.entries(w.extra).map(([k, v]) => (
+                      <div class="word-extra-item"><dt>{k}</dt><dd>{v}</dd></div>
+                    ))}
+                  </dl>
+                )}
+                <div class="word-actions">
+                  <button class="wbtn wbtn-ok" data-set="ok" type="button">Bra ✓</button>
+                  <button class="wbtn wbtn-flag" data-set="needs_work" type="button">Behöver förbättras</button>
+                </div>
+                <div class="word-note">
+                  <textarea rows="2" maxlength="2000" placeholder="Vad behöver förbättras? (sparas automatiskt)">{w.note}</textarea>
+                  <span class="note-saved"></span>
+                </div>
+              </article>
+            ))}
+          </div>
+          <p id="empty-msg" hidden>Inga ord matchar sökningen/filtret.</p>
+        </>
+      )}
+    </div>
+  </div>
+
+  <script>
+    // ---------- Granskningslistan ----------
+    const list = document.getElementById('word-list');
+    const searchInput = document.getElementById('word-search') as HTMLInputElement | null;
+    const chips = Array.from(document.querySelectorAll<HTMLButtonElement>('.chip'));
+    let activeFilter = 'all';
+    // Ett nyss flaggat kort hålls synligt trots aktivt filter, så att
+    // kommentaren hinner skrivas innan kortet filtreras bort.
+    let pinnedCard: HTMLElement | null = null;
+
+    function cards(): HTMLElement[] {
+      return Array.from(document.querySelectorAll<HTMLElement>('.word-card'));
+    }
+
+    function showToast(msg: string) {
+      const t = document.createElement('div');
+      t.className = 'mn-toast';
+      t.textContent = msg;
+      document.body.appendChild(t);
+      setTimeout(() => t.classList.add('show'), 10);
+      setTimeout(() => { t.classList.remove('show'); setTimeout(() => t.remove(), 300); }, 2600);
+    }
+
+    function applyFilter() {
+      const q = (searchInput?.value || '').trim().toLowerCase();
+      let visible = 0;
+      for (const card of cards()) {
+        const matchesFilter = activeFilter === 'all' || card.dataset.status === activeFilter;
+        const matchesSearch = !q || (card.dataset.search || '').includes(q);
+        const show = (matchesFilter && matchesSearch) || card === pinnedCard;
+        card.hidden = !show;
+        if (show) visible++;
+      }
+      const empty = document.getElementById('empty-msg');
+      if (empty) empty.hidden = visible > 0 || cards().length === 0;
+    }
+
+    function updateCounts() {
+      const all = cards();
+      const ok = all.filter(c => c.dataset.status === 'ok').length;
+      const flag = all.filter(c => c.dataset.status === 'needs_work').length;
+      const unrev = all.length - ok - flag;
+      const set = (id: string, v: number) => {
+        const el = document.getElementById(id);
+        if (el) el.textContent = String(v);
+      };
+      set('count-all', all.length);
+      set('count-ok', ok);
+      set('count-needs_work', flag);
+      set('count-unreviewed', unrev);
+      set('stat-ok', ok);
+      set('stat-flag', flag);
+      set('stat-unreviewed', unrev);
+      const pct = all.length > 0 ? Math.round(((ok + flag) / all.length) * 100) : 0;
+      const bar = document.getElementById('progress-bar');
+      if (bar) bar.style.width = pct + '%';
+      const txt = document.getElementById('progress-text');
+      if (txt) txt.textContent = `${ok + flag} av ${all.length} granskade (${pct}%)`;
+    }
+
+    searchInput?.addEventListener('input', () => { pinnedCard = null; applyFilter(); });
+    chips.forEach(chip => chip.addEventListener('click', () => {
+      activeFilter = chip.dataset.filter || 'all';
+      chips.forEach(c => c.classList.toggle('active', c === chip));
+      pinnedCard = null;
+      applyFilter();
+    }));
+
+    async function saveReview(card: HTMLElement, fields: { status?: string; note?: string }): Promise<boolean> {
+      try {
+        const res = await fetch('/api/admin/minnesord', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'review', id: Number(card.dataset.id), ...fields }),
+        });
+        return res.ok;
+      } catch {
+        return false;
+      }
+    }
+
+    function cardNote(card: HTMLElement): string {
+      return (card.querySelector('.word-note textarea') as HTMLTextAreaElement | null)?.value || '';
+    }
+
+    list?.addEventListener('click', async (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('.wbtn');
+      if (!btn) return;
+      const card = btn.closest<HTMLElement>('.word-card');
+      if (!card) return;
+      const target = btn.dataset.set || 'unreviewed';
+      const prev = card.dataset.status || 'unreviewed';
+      const next = prev === target ? 'unreviewed' : target;
+      card.dataset.status = next;
+      pinnedCard = next === 'needs_work' ? card : null;
+      updateCounts();
+      applyFilter();
+      if (next === 'needs_work') {
+        (card.querySelector('.word-note textarea') as HTMLTextAreaElement | null)?.focus();
+      }
+      const ok = await saveReview(card, { status: next });
+      if (!ok) {
+        card.dataset.status = prev;
+        if (pinnedCard === card) pinnedCard = null;
+        updateCounts();
+        applyFilter();
+        showToast('Kunde inte spara — försök igen.');
+      }
+    });
+
+    const noteTimers = new Map<HTMLElement, number>();
+    list?.addEventListener('input', (e) => {
+      const ta = e.target as HTMLTextAreaElement;
+      if (!ta.matches('.word-note textarea')) return;
+      const card = ta.closest<HTMLElement>('.word-card');
+      if (!card) return;
+      const saved = card.querySelector<HTMLElement>('.note-saved');
+      if (saved) saved.textContent = 'Sparar…';
+      const old = noteTimers.get(card);
+      if (old) clearTimeout(old);
+      const timer = window.setTimeout(async () => {
+        const ok = await saveReview(card, { note: ta.value });
+        // Visa inte "Sparat ✓" om nyare osparade ändringar väntar.
+        if (noteTimers.get(card) !== timer) return;
+        if (saved) {
+          saved.textContent = ok ? 'Sparat ✓' : 'Kunde inte spara!';
+          if (ok) setTimeout(() => { if (saved.textContent === 'Sparat ✓') saved.textContent = ''; }, 2000);
+        }
+      }, 700);
+      noteTimers.set(card, timer);
+    });
+
+    document.getElementById('copy-flagged')?.addEventListener('click', async () => {
+      const rows = cards().filter(c => c.dataset.status === 'needs_work').map(c => {
+        const word = c.querySelector('.word-title')?.textContent?.trim() || '';
+        const mnemoEl = c.querySelector('.word-mnemonic');
+        const mnemonic = mnemoEl && !mnemoEl.classList.contains('word-mnemonic--missing')
+          ? (mnemoEl.textContent || '').replace(/\s+/g, ' ').trim()
+          : '';
+        const note = cardNote(c).replace(/\s+/g, ' ').trim();
+        return `${word}\t${mnemonic}\t${note}`;
+      });
+      if (!rows.length) { showToast('Inga flaggade ord ännu.'); return; }
+      try {
+        await navigator.clipboard.writeText('ord\tminnesregel\tkommentar\n' + rows.join('\n'));
+        showToast(`Kopierade ${rows.length} ${rows.length === 1 ? 'flaggat' : 'flaggade'} ord till urklipp.`);
+      } catch {
+        showToast('Kunde inte kopiera till urklipp.');
+      }
+    });
+
+    // ---------- Import ----------
+    const pasteArea = document.getElementById('paste-area') as HTMLTextAreaElement | null;
+    const csvFile = document.getElementById('csv-file') as HTMLInputElement | null;
+    const mappingBox = document.getElementById('mapping-box');
+    const mapWord = document.getElementById('map-word') as HTMLSelectElement | null;
+    const mapDef = document.getElementById('map-def') as HTMLSelectElement | null;
+    const mapMnemo = document.getElementById('map-mnemo') as HTMLSelectElement | null;
+    const headerToggle = document.getElementById('header-toggle') as HTMLInputElement | null;
+    const previewTable = document.getElementById('preview-table');
+    const importBtn = document.getElementById('import-btn');
+    const importResult = document.getElementById('import-result');
+
+    let parsedRows: string[][] = [];
+
+    const WORD_RE = /^(ord|glosa|word)\b/i;
+    const DEF_RE = /(betyd|definition|förklar|översätt|meaning)/i;
+    const MNEMO_RE = /(minnes|regel|teknik|association|ramsa|mnemo)/i;
+    // Rubrikdetekteringen kräver korta celler som BÖRJAR med ett rubrikord —
+    // annars tolkas datarader som "GAGNA betyder gynna…" som rubrikrad.
+    const HEADER_CELL_RE = /^(ord|glosa|word|betydelse|definition|förklaring|översättning|meaning|minnesregel|minnesteknik|minnesbild|association|ramsa|mnemonic|källa|kommentar|exempel|kategori)\b/i;
+    let headerTouched = false;
+
+    function parseDelimited(text: string): string[][] {
+      if (text.charCodeAt(0) === 0xfeff) text = text.slice(1);
+      // Tab någonstans ⇒ TSV (inklistrat från Sheets). Annars avgör första
+      // icke-tomma raden om det är komma- eller semikolonseparerat.
+      let delim = '\t';
+      if (!text.includes('\t')) {
+        const firstLine = text.split(/\r?\n/).find(l => l.trim() !== '') || '';
+        const commas = (firstLine.match(/,/g) || []).length;
+        const semis = (firstLine.match(/;/g) || []).length;
+        delim = semis > commas ? ';' : ',';
+      }
+      // En cell räknas bara som citerad om ett avslutande citattecken följs av
+      // avgränsare/radslut — annars är citattecknen del av innehållet
+      // (t.ex. minnesregler som börjar med ett citat: "GAGNA gynnar" — ...).
+      function tryParseQuoted(start: number): { cell: string; end: number } | null {
+        let out = '';
+        let i = start + 1;
+        while (i < text.length) {
+          const ch = text[i];
+          if (ch === '"') {
+            if (text[i + 1] === '"') { out += '"'; i += 2; continue; }
+            const after = text[i + 1];
+            if (after === undefined || after === delim || after === '\n' || after === '\r') {
+              return { cell: out, end: i + 1 };
+            }
+            return null;
+          }
+          out += ch;
+          i++;
+        }
+        return null;
+      }
+
+      const rows: string[][] = [];
+      let row: string[] = [];
+      let cell = '';
+      for (let i = 0; i < text.length; i++) {
+        const ch = text[i];
+        if (ch === '"' && cell === '') {
+          const quoted = tryParseQuoted(i);
+          if (quoted) {
+            cell = quoted.cell;
+            i = quoted.end - 1;
+            continue;
+          }
+          cell += ch;
+        } else if (ch === delim) {
+          row.push(cell); cell = '';
+        } else if (ch === '\n' || ch === '\r') {
+          if (ch === '\r' && text[i + 1] === '\n') i++;
+          row.push(cell); cell = '';
+          rows.push(row); row = [];
+        } else {
+          cell += ch;
+        }
+      }
+      if (cell !== '' || row.length > 0) { row.push(cell); rows.push(row); }
+      return rows.filter(r => r.some(c => c.trim() !== ''));
+    }
+
+    function columnNames(): string[] {
+      const width = Math.max(0, ...parsedRows.map(r => r.length));
+      const headerRow = headerToggle?.checked ? parsedRows[0] : null;
+      const seen = new Map<string, number>();
+      return Array.from({ length: width }, (_, i) => {
+        const base = headerRow?.[i]?.trim() || `Kolumn ${i + 1}`;
+        const n = (seen.get(base) || 0) + 1;
+        seen.set(base, n);
+        return n > 1 ? `${base} (${n})` : base;
+      });
+    }
+
+    function dataRows(): string[][] {
+      return headerToggle?.checked ? parsedRows.slice(1) : parsedRows;
+    }
+
+    function fillSelect(sel: HTMLSelectElement, cols: string[], guess: number, allowNone: boolean) {
+      // Behåll ett manuellt gjort val när användaren redigerar inklistringen.
+      const prev = sel.dataset.touched === '1' ? sel.value : null;
+      sel.innerHTML = '';
+      if (allowNone) {
+        const opt = document.createElement('option');
+        opt.value = '-1';
+        opt.textContent = '— ingen —';
+        sel.appendChild(opt);
+      }
+      cols.forEach((name, i) => {
+        const opt = document.createElement('option');
+        opt.value = String(i);
+        opt.textContent = name;
+        sel.appendChild(opt);
+      });
+      sel.value = prev !== null && Number(prev) < cols.length ? prev : String(guess);
+    }
+
+    function renderPreview() {
+      if (!previewTable) return;
+      previewTable.innerHTML = '';
+      const cols = columnNames();
+      const thead = document.createElement('thead');
+      const hr = document.createElement('tr');
+      cols.forEach(name => {
+        const th = document.createElement('th');
+        th.textContent = name;
+        hr.appendChild(th);
+      });
+      thead.appendChild(hr);
+      previewTable.appendChild(thead);
+      const tbody = document.createElement('tbody');
+      dataRows().slice(0, 5).forEach(row => {
+        const tr = document.createElement('tr');
+        cols.forEach((_, i) => {
+          const td = document.createElement('td');
+          const v = (row[i] || '').trim();
+          td.textContent = v.length > 80 ? v.slice(0, 80) + '…' : v;
+          tr.appendChild(td);
+        });
+        tbody.appendChild(tr);
+      });
+      previewTable.appendChild(tbody);
+      const countEl = document.getElementById('import-count');
+      if (countEl) countEl.textContent = String(dataRows().length);
+    }
+
+    function buildMapping() {
+      if (!mapWord || !mapDef || !mapMnemo || !mappingBox) return;
+      if (parsedRows.length === 0) { mappingBox.hidden = true; return; }
+      const cols = columnNames();
+      const findCol = (re: RegExp) => cols.findIndex(c => re.test(c));
+      let wi = findCol(WORD_RE);
+      let di = findCol(DEF_RE);
+      let mi = findCol(MNEMO_RE);
+      if (wi === -1) wi = 0;
+      if (di === -1) di = cols.length > 1 ? 1 : -1;
+      if (mi === -1) mi = cols.length > 2 ? 2 : -1;
+      fillSelect(mapWord, cols, wi, false);
+      fillSelect(mapDef, cols, di, true);
+      fillSelect(mapMnemo, cols, mi, true);
+      renderPreview();
+      mappingBox.hidden = false;
+    }
+
+    function handleRawText(text: string) {
+      if (!text.trim()) return;
+      parsedRows = parseDelimited(text);
+      if (headerToggle && !headerTouched && parsedRows.length > 0) {
+        headerToggle.checked = parsedRows[0].some(c => {
+          const t = c.trim();
+          return t.length > 0 && t.length <= 30 && HEADER_CELL_RE.test(t);
+        });
+      }
+      buildMapping();
+    }
+
+    pasteArea?.addEventListener('input', () => handleRawText(pasteArea.value));
+    csvFile?.addEventListener('change', () => {
+      const file = csvFile.files?.[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => handleRawText(String(reader.result || ''));
+      reader.readAsText(file, 'utf-8');
+    });
+    headerToggle?.addEventListener('change', () => { headerTouched = true; buildMapping(); });
+    for (const sel of [mapWord, mapDef, mapMnemo]) {
+      sel?.addEventListener('change', () => { sel.dataset.touched = '1'; renderPreview(); });
+    }
+
+    importBtn?.addEventListener('click', async () => {
+      if (!mapWord || !importResult) return;
+      const cols = columnNames();
+      const wi = Number(mapWord.value);
+      const di = Number(mapDef?.value ?? '-1');
+      const mi = Number(mapMnemo?.value ?? '-1');
+      const seen = new Set<string>();
+      let dupes = 0;
+      let skipped = 0;
+      const items: { word: string; definition: string; mnemonic: string; extra: Record<string, string> | null }[] = [];
+      for (const row of dataRows()) {
+        const word = (row[wi] || '').trim();
+        if (!word) { skipped++; continue; }
+        const key = word.toLowerCase();
+        if (seen.has(key)) { dupes++; continue; }
+        seen.add(key);
+        const extra: Record<string, string> = {};
+        cols.forEach((name, idx) => {
+          if (idx === wi || idx === di || idx === mi) return;
+          const v = (row[idx] || '').trim();
+          if (v) extra[name] = v;
+        });
+        items.push({
+          word,
+          definition: di >= 0 ? (row[di] || '').trim() : '',
+          mnemonic: mi >= 0 ? (row[mi] || '').trim() : '',
+          extra: Object.keys(extra).length ? extra : null,
+        });
+      }
+      if (items.length === 0) {
+        importResult.textContent = 'Inga rader med ord hittades — kontrollera kolumnvalet.';
+        importResult.className = 'import-error';
+        return;
+      }
+      const sync = (document.getElementById('sync-toggle') as HTMLInputElement | null)?.checked === true;
+      importBtn.setAttribute('disabled', '');
+      importResult.textContent = 'Importerar…';
+      importResult.className = '';
+      try {
+        const res = await fetch('/api/admin/minnesord', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'import', words: items, mode: sync ? 'sync' : 'merge' }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          importResult.textContent = data.error || 'Importen misslyckades.';
+          importResult.className = 'import-error';
+          importBtn.removeAttribute('disabled');
+          return;
+        }
+        const parts = [`Importerade ${data.inserted} ${data.inserted === 1 ? 'nytt' : 'nya'} och uppdaterade ${data.updated} ord.`];
+        if (data.removed) parts.push(data.removed === 1 ? '1 ord som inte fanns med togs bort.' : `${data.removed} ord som inte fanns med togs bort.`);
+        if (skipped) parts.push(skipped === 1 ? '1 rad utan ord hoppades över.' : `${skipped} rader utan ord hoppades över.`);
+        if (dupes) parts.push(dupes === 1 ? '1 dubblett ignorerades.' : `${dupes} dubbletter ignorerades.`);
+        parts.push('Laddar om sidan…');
+        importResult.textContent = parts.join(' ');
+        importResult.className = 'import-success';
+        setTimeout(() => location.reload(), 1200);
+      } catch {
+        importResult.textContent = 'Kunde inte nå servern.';
+        importResult.className = 'import-error';
+        importBtn.removeAttribute('disabled');
+      }
+    });
+
+    document.getElementById('clear-btn')?.addEventListener('click', async () => {
+      const n = cards().length;
+      if (!confirm(`Ta bort alla ${n} ord och deras markeringar? Detta går inte att ångra.`)) return;
+      const res = await fetch('/api/admin/minnesord', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clear' }),
+      });
+      if (res.ok) location.reload();
+      else showToast('Kunde inte rensa listan.');
+    });
+  </script>
+</Base>
+
+<style>
+  .import-box {
+    margin: 1.5rem 0;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+  }
+
+  .import-box summary {
+    padding: 0.8rem 1rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .import-box summary:hover {
+    background: #f8fafc;
+  }
+
+  .import-body {
+    padding: 0 1rem 1rem;
+    border-top: 1px solid var(--color-border);
+  }
+
+  .import-steps {
+    margin: 1rem 0 0.5rem;
+    padding-left: 1.4rem;
+    font-size: 0.92rem;
+    color: var(--color-text);
+  }
+
+  .import-steps li {
+    margin-bottom: 0.25rem;
+  }
+
+  .import-hint {
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    margin: 0.5rem 0;
+  }
+
+  #paste-area {
+    width: 100%;
+    padding: 0.6rem 0.8rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
+    resize: vertical;
+    margin-top: 0.5rem;
+  }
+
+  #paste-area:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .import-file-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 0.6rem 0;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+  }
+
+  .mapping-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+    align-items: flex-end;
+    margin: 0.8rem 0;
+  }
+
+  .mapping-row label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
+    font-size: 0.85rem;
+  }
+
+  .mapping-row select {
+    padding: 0.4rem 0.6rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: 0.9rem;
+    font-family: var(--font-sans);
+    background: var(--color-surface);
+  }
+
+  .header-toggle {
+    flex-direction: row !important;
+    align-items: center;
+    gap: 0.4rem !important;
+  }
+
+  .sync-toggle {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    margin: 0 0 0.8rem;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+  }
+
+  .preview-scroll {
+    overflow-x: auto;
+    margin-bottom: 0.8rem;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+
+  #preview-table {
+    width: 100%;
+    font-size: 0.82rem;
+    border-collapse: collapse;
+  }
+
+  #preview-table th,
+  #preview-table td {
+    padding: 0.35rem 0.6rem;
+    border-bottom: 1px solid var(--color-border);
+    text-align: left;
+    white-space: nowrap;
+    max-width: 320px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  #preview-table th {
+    background: #f8fafc;
+    font-weight: 700;
+  }
+
+  #import-result {
+    margin-top: 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .import-success {
+    color: var(--color-success);
+    font-weight: 600;
+  }
+
+  .import-error {
+    color: #ef4444;
+    font-weight: 600;
+  }
+
+  .danger-zone {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-top: 1.2rem;
+    padding-top: 0.8rem;
+    border-top: 1px dashed var(--color-border);
+  }
+
+  .danger-zone .btn {
+    color: #ef4444;
+    border-color: #ef4444;
+  }
+
+  .review-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    margin: 1.5rem 0 1rem;
+  }
+
+  .review-stat {
+    text-align: center;
+    padding: 1rem;
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius);
+  }
+
+  .review-stat-num {
+    font-size: 1.7rem;
+    font-weight: 800;
+    color: var(--color-primary);
+  }
+
+  .review-stat-label {
+    font-size: 0.82rem;
+    color: var(--color-muted);
+  }
+
+  .progress-wrap {
+    height: 8px;
+    background: var(--color-border);
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .progress-bar {
+    height: 100%;
+    background: var(--color-success);
+    border-radius: 4px;
+    transition: width 0.3s ease;
+  }
+
+  .progress-text {
+    font-size: 0.82rem;
+    color: var(--color-muted);
+    margin: 0.4rem 0 1.2rem;
+  }
+
+  .review-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.7rem;
+    margin-bottom: 1.2rem;
+    position: sticky;
+    top: 64px; /* under sajtens sticky header */
+    background: var(--color-bg);
+    padding: 0.6rem 0;
+    z-index: 5;
+  }
+
+  #word-search {
+    flex: 1;
+    min-width: 200px;
+    padding: 0.55rem 0.8rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    font-size: 0.92rem;
+    font-family: var(--font-sans);
+  }
+
+  #word-search:focus {
+    outline: none;
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+  }
+
+  .filter-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .chip {
+    padding: 0.4rem 0.75rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: 999px;
+    background: var(--color-surface);
+    font-size: 0.82rem;
+    font-family: var(--font-sans);
+    cursor: pointer;
+    color: var(--color-text);
+  }
+
+  .chip:hover {
+    border-color: var(--color-primary);
+  }
+
+  .chip.active {
+    background: var(--color-primary);
+    border-color: var(--color-primary);
+    color: #fff;
+  }
+
+  .chip-count {
+    font-weight: 700;
+  }
+
+  .word-card {
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-left: 4px solid var(--color-border);
+    border-radius: var(--radius);
+    padding: 0.9rem 1.1rem;
+    margin-bottom: 0.8rem;
+  }
+
+  .word-card[data-status='ok'] {
+    border-left-color: var(--color-success);
+  }
+
+  .word-card[data-status='needs_work'] {
+    border-left-color: var(--color-accent);
+    background: #fffbeb;
+  }
+
+  .word-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.8rem;
+  }
+
+  .word-title {
+    margin: 0;
+    font-size: 1.15rem;
+  }
+
+  .word-status-badge::before {
+    content: 'Ogranskad';
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 0.2rem 0.55rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: var(--color-muted);
+    white-space: nowrap;
+  }
+
+  .word-card[data-status='ok'] .word-status-badge::before {
+    content: 'Bra ✓';
+    background: #d1fae5;
+    color: #047857;
+  }
+
+  .word-card[data-status='needs_work'] .word-status-badge::before {
+    content: 'Behöver förbättras';
+    background: #fef3c7;
+    color: #b45309;
+  }
+
+  .word-def {
+    margin: 0.35rem 0 0;
+    font-size: 0.9rem;
+    color: var(--color-muted);
+  }
+
+  .word-mnemonic {
+    margin: 0.55rem 0 0;
+    font-size: 0.95rem;
+    line-height: 1.5;
+  }
+
+  .word-mnemonic--missing {
+    color: #ef4444;
+    font-style: italic;
+  }
+
+  .word-extra {
+    margin: 0.55rem 0 0;
+    font-size: 0.82rem;
+    color: var(--color-muted);
+  }
+
+  .word-extra-item {
+    display: flex;
+    gap: 0.4rem;
+  }
+
+  .word-extra dt {
+    font-weight: 700;
+  }
+
+  .word-extra dt::after {
+    content: ':';
+  }
+
+  .word-extra dd {
+    margin: 0;
+  }
+
+  .word-actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 0.7rem;
+  }
+
+  .wbtn {
+    padding: 0.35rem 0.8rem;
+    border: 1.5px solid var(--color-border);
+    border-radius: var(--radius);
+    background: var(--color-surface);
+    font-size: 0.85rem;
+    font-family: var(--font-sans);
+    font-weight: 600;
+    cursor: pointer;
+    color: var(--color-text);
+  }
+
+  .wbtn-ok:hover {
+    border-color: var(--color-success);
+    color: var(--color-success);
+  }
+
+  .wbtn-flag:hover {
+    border-color: var(--color-accent);
+    color: #b45309;
+  }
+
+  .word-card[data-status='ok'] .wbtn-ok {
+    background: var(--color-success);
+    border-color: var(--color-success);
+    color: #fff;
+  }
+
+  .word-card[data-status='needs_work'] .wbtn-flag {
+    background: var(--color-accent);
+    border-color: var(--color-accent);
+    color: #fff;
+  }
+
+  .word-note {
+    display: none;
+    margin-top: 0.7rem;
+  }
+
+  .word-card[data-status='needs_work'] .word-note {
+    display: block;
+  }
+
+  .word-note textarea {
+    width: 100%;
+    padding: 0.5rem 0.7rem;
+    border: 1.5px solid #fde68a;
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    font-family: var(--font-sans);
+    resize: vertical;
+    background: var(--color-surface);
+  }
+
+  .word-note textarea:focus {
+    outline: none;
+    border-color: var(--color-accent);
+    box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.12);
+  }
+
+  .note-saved {
+    font-size: 0.75rem;
+    color: var(--color-muted);
+  }
+
+  #empty-msg {
+    text-align: center;
+    color: var(--color-muted);
+    padding: 2rem 0;
+  }
+
+  @media (max-width: 600px) {
+    .review-stats {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+</style>
+
+<style is:global>
+  .mn-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    left: 50%;
+    transform: translateX(-50%) translateY(10px);
+    background: var(--color-text);
+    color: #fff;
+    padding: 0.6rem 1.1rem;
+    border-radius: var(--radius);
+    font-size: 0.88rem;
+    box-shadow: var(--shadow-md);
+    opacity: 0;
+    transition: opacity 0.25s ease, transform 0.25s ease;
+    z-index: 100;
+    max-width: 90vw;
+  }
+
+  .mn-toast.show {
+    opacity: 1;
+    transform: translateX(-50%) translateY(0);
+  }
+</style>

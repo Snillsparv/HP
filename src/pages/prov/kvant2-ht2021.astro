@@ -45,6 +45,13 @@ if (user) {
     let timerInterval: number | null = null;
     let timerPaused = false;
     let started = false;
+    // Övertidsläge: tiden har gått ut, resultatet är sparat på det som hanns med,
+    // men användaren gör klart resterande frågor utan tid (för träningens skull).
+    let overtime = false;
+    let resultSaved = false;
+    let timedAnswers: (number | null)[] = [];
+    let timedScore = 0;
+    let saveStatus: 'server' | 'anon' | 'error' | null = null;
 
     const PROGRESS_KEY = 'hp-progress-kvant2-ht2021';
 
@@ -59,6 +66,7 @@ if (user) {
         saved.answers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
         submitted = true;
         started = true;
+        resultSaved = true;
         timerSeconds = totalTime - (saved.timeSeconds || 0);
         return;
       }
@@ -72,6 +80,7 @@ if (user) {
             serverAnswers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
             submitted = true;
             started = true;
+            resultSaved = true;
             timerSeconds = totalTime - (best.time_seconds || 0);
           }
         }
@@ -90,7 +99,7 @@ if (user) {
     }
 
     function saveProgress() {
-      if (started && !submitted) {
+      if (started && !submitted && !overtime && timerSeconds > 0) {
         const elapsed = totalTime - timerSeconds;
         localStorage.setItem(PROGRESS_KEY, JSON.stringify({ answers: [...answers], current, timerSeconds, started, submitted, elapsed }));
       }
@@ -102,7 +111,7 @@ if (user) {
 
     // Auto-save on leaving page
     window.addEventListener('beforeunload', (e) => {
-      if (started && !submitted) {
+      if (started && !submitted && !overtime && timerSeconds > 0) {
         saveProgress();
         e.preventDefault();
         e.returnValue = '';
@@ -127,6 +136,66 @@ if (user) {
 
     function fmt(s: number) { return `${Math.floor(s/60)}:${(s%60).toString().padStart(2,'0')}`; }
 
+    function countScore(ans: (number | null)[]) {
+      return allQuestions.reduce((sum, q, i) => sum + (ans[i] === q.correct ? 1 : 0), 0);
+    }
+
+    function saveAreaHTML() {
+      if (saveStatus === 'server') return '<div class="tip-box success"><strong>Resultat sparat i ditt konto!</strong></div>';
+      if (saveStatus === 'error') return '<div class="tip-box warning"><strong>Kunde inte spara till kontot, men resultatet finns sparat lokalt.</strong></div>';
+      if (saveStatus === 'anon') return '<div class="tip-box success"><strong>Resultat sparat!</strong> <a href="/konto/registrera">Skapa ett gratis konto</a> för att spara dina resultat permanent.</div>';
+      return '';
+    }
+
+    async function persistResult(score: number, ans: (number | null)[], elapsed: number) {
+      const resultData = { testId: 'kvant2-ht2021', score, total: allQuestions.length, answers: [...ans], timeSeconds: elapsed, date: new Date().toISOString() };
+      const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
+      stored['kvant2-ht2021'] = resultData;
+      localStorage.setItem('hp-results', JSON.stringify(stored));
+      if ((window as any).__isLoggedIn) {
+        try {
+          await fetch('/api/test/results', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ testId: 'kvant2-ht2021', score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
+          });
+          saveStatus = 'server';
+        } catch {
+          saveStatus = 'error';
+        }
+      } else {
+        saveStatus = 'anon';
+      }
+      // Uppdatera spar-rutan om resultatvyn redan hunnit visas
+      const saveArea = document.getElementById('save-area');
+      if (saveArea) saveArea.innerHTML = saveAreaHTML();
+    }
+
+    function renderTimeUp() {
+      const answered = timedAnswers.filter(a => a !== null).length;
+      const remaining = allQuestions.length - answered;
+      if (remaining === 0) { submitted = true; render(); return; }
+      root.innerHTML = `
+        <div style="text-align:center; padding:3rem 0;">
+          <div style="font-size:3rem; margin-bottom:0.5rem;">⏱</div>
+          <h2 style="margin:0 0 1rem;">Tiden är ute!</h2>
+          <p style="color:var(--color-muted); max-width:460px; margin:0 auto 0.6rem;">Provet har rättats på det du hann svara på — ${answered} av ${allQuestions.length} frågor. Resultatet är sparat.</p>
+          <p style="color:var(--color-muted); max-width:460px; margin:0 auto 2rem;">Vill du göra klart ${remaining === 1 ? 'den sista frågan' : `de ${remaining} frågor som är kvar`} i lugn och ro först, för träningens skull? Svaren efter tiden räknas inte in i resultatet, men rättas så att du kan lära dig av dem.</p>
+          <div style="display:flex; flex-direction:column; gap:0.8rem; align-items:center;">
+            <button class="btn btn-primary" id="btn-overtime" style="font-size:1.05rem; padding:0.9rem 2.5rem;">Gör klart resten (utan tid)</button>
+            <button class="btn btn-outline" id="btn-show-results" style="padding:0.7rem 2rem;">Visa rättningen direkt</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('btn-overtime')?.addEventListener('click', () => {
+        overtime = true;
+        const firstUnanswered = answers.findIndex(a => a === null);
+        if (firstUnanswered !== -1) current = firstUnanswered;
+        render();
+      });
+      document.getElementById('btn-show-results')?.addEventListener('click', () => { submitted = true; render(); });
+    }
+
     function startTimer() {
       timerInterval = setInterval(() => {
         if (!timerPaused) {
@@ -135,9 +204,15 @@ if (user) {
           if (el) el.textContent = fmt(timerSeconds);
           if (timerSeconds <= 0) {
             clearInterval(timerInterval!);
-            submitted = true;
+            timerSeconds = 0;
             clearProgress();
-            render();
+            // Rätta och spara direkt på det som hanns med, men låt användaren
+            // välja att göra klart resten utan tid innan rättningen visas.
+            timedAnswers = [...answers];
+            timedScore = countScore(timedAnswers);
+            resultSaved = true;
+            persistResult(timedScore, timedAnswers, totalTime);
+            renderTimeUp();
           }
         }
       }, 1000) as unknown as number;
@@ -254,13 +329,16 @@ if (user) {
         diagramHTML = `<div class="dtk-diagram"><img src="${q.diagram}" alt="${q.diagramAlt}" class="dtk-diagram-img ${q.rotate ? 'dtk-rotated' : ''}" loading="lazy" data-fadein style="cursor:zoom-in;" /></div>`;
       }
 
+      const locked = overtime && timedAnswers[current] !== null;
       root.innerHTML = `
         <div class="prov-top-bar">
           <span class="prov-section-tag">${st.shortName}</span>
-          <span class="prov-timer-bar">
+          ${overtime
+            ? '<span class="prov-overtime-tag">Övertid · resultatet sparat</span>'
+            : `<span class="prov-timer-bar">
             <span id="timer-val">${fmt(timerSeconds)}</span>
             <button class="btn-timer-toggle" id="btn-pause">${timerPaused ? '▶' : '⏸'}</button>
-          </span>
+          </span>`}
         </div>
         <div class="pq-progress">Uppgift ${current + 1} av ${allQuestions.length}</div>
         ${diagramHTML}
@@ -268,13 +346,14 @@ if (user) {
           ${questionHTML}
           <div class="pq-options">
             ${q.options.map((opt, i) => `
-              <label class="pq-opt ${answers[current] === i ? 'pq-opt--sel' : ''}">
-                <input type="radio" name="q${current}" value="${i}" ${answers[current] === i ? 'checked' : ''} />
+              <label class="pq-opt ${answers[current] === i ? 'pq-opt--sel' : ''} ${locked ? 'pq-opt--locked' : ''}">
+                <input type="radio" name="q${current}" value="${i}" ${answers[current] === i ? 'checked' : ''} ${locked ? 'disabled' : ''} />
                 <span class="pq-letter">${labels[i]}</span>
                 <span class="pq-opt-text">${opt}</span>
               </label>
             `).join('')}
           </div>
+          ${locked ? '<div class="pq-locked-note">🔒 Besvarad inom provtiden — svaret är låst och ingår i ditt sparade resultat.</div>' : ''}
         </div>
         <div class="pq-nav">
           <div class="pq-nav-main">
@@ -342,7 +421,9 @@ if (user) {
       let html = `
         <div class="prov-top-bar">
           <span>Översikt</span>
-          <span class="prov-timer-bar"><span id="timer-val">${fmt(timerSeconds)}</span><button class="btn-timer-toggle" id="btn-pause">${timerPaused ? '▶' : '⏸'}</button></span>
+          ${overtime
+            ? '<span class="prov-overtime-tag">Övertid · resultatet sparat</span>'
+            : `<span class="prov-timer-bar"><span id="timer-val">${fmt(timerSeconds)}</span><button class="btn-timer-toggle" id="btn-pause">${timerPaused ? '▶' : '⏸'}</button></span>`}
         </div>
         <p style="text-align:center;color:var(--color-muted);">${answered} av ${allQuestions.length} besvarade</p>
       `;
@@ -409,8 +490,12 @@ if (user) {
           }).join('')}</div>`;
       }
 
-      const normered = getNormering(totalScore, allQuestions.length, 'kvant', true);
+      // Vid övertid är det sparade resultatet det som hanns inom provtiden;
+      // rättningen nedan visar även svaren som gavs efter tiden.
+      const officialScore = overtime ? timedScore : totalScore;
+      const normered = getNormering(officialScore, allQuestions.length, 'kvant', true);
       const { summaryHTML: analysisHTML } = analyzeResults(allQuestions, answers, normered);
+      const answeredInTime = timedAnswers.filter(a => a !== null).length;
       const ps = (window as any).__prevScore;
       const pt = (window as any).__prevTotal;
       let comparisonHTML = '';
@@ -418,11 +503,11 @@ if (user) {
         const prevNorm = getNormering(ps, pt, 'kvant');
         const diff = normered - prevNorm;
         if (diff > 0) {
-          comparisonHTML = `<div class="tip-box success" style="margin-top:1.5rem; text-align:center;"><strong>Grattis! Du höjde dig med ${diff.toFixed(1)} poäng!</strong><br>Prov 1: ${prevNorm.toFixed(1)} (${ps}/${pt}) → Prov 2: ${normered.toFixed(1)} (${totalScore}/${allQuestions.length})</div>`;
+          comparisonHTML = `<div class="tip-box success" style="margin-top:1.5rem; text-align:center;"><strong>Grattis! Du höjde dig med ${diff.toFixed(1)} poäng!</strong><br>Prov 1: ${prevNorm.toFixed(1)} (${ps}/${pt}) → Prov 2: ${normered.toFixed(1)} (${officialScore}/${allQuestions.length})</div>`;
         } else if (diff === 0) {
-          comparisonHTML = `<div class="tip-box" style="margin-top:1.5rem; text-align:center;"><strong>Samma resultat som prov 1!</strong><br>Prov 1: ${prevNorm.toFixed(1)} (${ps}/${pt}) · Prov 2: ${normered.toFixed(1)} (${totalScore}/${allQuestions.length})<br>Bra jobbat med träningen! Du har fortfarande goda chanser att höja dig på det riktiga provet.</div>`;
+          comparisonHTML = `<div class="tip-box" style="margin-top:1.5rem; text-align:center;"><strong>Samma resultat som prov 1!</strong><br>Prov 1: ${prevNorm.toFixed(1)} (${ps}/${pt}) · Prov 2: ${normered.toFixed(1)} (${officialScore}/${allQuestions.length})<br>Bra jobbat med träningen! Du har fortfarande goda chanser att höja dig på det riktiga provet.</div>`;
         } else {
-          comparisonHTML = `<div class="tip-box" style="margin-top:1.5rem; text-align:center;"><strong>Jämförelse med prov 1</strong><br>Prov 1: ${prevNorm.toFixed(1)} (${ps}/${pt}) · Prov 2: ${normered.toFixed(1)} (${totalScore}/${allQuestions.length})<br>Bra jobbat med träningen! Du har fortfarande goda chanser att höja dig på det riktiga provet.</div>`;
+          comparisonHTML = `<div class="tip-box" style="margin-top:1.5rem; text-align:center;"><strong>Jämförelse med prov 1</strong><br>Prov 1: ${prevNorm.toFixed(1)} (${ps}/${pt}) · Prov 2: ${normered.toFixed(1)} (${officialScore}/${allQuestions.length})<br>Bra jobbat med träningen! Du har fortfarande goda chanser att höja dig på det riktiga provet.</div>`;
         }
       }
 
@@ -431,9 +516,12 @@ if (user) {
           <h2>Resultat</h2>
           <div class="pq-normered">${normered.toFixed(1)}</div>
           <p style="color:var(--color-muted); font-size:0.9rem;">normerad poäng</p>
-          <div class="pq-score" style="font-size:1.5rem; margin-top:0.5rem;">${totalScore}/${allQuestions.length}</div>
-          <p style="color:var(--color-muted)">rätt svar · tid: ${fmt(elapsed)}</p>
+          <div class="pq-score" style="font-size:1.5rem; margin-top:0.5rem;">${officialScore}/${allQuestions.length}</div>
+          <p style="color:var(--color-muted)">rätt svar${overtime ? ' inom provtiden' : ''} · tid: ${fmt(elapsed)}</p>
         </div>
+        ${overtime ? `<div class="tip-box warning" style="margin:1.5rem 0; font-size:0.92rem;">
+          <strong>Efter tiden:</strong> Ditt sparade resultat räknar de ${answeredInTime} frågor du besvarade inom provtiden (${timedScore}/${allQuestions.length} rätt). Med svaren du gjorde klart efteråt fick du ${totalScore}/${allQuestions.length} rätt — rättningen nedan visar alla dina svar.
+        </div>` : ''}
         ${comparisonHTML}
         ${analysisHTML}
         <div class="tip-box" style="text-align:center; margin:1.5rem 0; font-size:0.95rem;">
@@ -460,28 +548,12 @@ if (user) {
         </div>
       `;
 
-      // Always save to localStorage
-      const resultData = { testId: 'kvant2-ht2021', score: totalScore, total: allQuestions.length, answers: [...answers], timeSeconds: elapsed, date: new Date().toISOString() };
-      const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
-      stored['kvant2-ht2021'] = resultData;
-      localStorage.setItem('hp-results', JSON.stringify(stored));
-
-      // Also save to server if logged in
-      const saveArea = document.getElementById('save-area')!;
-      if ((window as any).__isLoggedIn) {
-        try {
-          await fetch('/api/test/results', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ testId: 'kvant2-ht2021', score: totalScore, total: allQuestions.length, answers, timeSeconds: elapsed }),
-          });
-          saveArea.innerHTML = '<div class="tip-box success"><strong>Resultat sparat i ditt konto!</strong></div>';
-        } catch {
-          saveArea.innerHTML = '<div class="tip-box warning"><strong>Kunde inte spara till kontot, men resultatet finns sparat lokalt.</strong></div>';
-        }
-      } else {
-        saveArea.innerHTML = '<div class="tip-box success"><strong>Resultat sparat!</strong> <a href="/konto/registrera">Skapa ett gratis konto</a> för att spara dina resultat permanent.</div>';
+      // Spara resultatet — men inte om det redan sparats (vid tidsslut eller i granskningsläge)
+      if (!resultSaved) {
+        resultSaved = true;
+        await persistResult(totalScore, answers, elapsed);
       }
+      document.getElementById('save-area')!.innerHTML = saveAreaHTML();
 
       // Accordion toggle for question details
       root.querySelectorAll('[data-toggle]').forEach(el => {
@@ -499,19 +571,21 @@ if (user) {
 
       document.getElementById('btn-retry')?.addEventListener('click', () => {
         answers.fill(null); current = 0; submitted = false; timerSeconds = totalTime; timerPaused = false; started = false;
+        overtime = false; resultSaved = false; timedAnswers = []; timedScore = 0; saveStatus = null;
         render();
       });
 
-      // Auto-generate share image
+      // Auto-generate share image (vid övertid: bara svaren inom provtiden)
+      const shareAnswers = overtime ? timedAnswers : answers;
       const stScores: { name: string; correct: number; total: number }[] = [];
       for (const st of subTests) {
         const qs = allQuestions.filter(q => q.subTest.id === st.id);
         const startIdx = allQuestions.indexOf(qs[0]);
         let sc = 0;
-        qs.forEach((q, i) => { if (answers[startIdx + i] === q.correct) sc++; });
+        qs.forEach((q, i) => { if (shareAnswers[startIdx + i] === q.correct) sc++; });
         stScores.push({ name: st.shortName, correct: sc, total: qs.length });
       }
-      generateResultImage('Kvantitativt prov 2', normered, totalScore, allQuestions.length, stScores, getYrkeForScore(normered)).then(dataUrl => {
+      generateResultImage('Kvantitativt prov 2', normered, officialScore, allQuestions.length, stScores, getYrkeForScore(normered)).then(dataUrl => {
         const preview = document.getElementById('share-preview')!;
         preview.innerHTML = `<img src="${dataUrl}" id="share-preview-img" style="max-width:300px; width:100%; border-radius:var(--radius); box-shadow:var(--shadow); cursor:pointer;" title="Klicka för att förstora" />`;
         document.getElementById('share-preview-img')?.addEventListener('click', () => {
@@ -558,6 +632,11 @@ if (user) {
   .prov-section-tag { font-weight: 700; font-size: 0.85rem; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.06em; }
   .prov-timer-bar { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .btn-timer-toggle { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 0.2rem; color: var(--color-muted); }
+  .prov-overtime-tag { font-weight: 700; font-size: 0.82rem; color: #b45309; background: #fef3c7; padding: 0.25rem 0.7rem; border-radius: 999px; }
+  .pq-opt--locked { cursor: default; opacity: 0.75; }
+  .pq-opt--locked:hover { background: none; }
+  .pq-opt--locked.pq-opt--sel:hover { background: #eef2ff; }
+  .pq-locked-note { margin-top: 1rem; font-size: 0.82rem; color: var(--color-muted); background: #f8fafc; border: 1px dashed var(--color-border); border-radius: var(--radius); padding: 0.5rem 0.8rem; }
   .btn-timer-toggle:hover { color: var(--color-text); }
 
   .pq-progress { text-align: center; font-size: 0.8rem; color: var(--color-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; }

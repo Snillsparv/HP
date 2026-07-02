@@ -1,4 +1,5 @@
 import pg from 'pg';
+import minnesordSeed from './minnesord-seed.json';
 
 const pool = new pg.Pool({
   connectionString: process.env.DATABASE_URL,
@@ -84,5 +85,27 @@ await pool.query(`
   ALTER TABLE mnemonic_words DROP CONSTRAINT IF EXISTS mnemonic_words_word_key;
   CREATE UNIQUE INDEX IF NOT EXISTS mnemonic_words_word_lower_idx ON mnemonic_words (lower(word));
 `);
+
+// Fyll ordlistan från src/lib/minnesord-seed.json första gången (tom tabell).
+// Efterföljande uppdateringar görs via importen på /admin/minnesord, som
+// bevarar granskningsstatus och kommentarer.
+const { rows: [mnemonicCount] } = await pool.query('SELECT COUNT(*)::int AS count FROM mnemonic_words');
+if (mnemonicCount.count === 0) {
+  const seed = minnesordSeed as { word: string; definition: string; mnemonic: string; status?: string; note?: string }[];
+  await pool.query(
+    `INSERT INTO mnemonic_words (word, definition, mnemonic, position, status, note)
+     SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::int[], $5::text[], $6::text[])
+     ON CONFLICT (lower(word)) DO NOTHING`,
+    [
+      seed.map(w => w.word),
+      seed.map(w => w.definition),
+      seed.map(w => w.mnemonic),
+      seed.map((_, i) => i),
+      seed.map(w => w.status || 'unreviewed'),
+      seed.map(w => w.note || ''),
+    ]
+  );
+  console.log(`Seedade ${seed.length} minnesord`);
+}
 
 export default pool;

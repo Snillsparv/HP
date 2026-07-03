@@ -126,6 +126,17 @@ import Base from '../layouts/Base.astro';
       videoRoot.innerHTML = `<div style="margin-bottom:1.5rem;"><div class="video-embed"><iframe src="https://player.vimeo.com/video/${introVideo}?dnt=1&title=0&byline=0&portrait=0" title="Introduktion" frameborder="0" allow="fullscreen; picture-in-picture" allowfullscreen></iframe></div><p style="text-align:center; color:var(--color-muted); font-size:0.85rem; margin-top:0.5rem;">Se min introduktion till matten på HP</p></div>`;
 
       root.innerHTML = `
+        <div class="ganger-box">
+          <div class="ganger-text">
+            <span class="ganger-tag">Grunden</span>
+            <h2>Få gångertabellen att sitta</h2>
+            <p>Snabb huvudräkning bygger på att multiplikationstabellen sitter blixtsnabbt — det tjänar du tid på i nästan varje uppgift på den kvantitativa delen. I videon visar jag hur du lär dig den på riktigt.</p>
+            <a href="https://www.gångertabellen.se" target="_blank" rel="noopener" class="btn btn-outline btn-sm">Träna på gångertabellen.se &rarr;</a>
+          </div>
+          <div class="ganger-video">
+            <div class="video-embed"><iframe src="https://www.youtube.com/embed/P4HNkxoOC4A" title="Lär dig multiplikationstabellen" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>
+          </div>
+        </div>
         <div class="ex-cats">
           ${categories.map(cat => {
             const done = answered.get(cat.id)?.size || 0;
@@ -276,6 +287,19 @@ import Base from '../layouts/Base.astro';
     .pq-dot--cur { border-color: var(--color-primary); color: var(--color-primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
     .pq-dot--ans { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
     @media (max-width: 480px) { .pq-card { padding: 1.2rem; } .pq-options { margin-left: 0; } }
+
+    /* Gångertabellen-rutan */
+    .ganger-box { display: flex; gap: 1.2rem; align-items: center; background: var(--color-surface); border: 1.5px solid var(--color-border); border-radius: var(--radius); padding: 1.1rem 1.2rem; margin-bottom: 1.5rem; box-shadow: var(--shadow); }
+    .ganger-text { flex: 1; }
+    .ganger-tag { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase; color: #16a34a; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 999px; padding: 0.15rem 0.6rem; margin-bottom: 0.5rem; }
+    .ganger-text h2 { margin: 0 0 0.4rem; font-size: 1.15rem; }
+    .ganger-text p { margin: 0 0 0.9rem; font-size: 0.88rem; color: var(--color-muted); line-height: 1.6; }
+    .ganger-video { flex: 0 0 300px; }
+    .ganger-video .video-embed { border-radius: var(--radius); overflow: hidden; }
+    @media (max-width: 640px) {
+      .ganger-box { flex-direction: column-reverse; align-items: stretch; }
+      .ganger-video { flex: none; }
+    }
 
     /* Exercise-specific */
     .ex-cats { display: flex; flex-direction: column; gap: 0.6rem; }

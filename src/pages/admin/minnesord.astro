@@ -20,10 +20,12 @@ interface WordRow {
   position: number;
   status: string;
   note: string;
+  example: string;
+  etymology: string;
 }
 
 const { rows: words } = await pool.query(
-  'SELECT id, word, definition, mnemonic, extra, position, status, note FROM mnemonic_words ORDER BY position, id'
+  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology FROM mnemonic_words ORDER BY position, id'
 ) as { rows: WordRow[] };
 
 const total = words.length;
@@ -143,7 +145,7 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                 class="word-card"
                 data-id={w.id}
                 data-status={w.status}
-                data-search={`${w.word} ${w.definition} ${w.mnemonic}`.toLowerCase()}
+                data-search={`${w.word} ${w.definition} ${w.mnemonic} ${w.example} ${w.etymology}`.toLowerCase()}
               >
                 <div class="word-head">
                   <h3 class="word-title">{w.word}</h3>
@@ -153,6 +155,8 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                 {w.mnemonic
                   ? <p class="word-mnemonic">{w.mnemonic}</p>
                   : <p class="word-mnemonic word-mnemonic--missing">Minnesregel saknas</p>}
+                {w.example && <p class="word-example">&raquo;{w.example}&laquo;</p>}
+                {w.etymology && <p class="word-etym"><span class="word-etym-label">Etymologi</span>{w.etymology}</p>}
                 {w.extra && Object.keys(w.extra).length > 0 && (
                   <dl class="word-extra">
                     {Object.entries(w.extra).map(([k, v]) => (
@@ -934,6 +938,34 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
   .word-mnemonic--missing {
     color: #ef4444;
     font-style: italic;
+  }
+
+  .word-example {
+    margin: 0.55rem 0 0;
+    font-size: 0.92rem;
+    font-style: italic;
+    color: #334155;
+  }
+
+  .word-etym {
+    margin: 0.55rem 0 0;
+    font-size: 0.85rem;
+    color: var(--color-muted);
+    background: #f8fafc;
+    border-left: 3px solid var(--color-primary);
+    border-radius: 0 var(--radius) var(--radius) 0;
+    padding: 0.5rem 0.8rem;
+    line-height: 1.55;
+  }
+
+  .word-etym-label {
+    display: block;
+    font-size: 0.68rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: var(--color-primary);
+    margin-bottom: 0.15rem;
   }
 
   .word-extra {

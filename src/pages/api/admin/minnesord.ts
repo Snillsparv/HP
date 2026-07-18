@@ -12,7 +12,7 @@ export const GET: APIRoute = async ({ request }) => {
   }
 
   const { rows } = await pool.query(
-    'SELECT id, word, definition, mnemonic, extra, position, status, note FROM mnemonic_words ORDER BY position, id'
+    'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology FROM mnemonic_words ORDER BY position, id'
   );
   return new Response(JSON.stringify({ count: rows.length, words: rows }), {
     headers: { 'Content-Type': 'application/json' },

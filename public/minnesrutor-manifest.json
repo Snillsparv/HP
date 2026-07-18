@@ -1,0 +1,17 @@
+{
+  "name": "Minnesrutor – HPAkuten",
+  "short_name": "Minnesrutor",
+  "description": "Träna ditt visuella minne med färgrutnät",
+  "start_url": "/minnesrutor",
+  "display": "standalone",
+  "background_color": "#0f4c5c",
+  "theme_color": "#0f4c5c",
+  "orientation": "portrait",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

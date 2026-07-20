@@ -13,6 +13,8 @@ function stems(word: string): string[] {
   for (const suf of ['era', 'a', 'n', 't', 'er', 'ar', 'or']) {
     if (w.endsWith(suf) && w.length - suf.length >= 3) out.add(w.slice(0, w.length - suf.length));
   }
+  // e-bortfall i böjning: amper -> ampra, vacker -> vackra
+  if (w.endsWith('er') && w.length >= 5) out.add(w.slice(0, w.length - 2) + 'r');
   return [...out].sort((a, b) => b.length - a.length);
 }
 
@@ -36,7 +38,8 @@ function tokenize(sentence: string): Tok[] {
 }
 
 function findSpan(sentence: string, word: string): [number, number] | null {
-  const wordL = word.toLowerCase().trim();
+  // Ordlistan markerar ibland andra betydelser med suffix, t.ex. "ordination (2)" eller "kuse 2"
+  const wordL = word.toLowerCase().replace(/\s*\(?\d+\)?\s*$/, '').trim();
   const tokens = tokenize(sentence);
   const parts = wordL.split(/\s+/);
 
@@ -44,12 +47,14 @@ function findSpan(sentence: string, word: string): [number, number] | null {
   if (parts.length > 1) {
     for (let i = 0; i < tokens.length; i++) {
       const p0 = parts[0];
-      if (!tokens[i].text.toLowerCase().startsWith(p0.slice(0, Math.max(4, p0.length - 1)))) continue;
+      const t0 = tokens[i].text.toLowerCase();
+      if (!t0.startsWith(p0.slice(0, Math.max(4, p0.length - 1))) && !(t0.length >= 2 && p0.startsWith(t0))) continue;
       let j = i, ok = true, last = i;
       for (const p of parts) {
         const key = p.slice(0, Math.max(3, p.length - 2));
         const tl = j < tokens.length ? tokens[j].text.toLowerCase() : '';
-        if (j < tokens.length && (tl.startsWith(key) || tl.includes(key))) { last = j; j++; }
+        // tl kan också vara en kortare böjning av frasdelen (vara -> var)
+        if (j < tokens.length && (tl.startsWith(key) || tl.includes(key) || (tl.length >= 2 && p.startsWith(tl)))) { last = j; j++; }
         else { ok = false; break; }
       }
       if (ok) return [tokens[i].start, tokens[last].end];

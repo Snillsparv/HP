@@ -90,6 +90,16 @@ function findSpan(sentence: string, word: string): [number, number] | null {
     return [scored[0].start, scored[0].end];
   }
 
+  // 5. Korta ord (3 tecken, t.ex. mas -> masen): kräv EN unik token som
+  // börjar med ordet och är högst tre tecken längre
+  if (wordL.length === 3) {
+    const cands = tokens.filter(t => {
+      const tl = t.text.toLowerCase();
+      return tl.startsWith(wordL) && tl.length <= wordL.length + 3;
+    });
+    if (cands.length === 1) return [cands[0].start, cands[0].end];
+  }
+
   return null;
 }
 

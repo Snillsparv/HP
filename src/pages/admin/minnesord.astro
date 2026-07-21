@@ -23,10 +23,11 @@ interface WordRow {
   note: string;
   example: string;
   etymology: string;
+  image: string;
 }
 
 const { rows: words } = await pool.query(
-  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology FROM mnemonic_words ORDER BY position, id'
+  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology, image FROM mnemonic_words ORDER BY position, id'
 ) as { rows: WordRow[] };
 
 const total = words.length;
@@ -148,6 +149,7 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                 data-status={w.status}
                 data-search={`${w.word} ${w.definition} ${w.mnemonic} ${w.example} ${w.etymology}`.toLowerCase()}
               >
+                {w.image && <img class="word-figure" src={w.image} alt={w.word} loading="lazy" width="92" height="92" />}
                 <div class="word-head">
                   <h3 class="word-title">{w.word}</h3>
                   <span class="word-status-badge"></span>
@@ -922,6 +924,18 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
     content: 'Behöver förbättras';
     background: #fef3c7;
     color: #b45309;
+  }
+
+  .word-figure {
+    float: right;
+    width: 92px;
+    height: 92px;
+    object-fit: contain;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 10px;
+    padding: 4px;
+    margin: 0 0 0.5rem 0.75rem;
   }
 
   .word-def {

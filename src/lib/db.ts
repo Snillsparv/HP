@@ -86,9 +86,10 @@ await pool.query(`
   CREATE UNIQUE INDEX IF NOT EXISTS mnemonic_words_word_lower_idx ON mnemonic_words (lower(word));
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS example TEXT NOT NULL DEFAULT '';
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS etymology TEXT NOT NULL DEFAULT '';
+  ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS image TEXT NOT NULL DEFAULT '';
 `);
 
-type MinnesordSeed = { word: string; definition: string; mnemonic: string; status?: string; note?: string; example?: string; etymology?: string };
+type MinnesordSeed = { word: string; definition: string; mnemonic: string; status?: string; note?: string; example?: string; etymology?: string; image?: string };
 
 // Ord vars minnesregel (och i två fall definition) rättats efter genomgång.
 // Seed-filen bär de nya texterna; nedan tvingas redan seedade databaser att
@@ -108,8 +109,8 @@ const { rows: [mnemonicCount] } = await pool.query('SELECT COUNT(*)::int AS coun
 if (mnemonicCount.count === 0) {
   const seed = minnesordSeed as MinnesordSeed[];
   await pool.query(
-    `INSERT INTO mnemonic_words (word, definition, mnemonic, position, status, note, example, etymology)
-     SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::int[], $5::text[], $6::text[], $7::text[], $8::text[])
+    `INSERT INTO mnemonic_words (word, definition, mnemonic, position, status, note, example, etymology, image)
+     SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::int[], $5::text[], $6::text[], $7::text[], $8::text[], $9::text[])
      ON CONFLICT (lower(word)) DO NOTHING`,
     [
       seed.map(w => w.word),
@@ -120,6 +121,7 @@ if (mnemonicCount.count === 0) {
       seed.map(w => w.note || ''),
       seed.map(w => w.example || ''),
       seed.map(w => w.etymology || ''),
+      seed.map(w => w.image || ''),
     ]
   );
   console.log(`Seedade ${seed.length} minnesord`);
@@ -127,17 +129,18 @@ if (mnemonicCount.count === 0) {
 
 // Komplettera befintliga rader med exempelmeningar och etymologier från
 // seed-filen. Fyller bara tomma fält, skriver aldrig över befintligt innehåll.
-const enrich = (minnesordSeed as MinnesordSeed[]).filter(w => w.example || w.etymology);
+const enrich = (minnesordSeed as MinnesordSeed[]).filter(w => w.example || w.etymology || w.image);
 if (enrich.length) {
   await pool.query(
     `UPDATE mnemonic_words m SET
        example = CASE WHEN m.example = '' AND s.example <> '' THEN s.example ELSE m.example END,
        etymology = CASE WHEN m.etymology = '' AND s.etymology <> '' THEN s.etymology ELSE m.etymology END,
+       image = CASE WHEN m.image = '' AND s.image <> '' THEN s.image ELSE m.image END,
        updated_at = NOW()
-     FROM unnest($1::text[], $2::text[], $3::text[]) AS s(word, example, etymology)
+     FROM unnest($1::text[], $2::text[], $3::text[], $4::text[]) AS s(word, example, etymology, image)
      WHERE lower(m.word) = lower(s.word)
-       AND ((m.example = '' AND s.example <> '') OR (m.etymology = '' AND s.etymology <> ''))`,
-    [enrich.map(w => w.word), enrich.map(w => w.example || ''), enrich.map(w => w.etymology || '')]
+       AND ((m.example = '' AND s.example <> '') OR (m.etymology = '' AND s.etymology <> '') OR (m.image = '' AND s.image <> ''))`,
+    [enrich.map(w => w.word), enrich.map(w => w.example || ''), enrich.map(w => w.etymology || ''), enrich.map(w => w.image || '')]
   );
 }
 

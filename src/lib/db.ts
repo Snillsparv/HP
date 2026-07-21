@@ -90,6 +90,17 @@ await pool.query(`
 
 type MinnesordSeed = { word: string; definition: string; mnemonic: string; status?: string; note?: string; example?: string; etymology?: string };
 
+// Ord vars minnesregel (och i två fall definition) rättats efter genomgång.
+// Seed-filen bär de nya texterna; nedan tvingas redan seedade databaser att
+// ta dem, men bara när värdet faktiskt skiljer sig.
+const CORRECTED_WORDS = new Set([
+  'utkomst', 'fashionabel', 'genre', 'inferno', 'in memoriam', 'nihilism',
+  'åskådning', 'sly', 'ödem', 'bermudas', 'lamé', 'mudd', 'antagonism',
+  'exhibitionism', 'introvert', 'aversion', 'negera', 'negligera', 'infernalisk',
+  'impediment', 'debitera', 'potemkinkulisser', 'inprägla', 'bräm', 'exponent',
+  'okynnig', 'knollrig', 'otillbörlig',
+]);
+
 // Fyll ordlistan från src/lib/minnesord-seed.json första gången (tom tabell).
 // Efterföljande uppdateringar görs via importen på /admin/minnesord, som
 // bevarar granskningsstatus och kommentarer.
@@ -127,6 +138,22 @@ if (enrich.length) {
      WHERE lower(m.word) = lower(s.word)
        AND ((m.example = '' AND s.example <> '') OR (m.etymology = '' AND s.etymology <> ''))`,
     [enrich.map(w => w.word), enrich.map(w => w.example || ''), enrich.map(w => w.etymology || '')]
+  );
+}
+
+// Rättade minnesregler/definitioner: skriv över befintliga rader när de skiljer
+// sig från seed-filen (idempotent, rör bara de utpekade orden).
+const corrections = (minnesordSeed as MinnesordSeed[]).filter(w => CORRECTED_WORDS.has(w.word.toLowerCase()));
+if (corrections.length) {
+  await pool.query(
+    `UPDATE mnemonic_words m SET
+       mnemonic = s.mnemonic,
+       definition = s.definition,
+       updated_at = NOW()
+     FROM unnest($1::text[], $2::text[], $3::text[]) AS s(word, mnemonic, definition)
+     WHERE lower(m.word) = lower(s.word)
+       AND (m.mnemonic <> s.mnemonic OR m.definition <> s.definition)`,
+    [corrections.map(w => w.word), corrections.map(w => w.mnemonic), corrections.map(w => w.definition)]
   );
 }
 

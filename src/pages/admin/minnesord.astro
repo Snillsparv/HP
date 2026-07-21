@@ -149,7 +149,7 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                 data-status={w.status}
                 data-search={`${w.word} ${w.definition} ${w.mnemonic} ${w.example} ${w.etymology}`.toLowerCase()}
               >
-                {w.image && <img class="word-figure" src={w.image} alt={w.word} loading="lazy" width="92" height="92" />}
+                {w.image && <img class="word-figure" src={w.image} alt={w.word} loading="lazy" width="128" height="128" />}
                 <div class="word-head">
                   <h3 class="word-title">{w.word}</h3>
                   <span class="word-status-badge"></span>
@@ -928,14 +928,14 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
 
   .word-figure {
     float: right;
-    width: 92px;
-    height: 92px;
+    width: 128px;
+    height: 128px;
     object-fit: contain;
     background: #fff;
     border: 1px solid #e5e7eb;
     border-radius: 10px;
-    padding: 4px;
-    margin: 0 0 0.5rem 0.75rem;
+    padding: 5px;
+    margin: 0 0 0.5rem 0.9rem;
   }
 
   .word-def {

@@ -91,6 +91,18 @@ await pool.query(`
 
 type MinnesordSeed = { word: string; definition: string; mnemonic: string; status?: string; note?: string; example?: string; etymology?: string; image?: string };
 
+// Engångsmigreringar, guardas via app_flags så de bara körs en gång per databas
+// (och därför inte rör framtida ändringar som görs via granskningsverktyget).
+await pool.query(`CREATE TABLE IF NOT EXISTS app_flags (key TEXT PRIMARY KEY, created_at TIMESTAMPTZ DEFAULT NOW());`);
+{
+  const claim = await pool.query(
+    `INSERT INTO app_flags (key) VALUES ('clear_needs_work_v1') ON CONFLICT (key) DO NOTHING RETURNING key`
+  );
+  if (claim.rowCount && claim.rowCount > 0) {
+    await pool.query(`UPDATE mnemonic_words SET status = 'unreviewed', updated_at = NOW() WHERE status = 'needs_work'`);
+  }
+}
+
 // Fyll ordlistan från src/lib/minnesord-seed.json första gången (tom tabell).
 // Efterföljande uppdateringar görs via importen på /admin/minnesord, som
 // bevarar granskningsstatus och kommentarer.

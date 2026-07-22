@@ -4,13 +4,14 @@ import pool from '../../../lib/db.js';
 import { highlightWord } from '../../../lib/highlight.js';
 
 const ADMIN_EMAIL = 'snillsparv@gmail.com';
-const NEW_PER_SESSION = 10;
-const DUE_LIMIT = 20;
+const NEW_MIN = 0, NEW_MAX = 40;
+const REVIEW_MIN = 5, REVIEW_MAX = 250;
 // Leitner-lådor -> repetitionsintervall i dagar.
 const INTERVAL_DAYS: Record<number, number> = { 1: 1, 2: 3, 3: 7, 4: 14, 5: 30, 6: 90 };
 
 const clampBox = (b: number) => Math.max(1, Math.min(6, b));
 const intervalDays = (box: number) => INTERVAL_DAYS[clampBox(box)] || 1;
+const clampRange = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(Number(n) || 0)));
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -45,6 +46,13 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!user) return json({ error: 'Unauthorized' }, 403);
   const action = url.searchParams.get('action') || 'session';
 
+  const { rows: [settings] } = await pool.query(
+    `SELECT COALESCE(learn_new_per, 10) AS new_per, COALESCE(learn_review_per, 60) AS review_per FROM users WHERE id = $1`,
+    [user.id]
+  );
+  const newPer = clampRange(settings?.new_per ?? 10, NEW_MIN, NEW_MAX);
+  const reviewPer = clampRange(settings?.review_per ?? 60, REVIEW_MIN, REVIEW_MAX);
+
   const { rows: [stats] } = await pool.query(
     `SELECT
        (SELECT COUNT(*) FROM word_progress WHERE user_id = $1)::int AS learned,
@@ -54,14 +62,14 @@ export const GET: APIRoute = async ({ request, url }) => {
     [user.id]
   );
 
-  if (action === 'stats') return json({ stats });
+  if (action === 'stats') return json({ stats, settings: { newPer, reviewPer } });
 
   const { rows: dueRows } = await pool.query(
     `SELECT m.id, m.word, m.definition, m.mnemonic, m.example, m.etymology, m.image, wp.box
      FROM word_progress wp JOIN mnemonic_words m ON m.id = wp.word_id
      WHERE wp.user_id = $1 AND wp.due_at <= NOW()
      ORDER BY wp.due_at LIMIT $2`,
-    [user.id, DUE_LIMIT]
+    [user.id, reviewPer]
   );
 
   const { rows: newRows } = await pool.query(
@@ -69,7 +77,7 @@ export const GET: APIRoute = async ({ request, url }) => {
      FROM mnemonic_words m
      WHERE NOT EXISTS (SELECT 1 FROM word_progress wp WHERE wp.user_id = $1 AND wp.word_id = m.id)
      ORDER BY m.position, m.id LIMIT $2`,
-    [user.id, NEW_PER_SESSION]
+    [user.id, newPer]
   );
 
   const { rows: defRows } = await pool.query(
@@ -94,7 +102,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   };
 
   const session = [...newRows.map((r: any) => build(r, true)), ...dueRows.map((r: any) => build(r, false))];
-  return json({ stats, session, newCount: newRows.length, dueCount: dueRows.length });
+  return json({ stats, session, newCount: newRows.length, dueCount: dueRows.length, settings: { newPer, reviewPer } });
 };
 
 export const POST: APIRoute = async ({ request }) => {
@@ -143,6 +151,13 @@ export const POST: APIRoute = async ({ request }) => {
   if (body.action === 'reset') {
     await pool.query('DELETE FROM word_progress WHERE user_id = $1', [user.id]);
     return json({ ok: true });
+  }
+
+  if (body.action === 'settings') {
+    const newPer = clampRange(body.newPer, NEW_MIN, NEW_MAX);
+    const reviewPer = clampRange(body.reviewPer, REVIEW_MIN, REVIEW_MAX);
+    await pool.query('UPDATE users SET learn_new_per = $2, learn_review_per = $3 WHERE id = $1', [user.id, newPer, reviewPer]);
+    return json({ ok: true, settings: { newPer, reviewPer } });
   }
 
   return json({ error: 'Invalid action' }, 400);

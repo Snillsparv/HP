@@ -61,6 +61,10 @@ await pool.query(`
   ALTER TABLE users ADD COLUMN IF NOT EXISTS train_step INTEGER DEFAULT 1;
 `);
 await pool.query(`
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_new_per INTEGER DEFAULT 10;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_review_per INTEGER DEFAULT 60;
+`);
+await pool.query(`
   CREATE TABLE IF NOT EXISTS contact_messages (
     id SERIAL PRIMARY KEY,
     name TEXT NOT NULL,

@@ -62,7 +62,7 @@ await pool.query(`
 `);
 await pool.query(`
   ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_new_per INTEGER DEFAULT 10;
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_review_per INTEGER DEFAULT 60;
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_review_per INTEGER DEFAULT 100;
 `);
 await pool.query(`
   CREATE TABLE IF NOT EXISTS contact_messages (
@@ -120,6 +120,15 @@ await pool.query(`CREATE TABLE IF NOT EXISTS app_flags (key TEXT PRIMARY KEY, cr
   );
   if (claim.rowCount && claim.rowCount > 0) {
     await pool.query(`UPDATE mnemonic_words SET status = 'unreviewed', updated_at = NOW() WHERE status = 'needs_work'`);
+  }
+}
+{
+  const claim = await pool.query(
+    `INSERT INTO app_flags (key) VALUES ('review_default_100') ON CONFLICT (key) DO NOTHING RETURNING key`
+  );
+  if (claim.rowCount && claim.rowCount > 0) {
+    // Höj det tidigare standardtaket (60) till 100 för befintliga konton.
+    await pool.query(`UPDATE users SET learn_review_per = 100 WHERE learn_review_per = 60`);
   }
 }
 

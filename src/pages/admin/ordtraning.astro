@@ -21,7 +21,6 @@ if (!user || user.email !== ADMIN_EMAIL) {
         <span class="dev-label">Testverktyg:</span>
         <button id="dev-day" class="dev-btn" type="button">⏩ Simulera nästa dag</button>
         <button id="dev-week" class="dev-btn" type="button">⏩ Hoppa 7 dagar</button>
-        <button id="dev-reset" class="dev-btn dev-danger" type="button">↺ Nollställ mina framsteg</button>
         <span id="dev-msg" class="dev-msg"></span>
       </div>
 
@@ -85,16 +84,23 @@ if (!user || user.email !== ADMIN_EMAIL) {
   .ot-page .chip { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
     padding: 0.22rem 0.6rem; border-radius: 999px; margin-bottom: 0.7rem; }
   .ot-page .chip-new { background: #eef2ff; color: #2563eb; } .ot-page .chip-rep { background: #fef3c7; color: #b45309; }
+  .ot-page .learn-card { display: flex; flex-direction: column; }
   .ot-page .w-img { display: block; width: 140px; height: 140px; object-fit: contain; background: #fff; border: 1px solid #e2e8f0;
-    border-radius: 14px; padding: 6px; margin: 0 auto 0.7rem; }
-  .ot-page .w-word { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.12; margin: 0 0 0.1rem; text-align: center; }
-  .ot-page .w-def { color: #64748b; font-size: 1.05rem; margin: 0 0 1rem; text-align: center; }
+    border-radius: 14px; padding: 6px; margin: 0.2rem auto 0.7rem; }
+  @media (min-width: 640px) { .ot-page .learn-card .w-img { order: -1; } }
+  .ot-page .w-word { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.12; margin: 0 0 0.5rem; text-align: center; }
+  .ot-page .w-def { display: block; width: fit-content; max-width: 100%; margin: 0 auto 1rem; text-align: center;
+    background: #eff6ff; color: #1d4ed8; font-weight: 700; font-size: 1.12rem; padding: 0.35rem 0.9rem; border-radius: 10px; }
   .ot-page .mnemo { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.8rem; }
   .ot-page .mnemo .m-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #b45309; margin-bottom: 0.3rem; }
   .ot-page .mnemo p { margin: 0; font-size: 1.02rem; line-height: 1.55; }
   .ot-page .hook { background: #fef3c7; color: #92400e; font-weight: 700; border-radius: 3px; padding: 0 2px; }
-  .ot-page .example { font-style: italic; color: #334155; font-size: 0.97rem; margin: 0 0 0.9rem; }
+  .ot-page .example { font-style: italic; color: #334155; font-size: 0.97rem; margin: 0.2rem 0 0.9rem; }
   .ot-page .example strong { font-style: normal; color: #1a1a2e; }
+  .ot-page .ex-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 0.15rem; font-style: normal; }
+  .ot-page .reset-line { text-align: center; margin: 1rem 0 0; }
+  .ot-page .link-btn { background: none; border: none; color: #94a3b8; font: inherit; font-size: 0.82rem; cursor: pointer; text-decoration: underline; }
+  .ot-page .link-btn:hover { color: #ef4444; }
   .ot-page .ety { border-left: 3px solid #e2e8f0; padding: 0.15rem 0 0.15rem 0.8rem; margin: 0 0 0.2rem; font-size: 0.9rem; color: #64748b; }
   .ot-page .ety-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 0.15rem; }
 
@@ -127,7 +133,9 @@ if (!user || user.email !== ADMIN_EMAIL) {
   const app = document.getElementById('app');
   const devMsg = document.getElementById('dev-msg');
   let session = [], stats = null, learnI = 0, quizI = 0, results = [];
-  let settings = { newPer: 10, reviewPer: 60 };
+  let settings = { newPer: 10, reviewPer: 100 };
+  let skipped = new Set();
+  let quizQueue = [], quizTotal = 0, resultsMap = {};
 
   function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   function hooks(s) { return esc(s).replace(/([A-ZÅÄÖ]{2,})/g, '<span class="hook">$1</span>'); }
@@ -136,7 +144,8 @@ if (!user || user.email !== ADMIN_EMAIL) {
     return `background: conic-gradient(#2563eb 0 ${deg}deg, #e2e8f0 ${deg}deg 360deg);`;
   }
   function whenLabel(days) {
-    if (days <= 1) return 'imorgon igen';
+    if (days <= 0) return 'senare idag';
+    if (days === 1) return 'imorgon';
     if (days < 7) return 'om ' + days + ' dagar';
     if (days < 30) return 'om ' + Math.round(days / 7) + ' veckor';
     return 'om ' + Math.round(days / 30) + ' månader';
@@ -156,7 +165,7 @@ if (!user || user.email !== ADMIN_EMAIL) {
     session = data.session || [];
     stats = data.stats;
     if (data.settings) settings = data.settings;
-    learnI = 0; quizI = 0; results = [];
+    learnI = 0; quizI = 0; results = []; skipped = new Set(); quizQueue = []; quizTotal = 0; resultsMap = {};
     renderStart();
   }
 
@@ -203,10 +212,17 @@ if (!user || user.email !== ADMIN_EMAIL) {
         <div class="stat-line"><span class="dot" style="background:#10b981"></span><b>${stats.strong}</b>&nbsp;sitter säkert</div>
       </div>
       ${settingsHtml()}
-      ${startBtn}`);
+      ${startBtn}
+      <p class="reset-line"><button id="reset-all" class="link-btn" type="button">↺ Återställ hela träningen</button></p>`);
     const go = document.getElementById('go');
-    if (go) go.onclick = () => { learnI = 0; session.some(w => w.isNew) ? renderLearn() : renderQuiz(); };
+    if (go) go.onclick = () => { learnI = 0; session.some(w => w.isNew) ? renderLearn() : beginQuiz(); };
     app.querySelectorAll('.st-btn').forEach(btn => btn.onclick = () => changeSetting(btn.dataset.set, Number(btn.dataset.d)));
+    document.getElementById('reset-all').onclick = async () => {
+      if (confirm('Vill du återställa hela träningen? All inlärning och alla intervall nollställs och du börjar om från första ordet.')) {
+        await api('POST', { action: 'reset' });
+        load();
+      }
+    };
   }
 
   let saveTimer = null;
@@ -226,23 +242,41 @@ if (!user || user.email !== ADMIN_EMAIL) {
     const news = session.filter(w => w.isNew);
     const w = news[learnI];
     app.innerHTML = frame('Nya ord', `${learnI + 1} av ${news.length}`, 5 + (learnI / news.length) * 40, `
-      ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
-      <div style="text-align:center"><span class="chip chip-new">Nytt ord</span></div>
-      <h2 class="w-word">${esc(w.word)}</h2>
-      <p class="w-def">${esc(w.definition)}</p>
-      <div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>
-      ${w.example ? `<p class="example">»${w.example}«</p>` : ''}
-      ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
-      <div class="btn-row"><button class="btn btn-primary" id="next">Jag har bilden — nästa</button></div>`);
-    document.getElementById('next').onclick = () => {
-      learnI++;
-      learnI < news.length ? renderLearn() : renderQuiz();
+      <div class="learn-card">
+        <div style="text-align:center"><span class="chip chip-new">Nytt ord</span></div>
+        <h2 class="w-word">${esc(w.word)}</h2>
+        ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
+        <p class="w-def">${esc(w.definition)}</p>
+        <div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>
+        ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
+        ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}
+      </div>
+      <div class="btn-row">
+        <button class="btn btn-primary" id="next">Jag har bilden — nästa</button>
+        <button class="btn btn-outline" id="knew">Kunde det redan ✓</button>
+      </div>`);
+    const advance = () => { learnI++; learnI < news.length ? renderLearn() : beginQuiz(); };
+    document.getElementById('next').onclick = advance;
+    document.getElementById('knew').onclick = async () => {
+      skipped.add(w.id);
+      await api('POST', { action: 'grade', wordId: w.id, known: true });
+      advance();
     };
   }
 
+  function beginQuiz() {
+    quizQueue = session.filter(w => !skipped.has(w.id));
+    quizTotal = quizQueue.length;
+    resultsMap = {};
+    renderQuiz();
+  }
+
   function renderQuiz() {
-    const w = session[quizI];
-    app.innerHTML = frame('Quiz', `${quizI + 1} av ${session.length}`, 48 + (quizI / session.length) * 50, `
+    if (quizQueue.length === 0) { renderDone(); return; }
+    const w = quizQueue[0];
+    const remaining = new Set(quizQueue.map(x => x.id)).size;
+    const pct = quizTotal ? 48 + ((quizTotal - remaining) / quizTotal) * 50 : 98;
+    app.innerHTML = frame('Quiz', `${quizTotal - remaining + 1} av ${quizTotal}`, pct, `
       <p class="q-label">Vad betyder ordet?</p>
       <h2 class="w-word">${esc(w.word)}</h2>
       <div class="opts">${w.options.map((o, i) =>
@@ -261,26 +295,34 @@ if (!user || user.email !== ADMIN_EMAIL) {
       else if (b === btn) b.classList.add('wrong');
     });
     const res = await api('POST', { action: 'grade', wordId: w.id, correct: ok });
-    results.push({ word: w.word, ok, days: res.days || 1 });
+    const prev = resultsMap[w.id] || { word: w.word, lapsed: false };
+    if (ok) {
+      // klarat: schemalägg och plocka bort ur kön
+      quizQueue.shift();
+      resultsMap[w.id] = { word: w.word, ok: true, days: res.days || 1, lapsed: prev.lapsed };
+    } else {
+      // fel: tillbaka i kön (samma pass, samma dag) tills det sitter
+      quizQueue.push(quizQueue.shift());
+      resultsMap[w.id] = { word: w.word, ok: false, days: 0, lapsed: true };
+    }
+    const last = quizQueue.length === 0;
     document.getElementById('fb').innerHTML = `
-      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Inte riktigt — så här minns du:'}</p>
+      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Inte riktigt — så här minns du (kommer igen senare i passet):'}</p>
       ${w.image ? `<img class="fb-img" src="${w.image}" alt="">` : ''}
       <div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>
-      ${w.example ? `<p class="example">»${w.example}«</p>` : ''}
-      <div class="btn-row"><button class="btn btn-primary" id="nq">${quizI < session.length - 1 ? 'Nästa fråga' : 'Avsluta passet'}</button></div>`;
-    document.getElementById('nq').onclick = () => {
-      quizI++;
-      quizI < session.length ? renderQuiz() : renderDone();
-    };
+      ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}
+      <div class="btn-row"><button class="btn btn-primary" id="nq">${last ? 'Avsluta passet' : 'Nästa fråga'}</button></div>`;
+    document.getElementById('nq').onclick = () => { last ? renderDone() : renderQuiz(); };
   }
 
   function renderDone() {
-    const correct = results.filter(r => r.ok).length;
-    const rows = results.map(r =>
-      `<div class="done-row ${r.ok ? 'ok' : 'rep'}"><span class="mark">${r.ok ? '✓' : '↻'}</span> ${esc(r.word)} <span class="when">${whenLabel(r.days)}</span></div>`).join('');
+    const list = Object.values(resultsMap);
+    const firstTry = list.filter(r => r.ok && !r.lapsed).length;
+    const rows = list.map(r =>
+      `<div class="done-row ${r.lapsed ? 'rep' : 'ok'}"><span class="mark">${r.lapsed ? '↻' : '✓'}</span> ${esc(r.word)} <span class="when">${whenLabel(r.days)}</span></div>`).join('');
     app.innerHTML = frame('Passet klart', 'Klart', 100, `
-      <div class="done-head"><div class="big">${correct}<span style="color:#64748b;font-size:1.4rem">/${results.length}</span></div><div class="sub">rätt i passet</div></div>
-      <div class="done-list">${rows}</div>
+      <div class="done-head"><div class="big">${firstTry}<span style="color:#64748b;font-size:1.4rem">/${list.length}</span></div><div class="sub">rätt på första försöket</div></div>
+      <div class="done-list">${rows || '<p class="q-label">Inga ord i passet.</p>'}</div>
       <div class="btn-row"><button class="btn btn-primary" id="again">Nästa pass</button><button class="btn btn-outline" id="home">Klar för idag</button></div>`);
     document.getElementById('again').onclick = load;
     document.getElementById('home').onclick = () => { load(); };
@@ -295,9 +337,6 @@ if (!user || user.email !== ADMIN_EMAIL) {
   }
   document.getElementById('dev-day').onclick = () => dev('simulate_day', { days: 1 });
   document.getElementById('dev-week').onclick = () => dev('simulate_day', { days: 7 });
-  document.getElementById('dev-reset').onclick = () => {
-    if (confirm('Nollställa alla dina inlärningsframsteg?')) dev('reset');
-  };
 
   load();
 })();

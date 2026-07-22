@@ -6,11 +6,10 @@ import { highlightWord } from '../../../lib/highlight.js';
 const ADMIN_EMAIL = 'snillsparv@gmail.com';
 const NEW_MIN = 0, NEW_MAX = 40;
 const REVIEW_MIN = 5, REVIEW_MAX = 250;
-// Leitner-lådor -> repetitionsintervall i dagar.
-const INTERVAL_DAYS: Record<number, number> = { 1: 1, 2: 3, 3: 7, 4: 14, 5: 30, 6: 90 };
-
-const clampBox = (b: number) => Math.max(1, Math.min(6, b));
-const intervalDays = (box: number) => INTERVAL_DAYS[clampBox(box)] || 1;
+// Anki-lika lådor. Låda 0 = inlärning (förfaller samma dag, upprepas tills rätt).
+// Låda 1+ = repetition med växande intervall i dagar.
+const INTERVAL_DAYS: Record<number, number> = { 1: 1, 2: 3, 3: 7, 4: 16, 5: 35, 6: 90 };
+const KNOWN_BOX = 3; // "Kunde det redan" hoppar direkt till ~1 vecka
 const clampRange = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(Number(n) || 0)));
 
 function json(data: unknown, status = 200) {
@@ -47,11 +46,11 @@ export const GET: APIRoute = async ({ request, url }) => {
   const action = url.searchParams.get('action') || 'session';
 
   const { rows: [settings] } = await pool.query(
-    `SELECT COALESCE(learn_new_per, 10) AS new_per, COALESCE(learn_review_per, 60) AS review_per FROM users WHERE id = $1`,
+    `SELECT COALESCE(learn_new_per, 10) AS new_per, COALESCE(learn_review_per, 100) AS review_per FROM users WHERE id = $1`,
     [user.id]
   );
   const newPer = clampRange(settings?.new_per ?? 10, NEW_MIN, NEW_MAX);
-  const reviewPer = clampRange(settings?.review_per ?? 60, REVIEW_MIN, REVIEW_MAX);
+  const reviewPer = clampRange(settings?.review_per ?? 100, REVIEW_MIN, REVIEW_MAX);
 
   const { rows: [stats] } = await pool.query(
     `SELECT
@@ -115,15 +114,19 @@ export const POST: APIRoute = async ({ request }) => {
   if (body.action === 'grade') {
     const wordId = Number(body.wordId);
     const correct = !!body.correct;
+    const known = !!body.known;
     if (!Number.isInteger(wordId)) return json({ error: 'Ogiltigt ord' }, 400);
 
     const { rows: [cur] } = await pool.query(
       'SELECT box FROM word_progress WHERE user_id = $1 AND word_id = $2',
       [user.id, wordId]
     );
-    const curBox = cur ? cur.box : 1;
-    const newBox = correct ? clampBox(curBox + 1) : 1;
-    const days = intervalDays(newBox);
+    const curBox = cur ? cur.box : 0; // nytt ord = låda 0
+    // known -> hoppa till KNOWN_BOX. Rätt -> nästa låda. Fel -> tillbaka till
+    // låda 0 (förfaller genast, upprepas samma dag tills det sitter).
+    const newBox = known ? KNOWN_BOX : correct ? Math.min(curBox + 1, 6) : 0;
+    const days = newBox === 0 ? 0 : (INTERVAL_DAYS[newBox] || 1);
+    const lapse = (!correct && !known) ? 1 : 0;
     await pool.query(
       `INSERT INTO word_progress (user_id, word_id, box, due_at, reps, lapses)
        VALUES ($1, $2, $3, NOW() + ($4 * interval '1 day'), 1, $5)
@@ -133,7 +136,7 @@ export const POST: APIRoute = async ({ request }) => {
          reps = word_progress.reps + 1,
          lapses = word_progress.lapses + $5,
          updated_at = NOW()`,
-      [user.id, wordId, newBox, days, correct ? 0 : 1]
+      [user.id, wordId, newBox, days, lapse]
     );
     return json({ ok: true, box: newBox, days });
   }

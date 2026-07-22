@@ -1,0 +1,263 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getSessionFromCookies } from '../../lib/auth.js';
+
+const ADMIN_EMAIL = 'snillsparv@gmail.com';
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+if (!user || user.email !== ADMIN_EMAIL) {
+  return Astro.redirect('/');
+}
+---
+
+<Base title="Ordträning (test) – HPAkuten">
+  <div class="page-content">
+    <div class="container ot-page">
+      <div class="head">
+        <h1>Ordträning <span class="beta">testläge</span></h1>
+        <p class="lead">Den skarpa inlärningssidan, bara synlig för dig. Testa flödet och repetitionssystemet innan vi släpper den publikt.</p>
+      </div>
+
+      <div class="dev">
+        <span class="dev-label">Testverktyg:</span>
+        <button id="dev-day" class="dev-btn" type="button">⏩ Simulera nästa dag</button>
+        <button id="dev-week" class="dev-btn" type="button">⏩ Hoppa 7 dagar</button>
+        <button id="dev-reset" class="dev-btn dev-danger" type="button">↺ Nollställ mina framsteg</button>
+        <span id="dev-msg" class="dev-msg"></span>
+      </div>
+
+      <div id="app" class="app"><div class="loading">Laddar…</div></div>
+    </div>
+  </div>
+</Base>
+
+<style is:global>
+  .ot-page .head { margin-bottom: 1rem; }
+  .ot-page .beta { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    background: #eef2ff; color: #2563eb; padding: 0.15rem 0.5rem; border-radius: 999px; vertical-align: middle; }
+  .ot-page .lead { color: #64748b; max-width: 60ch; }
+
+  .ot-page .dev { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-bottom: 1.4rem;
+    padding: 0.7rem 0.9rem; background: #f8fafc; border: 1px dashed #cbd5e1; border-radius: 10px; }
+  .ot-page .dev-label { font-size: 0.78rem; font-weight: 700; color: #64748b; }
+  .ot-page .dev-btn { font: inherit; font-size: 0.82rem; font-weight: 600; padding: 0.35rem 0.7rem; border-radius: 8px;
+    border: 1.5px solid #e2e8f0; background: #fff; color: #1a1a2e; cursor: pointer; }
+  .ot-page .dev-btn:hover { border-color: #2563eb; color: #2563eb; }
+  .ot-page .dev-danger:hover { border-color: #ef4444; color: #ef4444; }
+  .ot-page .dev-msg { font-size: 0.8rem; color: #10b981; font-weight: 600; }
+
+  .ot-page .app { display: flex; justify-content: center; }
+  .ot-page .loading { color: #64748b; padding: 3rem; }
+  .ot-page .card { width: 100%; max-width: 560px; background: #fff; border: 1px solid #e2e8f0; border-radius: 18px;
+    box-shadow: 0 10px 30px rgba(20,24,43,.08); overflow: hidden; }
+  .ot-page .card-top { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.2rem; border-bottom: 1px solid #e2e8f0; }
+  .ot-page .card-top .tag { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #2563eb; }
+  .ot-page .card-top .step { font-size: 0.78rem; color: #64748b; font-variant-numeric: tabular-nums; }
+  .ot-page .bar { height: 5px; background: #e2e8f0; }
+  .ot-page .bar > i { display: block; height: 100%; background: #2563eb; transition: width 0.35s ease; }
+  .ot-page .body { padding: 1.4rem 1.4rem 1.5rem; }
+
+  .ot-page .ring-row { display: flex; align-items: center; gap: 1.1rem; margin: 0.2rem 0 1.2rem; }
+  .ot-page .ring { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
+  .ot-page .ring > div { width: 74px; height: 74px; border-radius: 50%; background: #fff; display: grid; place-items: center;
+    text-align: center; font-size: 0.66rem; color: #64748b; line-height: 1.25; }
+  .ot-page .ring b { display: block; font-size: 1.05rem; color: #1a1a2e; font-variant-numeric: tabular-nums; }
+  .ot-page .stat-lines { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.4rem; }
+  .ot-page .stat-line { display: flex; align-items: center; gap: 0.6rem; font-size: 0.86rem; color: #64748b; }
+  .ot-page .stat-line .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
+  .ot-page .stat-line b { color: #1a1a2e; font-variant-numeric: tabular-nums; }
+
+  .ot-page .btn { font: inherit; font-weight: 700; font-size: 0.98rem; border-radius: 10px; padding: 0.85rem 1.2rem;
+    cursor: pointer; border: 2px solid transparent; width: 100%; }
+  .ot-page .btn-primary { background: #2563eb; color: #fff; } .ot-page .btn-primary:hover { background: #1d4ed8; }
+  .ot-page .btn-outline { background: #fff; border-color: #e2e8f0; color: #1a1a2e; } .ot-page .btn-outline:hover { border-color: #2563eb; color: #2563eb; }
+  .ot-page .btn-row { display: flex; flex-direction: column; gap: 0.55rem; margin-top: 1.2rem; }
+
+  .ot-page .chip { display: inline-block; font-size: 0.7rem; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+    padding: 0.22rem 0.6rem; border-radius: 999px; margin-bottom: 0.7rem; }
+  .ot-page .chip-new { background: #eef2ff; color: #2563eb; } .ot-page .chip-rep { background: #fef3c7; color: #b45309; }
+  .ot-page .w-img { display: block; width: 140px; height: 140px; object-fit: contain; background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 14px; padding: 6px; margin: 0 auto 0.7rem; }
+  .ot-page .w-word { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.12; margin: 0 0 0.1rem; text-align: center; }
+  .ot-page .w-def { color: #64748b; font-size: 1.05rem; margin: 0 0 1rem; text-align: center; }
+  .ot-page .mnemo { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 0.85rem 1rem; margin-bottom: 0.8rem; }
+  .ot-page .mnemo .m-label { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #b45309; margin-bottom: 0.3rem; }
+  .ot-page .mnemo p { margin: 0; font-size: 1.02rem; line-height: 1.55; }
+  .ot-page .hook { background: #fef3c7; color: #92400e; font-weight: 700; border-radius: 3px; padding: 0 2px; }
+  .ot-page .example { font-style: italic; color: #334155; font-size: 0.97rem; margin: 0 0 0.9rem; }
+  .ot-page .example strong { font-style: normal; color: #1a1a2e; }
+  .ot-page .ety { border-left: 3px solid #e2e8f0; padding: 0.15rem 0 0.15rem 0.8rem; margin: 0 0 0.2rem; font-size: 0.9rem; color: #64748b; }
+  .ot-page .ety-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 0.15rem; }
+
+  .ot-page .q-label { font-size: 0.85rem; color: #64748b; margin: 0 0 0.2rem; text-align: center; }
+  .ot-page .opts { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.6rem 0 0.4rem; }
+  .ot-page .opt { display: flex; align-items: center; gap: 0.7rem; font: inherit; font-size: 0.98rem; text-align: left; width: 100%;
+    padding: 0.7rem 0.8rem; background: #fff; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; color: #1a1a2e; }
+  .ot-page .opt:hover:not(:disabled) { border-color: #2563eb; }
+  .ot-page .opt .letter { width: 28px; height: 28px; border-radius: 50%; background: #f1f5f9; border: 1.5px solid #e2e8f0;
+    display: grid; place-items: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
+  .ot-page .opt.correct { border-color: #10b981; background: #d1fae5; } .ot-page .opt.correct .letter { background: #10b981; border-color: #10b981; color: #fff; }
+  .ot-page .opt.wrong { border-color: #ef4444; background: #fee2e2; } .ot-page .opt.wrong .letter { background: #ef4444; border-color: #ef4444; color: #fff; }
+  .ot-page .opt:disabled { cursor: default; } .ot-page .opt:disabled:not(.correct):not(.wrong) { opacity: 0.5; }
+  .ot-page .verdict { font-weight: 700; margin: 0.4rem 0 0.6rem; } .ot-page .verdict.ok { color: #047857; } .ot-page .verdict.no { color: #ef4444; }
+  .ot-page .fb-img { display: block; width: 96px; height: 96px; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 12px; padding: 5px; margin: 0.2rem auto 0.5rem; }
+
+  .ot-page .done-head { text-align: center; margin: 0.4rem 0 1.1rem; }
+  .ot-page .done-head .big { font-size: 2.6rem; font-weight: 800; color: #2563eb; font-variant-numeric: tabular-nums; line-height: 1.1; }
+  .ot-page .done-head .sub { color: #64748b; font-size: 0.9rem; }
+  .ot-page .done-list { display: flex; flex-direction: column; gap: 0.35rem; margin-bottom: 1.1rem; max-height: 320px; overflow-y: auto; }
+  .ot-page .done-row { display: flex; align-items: center; gap: 0.6rem; font-size: 0.9rem; padding: 0.45rem 0.7rem; border-radius: 8px; background: #f8fafc; }
+  .ot-page .done-row .mark { font-weight: 700; width: 1.2rem; text-align: center; } .ot-page .done-row.ok .mark { color: #10b981; } .ot-page .done-row.rep .mark { color: #b45309; }
+  .ot-page .done-row .when { margin-left: auto; font-size: 0.78rem; color: #64748b; }
+  .ot-page .empty { text-align: center; color: #64748b; padding: 1.5rem 0.5rem; }
+  .ot-page .empty .big { font-size: 2.2rem; }
+</style>
+
+<script is:inline>
+(function () {
+  const app = document.getElementById('app');
+  const devMsg = document.getElementById('dev-msg');
+  let session = [], stats = null, learnI = 0, quizI = 0, results = [];
+
+  function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
+  function hooks(s) { return esc(s).replace(/([A-ZÅÄÖ]{2,})/g, '<span class="hook">$1</span>'); }
+  function ring(pct) {
+    const deg = Math.max(4, Math.round(pct * 3.6));
+    return `background: conic-gradient(#2563eb 0 ${deg}deg, #e2e8f0 ${deg}deg 360deg);`;
+  }
+  function whenLabel(days) {
+    if (days <= 1) return 'imorgon igen';
+    if (days < 7) return 'om ' + days + ' dagar';
+    if (days < 30) return 'om ' + Math.round(days / 7) + ' veckor';
+    return 'om ' + Math.round(days / 30) + ' månader';
+  }
+
+  async function api(method, body) {
+    const opts = { method, headers: { 'Content-Type': 'application/json' } };
+    if (body) opts.body = JSON.stringify(body);
+    const url = method === 'GET' ? '/api/admin/ordtraning?action=session' : '/api/admin/ordtraning';
+    const r = await fetch(url, opts);
+    return r.json();
+  }
+
+  async function load() {
+    app.innerHTML = '<div class="loading">Laddar…</div>';
+    const data = await api('GET');
+    session = data.session || [];
+    stats = data.stats;
+    learnI = 0; quizI = 0; results = [];
+    renderStart();
+  }
+
+  function frame(tag, step, pct, inner) {
+    return `<div class="card">
+      <div class="card-top"><span class="tag">${tag}</span><span class="step">${step}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i></div>
+      <div class="body">${inner}</div></div>`;
+  }
+
+  function renderStart() {
+    const news = session.filter(w => w.isNew).length;
+    const reps = session.length - news;
+    const pct = stats.total ? Math.round((stats.learned / stats.total) * 100) : 0;
+    if (session.length === 0) {
+      app.innerHTML = frame('Ordträning', 'Klart för nu', 0,
+        `<div class="empty"><div class="big">🎉</div><p>Inget att träna just nu, allt är repeterat.<br>Kom tillbaka senare eller använd testknapparna ovan för att simulera framtiden.</p></div>`);
+      return;
+    }
+    app.innerHTML = frame('Ordträning', 'Dagens pass', 0, `
+      <div class="ring-row">
+        <div class="ring" style="${ring(pct)}"><div><b>${stats.learned}</b>av ${stats.total}<br>påbörjade</div></div>
+        <div>
+          <div class="stat-line"><b>${news} nya ord</b></div>
+          <div class="stat-line">+ <b>${reps} repetitioner</b></div>
+        </div>
+      </div>
+      <div class="stat-lines">
+        <div class="stat-line"><span class="dot" style="background:#f59e0b"></span><b>${stats.due}</b>&nbsp;ord att repetera nu</div>
+        <div class="stat-line"><span class="dot" style="background:#2563eb"></span><b>${stats.learned - stats.strong}</b>&nbsp;på inlärning</div>
+        <div class="stat-line"><span class="dot" style="background:#10b981"></span><b>${stats.strong}</b>&nbsp;sitter säkert</div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" id="go">Starta passet (${session.length} ord)</button></div>`);
+    document.getElementById('go').onclick = () => { learnI = 0; session.some(w => w.isNew) ? renderLearn() : renderQuiz(); };
+  }
+
+  function renderLearn() {
+    const news = session.filter(w => w.isNew);
+    const w = news[learnI];
+    app.innerHTML = frame('Nya ord', `${learnI + 1} av ${news.length}`, 5 + (learnI / news.length) * 40, `
+      ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
+      <div style="text-align:center"><span class="chip chip-new">Nytt ord</span></div>
+      <h2 class="w-word">${esc(w.word)}</h2>
+      <p class="w-def">${esc(w.definition)}</p>
+      <div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>
+      ${w.example ? `<p class="example">»${w.example}«</p>` : ''}
+      ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
+      <div class="btn-row"><button class="btn btn-primary" id="next">Jag har bilden — nästa</button></div>`);
+    document.getElementById('next').onclick = () => {
+      learnI++;
+      learnI < news.length ? renderLearn() : renderQuiz();
+    };
+  }
+
+  function renderQuiz() {
+    const w = session[quizI];
+    app.innerHTML = frame('Quiz', `${quizI + 1} av ${session.length}`, 48 + (quizI / session.length) * 50, `
+      <p class="q-label">Vad betyder ordet?</p>
+      <h2 class="w-word">${esc(w.word)}</h2>
+      <div class="opts">${w.options.map((o, i) =>
+        `<button class="opt" data-o="${esc(o)}"><span class="letter">${'ABCDE'[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>
+      <div id="fb"></div>`);
+    app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => answer(btn, w));
+  }
+
+  async function answer(btn, w) {
+    const chosen = btn.getAttribute('data-o');
+    const ok = chosen === w.correct;
+    app.querySelectorAll('.opt').forEach(b => {
+      b.disabled = true;
+      const v = b.getAttribute('data-o');
+      if (v === w.correct) b.classList.add('correct');
+      else if (b === btn) b.classList.add('wrong');
+    });
+    const res = await api('POST', { action: 'grade', wordId: w.id, correct: ok });
+    results.push({ word: w.word, ok, days: res.days || 1 });
+    document.getElementById('fb').innerHTML = `
+      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Inte riktigt — så här minns du:'}</p>
+      ${w.image ? `<img class="fb-img" src="${w.image}" alt="">` : ''}
+      <div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>
+      ${w.example ? `<p class="example">»${w.example}«</p>` : ''}
+      <div class="btn-row"><button class="btn btn-primary" id="nq">${quizI < session.length - 1 ? 'Nästa fråga' : 'Avsluta passet'}</button></div>`;
+    document.getElementById('nq').onclick = () => {
+      quizI++;
+      quizI < session.length ? renderQuiz() : renderDone();
+    };
+  }
+
+  function renderDone() {
+    const correct = results.filter(r => r.ok).length;
+    const rows = results.map(r =>
+      `<div class="done-row ${r.ok ? 'ok' : 'rep'}"><span class="mark">${r.ok ? '✓' : '↻'}</span> ${esc(r.word)} <span class="when">${whenLabel(r.days)}</span></div>`).join('');
+    app.innerHTML = frame('Passet klart', 'Klart', 100, `
+      <div class="done-head"><div class="big">${correct}<span style="color:#64748b;font-size:1.4rem">/${results.length}</span></div><div class="sub">rätt i passet</div></div>
+      <div class="done-list">${rows}</div>
+      <div class="btn-row"><button class="btn btn-primary" id="again">Nästa pass</button><button class="btn btn-outline" id="home">Klar för idag</button></div>`);
+    document.getElementById('again').onclick = load;
+    document.getElementById('home').onclick = () => { load(); };
+  }
+
+  async function dev(action, extra) {
+    devMsg.textContent = '…';
+    await api('POST', Object.assign({ action }, extra || {}));
+    devMsg.textContent = 'Klart';
+    setTimeout(() => devMsg.textContent = '', 1500);
+    load();
+  }
+  document.getElementById('dev-day').onclick = () => dev('simulate_day', { days: 1 });
+  document.getElementById('dev-week').onclick = () => dev('simulate_day', { days: 7 });
+  document.getElementById('dev-reset').onclick = () => {
+    if (confirm('Nollställa alla dina inlärningsframsteg?')) dev('reset');
+  };
+
+  load();
+})();
+</script>

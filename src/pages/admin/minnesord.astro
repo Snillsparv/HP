@@ -27,7 +27,7 @@ interface WordRow {
 }
 
 const { rows: words } = await pool.query(
-  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology, image FROM mnemonic_words ORDER BY random()'
+  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology, image FROM mnemonic_words ORDER BY position, id'
 ) as { rows: WordRow[] };
 
 const total = words.length;

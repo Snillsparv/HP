@@ -88,6 +88,22 @@ await pool.query(`
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS etymology TEXT NOT NULL DEFAULT '';
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS image TEXT NOT NULL DEFAULT '';
 `);
+// Inlärningsframsteg per användare och ord (Leitner-baserad repetition).
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS word_progress (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    word_id INTEGER NOT NULL REFERENCES mnemonic_words(id) ON DELETE CASCADE,
+    box INTEGER NOT NULL DEFAULT 1,
+    due_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    reps INTEGER NOT NULL DEFAULT 0,
+    lapses INTEGER NOT NULL DEFAULT 0,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    updated_at TIMESTAMPTZ DEFAULT NOW(),
+    UNIQUE (user_id, word_id)
+  );
+  CREATE INDEX IF NOT EXISTS word_progress_due_idx ON word_progress (user_id, due_at);
+`);
 
 type MinnesordSeed = { word: string; definition: string; mnemonic: string; status?: string; note?: string; example?: string; etymology?: string; image?: string };
 
@@ -154,11 +170,12 @@ if (canonical.length) {
     `UPDATE mnemonic_words m SET
        mnemonic = s.mnemonic,
        definition = s.definition,
+       position = s.position,
        updated_at = NOW()
-     FROM unnest($1::text[], $2::text[], $3::text[]) AS s(word, mnemonic, definition)
+     FROM unnest($1::text[], $2::text[], $3::text[], $4::int[]) AS s(word, mnemonic, definition, position)
      WHERE lower(m.word) = lower(s.word)
-       AND (m.mnemonic <> s.mnemonic OR m.definition <> s.definition)`,
-    [canonical.map(w => w.word), canonical.map(w => w.mnemonic), canonical.map(w => w.definition)]
+       AND (m.mnemonic <> s.mnemonic OR m.definition <> s.definition OR m.position <> s.position)`,
+    [canonical.map(w => w.word), canonical.map(w => w.mnemonic), canonical.map(w => w.definition), canonical.map((_, i) => i)]
   );
 }
 

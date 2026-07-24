@@ -24,10 +24,11 @@ interface WordRow {
   example: string;
   etymology: string;
   image: string;
+  related: { root: string; words: { word: string; gloss: string }[] } | null;
 }
 
 const { rows: words } = await pool.query(
-  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology, image FROM mnemonic_words ORDER BY position, id'
+  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology, image, related FROM mnemonic_words ORDER BY position, id'
 ) as { rows: WordRow[] };
 
 const total = words.length;
@@ -160,6 +161,14 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                   : <p class="word-mnemonic word-mnemonic--missing">Minnesregel saknas</p>}
                 {w.example && <p class="word-example" set:html={`&raquo;${highlightWord(w.example, w.word)}&laquo;`}></p>}
                 {w.etymology && <p class="word-etym"><span class="word-etym-label">Etymologi</span>{w.etymology}</p>}
+                {w.related && w.related.words && w.related.words.length > 0 && (
+                  <p class="word-rel">
+                    <span class="word-rel-label">Samma rot{w.related.root ? `: ${w.related.root}` : ''}</span>
+                    {w.related.words.map((r, i) => (
+                      <>{i > 0 ? ' · ' : ''}<b>{r.word}</b>{r.gloss ? ` (${r.gloss})` : ''}</>
+                    ))}
+                  </p>
+                )}
                 {w.extra && Object.keys(w.extra).length > 0 && (
                   <dl class="word-extra">
                     {Object.entries(w.extra).map(([k, v]) => (
@@ -960,6 +969,22 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
     font-size: 0.92rem;
     font-style: italic;
     color: #334155;
+  }
+
+  .word-rel {
+    margin: 0.45rem 0 0;
+    font-size: 0.86rem;
+    color: #475569;
+  }
+
+  .word-rel-label {
+    display: block;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #94a3b8;
+    margin-bottom: 0.1rem;
   }
 
   .word-etym {

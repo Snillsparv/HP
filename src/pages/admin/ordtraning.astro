@@ -90,6 +90,13 @@ if (!user || user.email !== ADMIN_EMAIL) {
   .ot-page .learn-card { display: flex; flex-direction: column; }
   .ot-page .w-img { display: block; width: 140px; height: 140px; object-fit: contain; background: #fff; border: 1px solid #e2e8f0;
     border-radius: 14px; padding: 6px; margin: 0.2rem auto 0.7rem; }
+  .ot-page .rel { margin: 0.55rem 0 0.1rem; }
+  .ot-page .rel-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 0.3rem; }
+  .ot-page .rel-words { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .ot-page .rel-item { background: #f1f5f9; border-radius: 8px; padding: 0.25rem 0.55rem; font-size: 0.86rem; color: #334155; }
+  .ot-page .rel-item b { color: #1a1a2e; }
+  .ot-page .rel-item i { color: #64748b; font-style: normal; }
+
   .ot-page .help-toggle { font: inherit; font-size: 0.9rem; font-weight: 700; color: #2563eb; background: #eff6ff;
     border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 0.55rem 0.9rem; cursor: pointer; margin: 0.8rem 0 0.7rem; width: 100%; }
   .ot-page .help-toggle:hover { background: #dbeafe; }
@@ -147,6 +154,13 @@ if (!user || user.email !== ADMIN_EMAIL) {
   let settingsOpen = false;
   let skipped = new Set();
   let quizQueue = [], quizTotal = 0, resultsMap = {};
+
+  function relatedHtml(rel) {
+    if (!rel || !rel.words || !rel.words.length) return '';
+    const items = rel.words.map(r =>
+      `<span class="rel-item"><b>${esc(r.word)}</b>${r.gloss ? ` <i>${esc(r.gloss)}</i>` : ''}</span>`).join('');
+    return `<div class="rel"><span class="rel-label">Samma rot${rel.root ? ': ' + esc(rel.root) : ''}</span><div class="rel-words">${items}</div></div>`;
+  }
 
   function shuffle(arr) {
     const a = arr.slice();
@@ -277,6 +291,7 @@ if (!user || user.email !== ADMIN_EMAIL) {
         <h2 class="w-word">${esc(w.word)}</h2>
         <p class="w-def">${esc(w.definition)}</p>
         ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
+        ${relatedHtml(w.related)}
         ${hasHelp ? `
         <button class="help-toggle" id="help-toggle" type="button">Visa minneshjälp <span>▾</span></button>
         <div id="help-body" hidden>

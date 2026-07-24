@@ -91,6 +91,7 @@ await pool.query(`
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS example TEXT NOT NULL DEFAULT '';
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS etymology TEXT NOT NULL DEFAULT '';
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS image TEXT NOT NULL DEFAULT '';
+  ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS related JSONB;
 `);
 // Inlärningsframsteg per användare och ord (Leitner-baserad repetition).
 await pool.query(`
@@ -109,7 +110,9 @@ await pool.query(`
   CREATE INDEX IF NOT EXISTS word_progress_due_idx ON word_progress (user_id, due_at);
 `);
 
-type MinnesordSeed = { word: string; definition: string; mnemonic: string; status?: string; note?: string; example?: string; etymology?: string; image?: string };
+type RelatedWord = { word: string; gloss: string };
+type Related = { root: string; words: RelatedWord[] };
+type MinnesordSeed = { word: string; definition: string; mnemonic: string; status?: string; note?: string; example?: string; etymology?: string; image?: string; related?: Related };
 
 // Engångsmigreringar, guardas via app_flags så de bara körs en gång per databas
 // (och därför inte rör framtida ändringar som görs via granskningsverktyget).
@@ -139,8 +142,8 @@ const { rows: [mnemonicCount] } = await pool.query('SELECT COUNT(*)::int AS coun
 if (mnemonicCount.count === 0) {
   const seed = minnesordSeed as MinnesordSeed[];
   await pool.query(
-    `INSERT INTO mnemonic_words (word, definition, mnemonic, position, status, note, example, etymology, image)
-     SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::int[], $5::text[], $6::text[], $7::text[], $8::text[], $9::text[])
+    `INSERT INTO mnemonic_words (word, definition, mnemonic, position, status, note, example, etymology, image, related)
+     SELECT * FROM unnest($1::text[], $2::text[], $3::text[], $4::int[], $5::text[], $6::text[], $7::text[], $8::text[], $9::text[], $10::jsonb[])
      ON CONFLICT (lower(word)) DO NOTHING`,
     [
       seed.map(w => w.word),
@@ -152,6 +155,7 @@ if (mnemonicCount.count === 0) {
       seed.map(w => w.example || ''),
       seed.map(w => w.etymology || ''),
       seed.map(w => w.image || ''),
+      seed.map(w => (w.related && w.related.words && w.related.words.length ? JSON.stringify(w.related) : null)),
     ]
   );
   console.log(`Seedade ${seed.length} minnesord`);
@@ -184,11 +188,19 @@ if (canonical.length) {
        mnemonic = s.mnemonic,
        definition = s.definition,
        position = s.position,
+       related = s.related,
        updated_at = NOW()
-     FROM unnest($1::text[], $2::text[], $3::text[], $4::int[]) AS s(word, mnemonic, definition, position)
+     FROM unnest($1::text[], $2::text[], $3::text[], $4::int[], $5::jsonb[]) AS s(word, mnemonic, definition, position, related)
      WHERE lower(m.word) = lower(s.word)
-       AND (m.mnemonic <> s.mnemonic OR m.definition <> s.definition OR m.position <> s.position)`,
-    [canonical.map(w => w.word), canonical.map(w => w.mnemonic), canonical.map(w => w.definition), canonical.map((_, i) => i)]
+       AND (m.mnemonic <> s.mnemonic OR m.definition <> s.definition OR m.position <> s.position
+            OR m.related IS DISTINCT FROM s.related)`,
+    [
+      canonical.map(w => w.word),
+      canonical.map(w => w.mnemonic),
+      canonical.map(w => w.definition),
+      canonical.map((_, i) => i),
+      canonical.map(w => (w.related && w.related.words && w.related.words.length ? JSON.stringify(w.related) : null)),
+    ]
   );
 }
 

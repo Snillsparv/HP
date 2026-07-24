@@ -64,7 +64,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (action === 'stats') return json({ stats, settings: { newPer, reviewPer } });
 
   const { rows: dueRows } = await pool.query(
-    `SELECT m.id, m.word, m.definition, m.mnemonic, m.example, m.etymology, m.image, wp.box
+    `SELECT m.id, m.word, m.definition, m.mnemonic, m.example, m.etymology, m.image, m.related, wp.box
      FROM word_progress wp JOIN mnemonic_words m ON m.id = wp.word_id
      WHERE wp.user_id = $1 AND wp.due_at <= NOW()
      ORDER BY wp.due_at LIMIT $2`,
@@ -72,7 +72,7 @@ export const GET: APIRoute = async ({ request, url }) => {
   );
 
   const { rows: newRows } = await pool.query(
-    `SELECT m.id, m.word, m.definition, m.mnemonic, m.example, m.etymology, m.image
+    `SELECT m.id, m.word, m.definition, m.mnemonic, m.example, m.etymology, m.image, m.related
      FROM mnemonic_words m
      WHERE NOT EXISTS (SELECT 1 FROM word_progress wp WHERE wp.user_id = $1 AND wp.word_id = m.id)
      ORDER BY m.position, m.id LIMIT $2`,
@@ -94,6 +94,7 @@ export const GET: APIRoute = async ({ request, url }) => {
       example: r.example ? highlightWord(r.example, r.word) : '',
       etymology: r.etymology || '',
       image: r.image || '',
+      related: r.related && Array.isArray(r.related.words) && r.related.words.length ? r.related : null,
       isNew,
       options,
       correct,

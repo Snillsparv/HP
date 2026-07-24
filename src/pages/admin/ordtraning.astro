@@ -74,6 +74,9 @@ if (!user || user.email !== ADMIN_EMAIL) {
     font-size: 1.1rem; font-weight: 700; line-height: 1; color: #2563eb; cursor: pointer; display: grid; place-items: center; }
   .ot-page .st-btn:hover { border-color: #2563eb; background: #eff6ff; }
   .ot-page .set-note { font-size: 0.76rem; color: #94a3b8; margin: 0.35rem 0 0; }
+  .ot-page .set-more { font: inherit; font-size: 0.8rem; font-weight: 600; color: #64748b; background: none; border: none;
+    padding: 0.35rem 0 0.1rem; cursor: pointer; }
+  .ot-page .set-more:hover { color: #2563eb; }
 
   .ot-page .btn { font: inherit; font-weight: 700; font-size: 0.98rem; border-radius: 10px; padding: 0.85rem 1.2rem;
     cursor: pointer; border: 2px solid transparent; width: 100%; }
@@ -87,7 +90,9 @@ if (!user || user.email !== ADMIN_EMAIL) {
   .ot-page .learn-card { display: flex; flex-direction: column; }
   .ot-page .w-img { display: block; width: 140px; height: 140px; object-fit: contain; background: #fff; border: 1px solid #e2e8f0;
     border-radius: 14px; padding: 6px; margin: 0.2rem auto 0.7rem; }
-  @media (min-width: 640px) { .ot-page .learn-card .w-img { order: -1; } }
+  .ot-page .help-toggle { font: inherit; font-size: 0.9rem; font-weight: 700; color: #2563eb; background: #eff6ff;
+    border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 0.55rem 0.9rem; cursor: pointer; margin: 0.8rem 0 0.7rem; width: 100%; }
+  .ot-page .help-toggle:hover { background: #dbeafe; }
   .ot-page .w-word { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.12; margin: 0 0 0.5rem; text-align: center; }
   .ot-page .w-def { display: block; width: fit-content; max-width: 100%; margin: 0 auto 1rem; text-align: center;
     background: #eff6ff; color: #1d4ed8; font-weight: 700; font-size: 1.12rem; padding: 0.35rem 0.9rem; border-radius: 10px; }
@@ -108,7 +113,12 @@ if (!user || user.email !== ADMIN_EMAIL) {
   .ot-page .opts { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.6rem 0 0.4rem; }
   .ot-page .opt { display: flex; align-items: center; gap: 0.7rem; font: inherit; font-size: 0.98rem; text-align: left; width: 100%;
     padding: 0.7rem 0.8rem; background: #fff; border: 2px solid #e2e8f0; border-radius: 10px; cursor: pointer; color: #1a1a2e; }
-  .ot-page .opt:hover:not(:disabled) { border-color: #2563eb; }
+  .ot-page .opts:not(.answered) .opt:hover { border-color: #2563eb; }
+  .ot-page .opt.dim { opacity: 0.5; }
+  .ot-page .opts.answered .opt { cursor: pointer; }
+  .ot-page .next-arrow { margin-left: auto; font-weight: 800; font-size: 1.15rem; line-height: 1; animation: ot-nudge 0.9s ease-in-out infinite; }
+  @keyframes ot-nudge { 0%, 100% { transform: translateX(0); } 50% { transform: translateX(4px); } }
+  @media (prefers-reduced-motion: reduce) { .ot-page .next-arrow { animation: none; } }
   .ot-page .opt .letter { width: 28px; height: 28px; border-radius: 50%; background: #f1f5f9; border: 1.5px solid #e2e8f0;
     display: grid; place-items: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
   .ot-page .opt.correct { border-color: #10b981; background: #d1fae5; } .ot-page .opt.correct .letter { background: #10b981; border-color: #10b981; color: #fff; }
@@ -134,8 +144,18 @@ if (!user || user.email !== ADMIN_EMAIL) {
   const devMsg = document.getElementById('dev-msg');
   let session = [], stats = null, learnI = 0, quizI = 0, results = [];
   let settings = { newPer: 10, reviewPer: 100 };
+  let settingsOpen = false;
   let skipped = new Set();
   let quizQueue = [], quizTotal = 0, resultsMap = {};
+
+  function shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  }
 
   function esc(s) { return (s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;'); }
   function hooks(s) { return esc(s).replace(/([A-ZÅÄÖ]{2,})/g, '<span class="hook">$1</span>'); }
@@ -183,11 +203,14 @@ if (!user || user.email !== ADMIN_EMAIL) {
           <span class="set-label">Nya ord per pass</span>
           <div class="stepper"><button class="st-btn" data-set="new" data-d="-1" type="button">−</button><b id="v-new">${settings.newPer}</b><button class="st-btn" data-set="new" data-d="1" type="button">+</button></div>
         </div>
-        <div class="set-row">
-          <span class="set-label">Repetitioner per pass</span>
-          <div class="stepper"><button class="st-btn" data-set="rev" data-d="-5" type="button">−</button><b id="v-rev">${settings.reviewPer}</b><button class="st-btn" data-set="rev" data-d="5" type="button">+</button></div>
+        <button class="set-more" id="set-more" type="button">⚙ Fler inställningar <span>${settingsOpen ? '▴' : '▾'}</span></button>
+        <div id="set-extra" ${settingsOpen ? '' : 'hidden'}>
+          <div class="set-row">
+            <span class="set-label">Max-repetitioner</span>
+            <div class="stepper"><button class="st-btn" data-set="rev" data-d="-5" type="button">−</button><b id="v-rev">${settings.reviewPer}</b><button class="st-btn" data-set="rev" data-d="5" type="button">+</button></div>
+          </div>
+          <p class="set-note">Högsta antal repetitioner i ett pass. De som inte får plats försvinner inte, de kommer tillbaka i nästa pass samma dag.</p>
         </div>
-        <p class="set-note">Repetitioner som inte får plats försvinner inte, de kommer tillbaka i nästa pass samma dag.</p>
       </div>`;
   }
 
@@ -217,6 +240,12 @@ if (!user || user.email !== ADMIN_EMAIL) {
     const go = document.getElementById('go');
     if (go) go.onclick = () => { learnI = 0; session.some(w => w.isNew) ? renderLearn() : beginQuiz(); };
     app.querySelectorAll('.st-btn').forEach(btn => btn.onclick = () => changeSetting(btn.dataset.set, Number(btn.dataset.d)));
+    document.getElementById('set-more').onclick = () => {
+      settingsOpen = !settingsOpen;
+      const extra = document.getElementById('set-extra');
+      extra.hidden = !settingsOpen;
+      document.querySelector('#set-more span').textContent = settingsOpen ? '▴' : '▾';
+    };
     document.getElementById('reset-all').onclick = async () => {
       if (confirm('Vill du återställa hela träningen? All inlärning och alla intervall nollställs och du börjar om från första ordet.')) {
         await api('POST', { action: 'reset' });
@@ -241,20 +270,32 @@ if (!user || user.email !== ADMIN_EMAIL) {
   function renderLearn() {
     const news = session.filter(w => w.isNew);
     const w = news[learnI];
+    const hasHelp = !!(w.image || w.mnemonic || w.example);
     app.innerHTML = frame('Nya ord', `${learnI + 1} av ${news.length}`, 5 + (learnI / news.length) * 40, `
       <div class="learn-card">
         <div style="text-align:center"><span class="chip chip-new">Nytt ord</span></div>
         <h2 class="w-word">${esc(w.word)}</h2>
-        ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
         <p class="w-def">${esc(w.definition)}</p>
-        <div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>
         ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
-        ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}
+        ${hasHelp ? `
+        <button class="help-toggle" id="help-toggle" type="button">Visa minneshjälp <span>▾</span></button>
+        <div id="help-body" hidden>
+          ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
+          ${w.mnemonic ? `<div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>` : ''}
+          ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}
+        </div>` : ''}
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" id="next">Jag har bilden — nästa</button>
         <button class="btn btn-outline" id="knew">Kunde det redan ✓</button>
       </div>`);
+    const ht = document.getElementById('help-toggle');
+    if (ht) ht.onclick = () => {
+      const body = document.getElementById('help-body');
+      body.hidden = !body.hidden;
+      ht.querySelector('span').textContent = body.hidden ? '▾' : '▴';
+      ht.firstChild.textContent = body.hidden ? 'Visa minneshjälp ' : 'Dölj minneshjälp ';
+    };
     const advance = () => { learnI++; learnI < news.length ? renderLearn() : beginQuiz(); };
     document.getElementById('next').onclick = advance;
     document.getElementById('knew').onclick = async () => {
@@ -265,7 +306,11 @@ if (!user || user.email !== ADMIN_EMAIL) {
   }
 
   function beginQuiz() {
-    quizQueue = session.filter(w => !skipped.has(w.id));
+    const pool = session.filter(w => !skipped.has(w.id));
+    // Repetitionerna först (färskvara som riskerar glömmas), sedan de nya orden.
+    // Båda grupperna blandas så att man inte kan svara på ordningen från
+    // lärfasen i stället för på ordet.
+    quizQueue = [...shuffle(pool.filter(w => !w.isNew)), ...shuffle(pool.filter(w => w.isNew))];
     quizTotal = quizQueue.length;
     resultsMap = {};
     renderQuiz();
@@ -285,34 +330,48 @@ if (!user || user.email !== ADMIN_EMAIL) {
     app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => answer(btn, w));
   }
 
-  async function answer(btn, w) {
+  function answer(btn, w) {
     const chosen = btn.getAttribute('data-o');
     const ok = chosen === w.correct;
+    const goNext = () => { quizQueue.length === 0 ? renderDone() : renderQuiz(); };
+    // Efter svar: alla alternativ blir "gå vidare"-ytor, med en pil på det man
+    // tryckte, så att tummen inte behöver flyttas.
     app.querySelectorAll('.opt').forEach(b => {
-      b.disabled = true;
       const v = b.getAttribute('data-o');
       if (v === w.correct) b.classList.add('correct');
       else if (b === btn) b.classList.add('wrong');
+      else b.classList.add('dim');
+      b.onclick = goNext;
     });
-    const res = await api('POST', { action: 'grade', wordId: w.id, correct: ok });
+    btn.insertAdjacentHTML('beforeend', '<span class="next-arrow">→</span>');
+    const optsBox = app.querySelector('.opts');
+    if (optsBox) optsBox.classList.add('answered');
+    // Kön uppdateras synkront så att ett snabbt tryck vidare aldrig hinner före.
     const prev = resultsMap[w.id] || { word: w.word, lapsed: false };
+    quizQueue.shift();
     if (ok) {
-      // klarat: schemalägg och plocka bort ur kön
-      quizQueue.shift();
-      resultsMap[w.id] = { word: w.word, ok: true, days: res.days || 1, lapsed: prev.lapsed };
+      resultsMap[w.id] = { word: w.word, ok: true, days: 1, lapsed: prev.lapsed };
     } else {
-      // fel: tillbaka i kön (samma pass, samma dag) tills det sitter
-      quizQueue.push(quizQueue.shift());
+      // fel: tillbaka i kön efter några få kort (Ankis korta inlärningssteg),
+      // inte längst bak i en lång kö, tills det sitter
+      const gap = Math.min(quizQueue.length, 4 + Math.floor(Math.random() * 3));
+      quizQueue.splice(gap, 0, w);
       resultsMap[w.id] = { word: w.word, ok: false, days: 0, lapsed: true };
     }
     const last = quizQueue.length === 0;
+    api('POST', { action: 'grade', wordId: w.id, correct: ok }).then(res => {
+      if (ok && resultsMap[w.id]) {
+        resultsMap[w.id].days = res.days || 1;
+        if (document.querySelector('.done-list')) renderDone();
+      }
+    });
     document.getElementById('fb').innerHTML = `
-      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Inte riktigt — så här minns du (kommer igen senare i passet):'}</p>
+      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Inte riktigt — så här minns du (kommer igen strax):'}</p>
       ${w.image ? `<img class="fb-img" src="${w.image}" alt="">` : ''}
       <div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>
       ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}
       <div class="btn-row"><button class="btn btn-primary" id="nq">${last ? 'Avsluta passet' : 'Nästa fråga'}</button></div>`;
-    document.getElementById('nq').onclick = () => { last ? renderDone() : renderQuiz(); };
+    document.getElementById('nq').onclick = goNext;
   }
 
   function renderDone() {

@@ -5,10 +5,22 @@ import pool from '../../../lib/db.js';
 const ADMIN_EMAIL = 'snillsparv@gmail.com';
 const VALID_STATUS = ['unreviewed', 'ok', 'needs_work'];
 
-export const GET: APIRoute = async ({ request }) => {
+export const GET: APIRoute = async ({ request, url }) => {
   const user = await getSessionFromCookies(request.headers.get('cookie'));
   if (!user || user.email !== ADMIN_EMAIL) {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 403 });
+  }
+
+  // Ordningen som ren ordlista, för att kunna läggas tillbaka i seed-filen så
+  // att kureringen överlever även om databasen byggs om från grunden.
+  if (url.searchParams.get('export') === 'order') {
+    const { rows } = await pool.query('SELECT word FROM mnemonic_words ORDER BY position, id');
+    return new Response(JSON.stringify(rows.map((r: { word: string }) => r.word), null, 1), {
+      headers: {
+        'Content-Type': 'application/json',
+        'Content-Disposition': 'attachment; filename="minnesord-ordning.json"',
+      },
+    });
   }
 
   const { rows } = await pool.query(

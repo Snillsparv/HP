@@ -140,6 +140,7 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
               <button class="chip" data-filter="ok">Bra <span class="chip-count" id="count-ok">{okCount}</span></button>
             </div>
             <button id="copy-flagged" class="btn btn-outline btn-sm">Kopiera flaggade</button>
+            <a id="export-order" class="btn btn-outline btn-sm" href="/api/admin/minnesord?export=order" download="minnesord-ordning.json" title="Ladda ner ordningen som JSON, för att kunna läggas in permanent i koden">⬇ Exportera ordning</a>
           </div>
 
           <div id="word-list">

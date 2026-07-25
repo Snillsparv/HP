@@ -154,6 +154,7 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                 <div class="word-head">
                   <h3 class="word-title">{w.word}</h3>
                   <span class="word-move">
+                    <button class="mv-btn" data-move="top" type="button" title="Flytta först i listan" aria-label="Flytta först i listan">⤒</button>
                     <button class="mv-btn" data-move="up" type="button" title="Flytta upp" aria-label="Flytta upp">↑</button>
                     <button class="mv-btn" data-move="down" type="button" title="Flytta ner" aria-label="Flytta ner">↓</button>
                   </span>
@@ -314,6 +315,29 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
       if (!btn) return;
       const card = btn.closest<HTMLElement>('.word-card');
       if (!card || !list) return;
+
+      if (btn.dataset.move === 'top') {
+        const before = card.nextElementSibling;
+        const parent = card.parentElement;
+        list.insertBefore(card, list.firstElementChild);
+        card.classList.add('word-card--moved');
+        setTimeout(() => card.classList.remove('word-card--moved'), 700);
+        card.scrollIntoView({ block: 'center', behavior: 'smooth' });
+        try {
+          const res = await fetch('/api/admin/minnesord', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'move_top', id: Number(card.dataset.id) }),
+          });
+          if (!res.ok) throw new Error('move_top');
+        } catch {
+          if (before) parent?.insertBefore(card, before);
+          else parent?.appendChild(card);
+          showToast('Kunde inte spara ordningen — försök igen.');
+        }
+        return;
+      }
+
       const up = btn.dataset.move === 'up';
       const visible = Array.from(list.querySelectorAll<HTMLElement>('.word-card'))
         .filter(c => !c.hidden);

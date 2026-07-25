@@ -170,6 +170,27 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    // Flytta ett ord först i hela listan.
+    if (body.action === 'move_top') {
+      const id = Number(body.id);
+      if (!Number.isInteger(id)) {
+        return new Response(JSON.stringify({ error: 'Ogiltig förfrågan' }), { status: 400 });
+      }
+      const { rowCount } = await pool.query(
+        `UPDATE mnemonic_words SET
+           position = (SELECT COALESCE(MIN(position), 0) - 1 FROM mnemonic_words),
+           updated_at = NOW()
+         WHERE id = $1`,
+        [id]
+      );
+      if (!rowCount) {
+        return new Response(JSON.stringify({ error: 'Ordet finns inte' }), { status: 404 });
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     if (body.action === 'clear') {
       await pool.query('DELETE FROM mnemonic_words');
       return new Response(JSON.stringify({ ok: true }), {

@@ -97,8 +97,9 @@ if (!user || user.email !== ADMIN_EMAIL) {
   .ot-page .rel-item b { color: #1a1a2e; }
   .ot-page .rel-item i { color: #64748b; font-style: normal; }
 
+  .ot-page .reveal-row { display: flex; flex-wrap: wrap; gap: 0.5rem; margin: 0.8rem 0 0.7rem; }
   .ot-page .help-toggle { font: inherit; font-size: 0.9rem; font-weight: 700; color: #2563eb; background: #eff6ff;
-    border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 0.55rem 0.9rem; cursor: pointer; margin: 0.8rem 0 0.7rem; width: 100%; }
+    border: 1.5px solid #bfdbfe; border-radius: 10px; padding: 0.55rem 0.9rem; cursor: pointer; flex: 1 1 45%; }
   .ot-page .help-toggle:hover { background: #dbeafe; }
   .ot-page .w-word { font-size: 2.1rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.12; margin: 0 0 0.5rem; text-align: center; }
   .ot-page .w-def { display: block; width: fit-content; max-width: 100%; margin: 0 auto 1rem; text-align: center;
@@ -115,6 +116,7 @@ if (!user || user.email !== ADMIN_EMAIL) {
   .ot-page .link-btn:hover { color: #ef4444; }
   .ot-page .ety { border-left: 3px solid #e2e8f0; padding: 0.15rem 0 0.15rem 0.8rem; margin: 0 0 0.2rem; font-size: 0.9rem; color: #64748b; }
   .ot-page .ety-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 0.15rem; }
+  .ot-page .ety-none { color: #cbd5e1; }
 
   .ot-page .q-label { font-size: 0.85rem; color: #64748b; margin: 0 0 0.2rem; text-align: center; }
   .ot-page .opts { display: flex; flex-direction: column; gap: 0.5rem; margin: 0.6rem 0 0.4rem; }
@@ -284,33 +286,35 @@ if (!user || user.email !== ADMIN_EMAIL) {
   function renderLearn() {
     const news = session.filter(w => w.isNew);
     const w = news[learnI];
-    const hasHelp = !!(w.image || w.mnemonic || w.example);
+    const hasPicture = !!(w.image || w.mnemonic);
     app.innerHTML = frame('Nya ord', `${learnI + 1} av ${news.length}`, 5 + (learnI / news.length) * 40, `
       <div class="learn-card">
         <div style="text-align:center"><span class="chip chip-new">Nytt ord</span></div>
         <h2 class="w-word">${esc(w.word)}</h2>
         <p class="w-def">${esc(w.definition)}</p>
-        ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
+        <div class="ety"><span class="ety-label">Etymologi</span>${w.etymology ? esc(w.etymology) : '<span class="ety-none">—</span>'}</div>
         ${relatedHtml(w.related)}
-        ${hasHelp ? `
-        <button class="help-toggle" id="help-toggle" type="button">Visa minneshjälp <span>▾</span></button>
-        <div id="help-body" hidden>
+        <div class="reveal-row">
+          ${hasPicture ? `<button class="help-toggle" data-target="pic-body" type="button"><span class="ht-text">Visa minnesbild</span> <span class="ht-arrow">▾</span></button>` : ''}
+          ${w.example ? `<button class="help-toggle" data-target="ex-body" type="button"><span class="ht-text">Visa exempelmening</span> <span class="ht-arrow">▾</span></button>` : ''}
+        </div>
+        ${hasPicture ? `<div id="pic-body" hidden>
           ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
           ${w.mnemonic ? `<div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>` : ''}
-          ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}
         </div>` : ''}
+        ${w.example ? `<div id="ex-body" hidden><p class="example">»${w.example}«</p></div>` : ''}
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" id="next">Jag har bilden — nästa</button>
         <button class="btn btn-outline" id="knew">Kunde det redan ✓</button>
       </div>`);
-    const ht = document.getElementById('help-toggle');
-    if (ht) ht.onclick = () => {
-      const body = document.getElementById('help-body');
+    app.querySelectorAll('.help-toggle').forEach(ht => ht.onclick = () => {
+      const body = document.getElementById(ht.dataset.target);
       body.hidden = !body.hidden;
-      ht.querySelector('span').textContent = body.hidden ? '▾' : '▴';
-      ht.firstChild.textContent = body.hidden ? 'Visa minneshjälp ' : 'Dölj minneshjälp ';
-    };
+      const label = ht.dataset.target === 'pic-body' ? 'minnesbild' : 'exempelmening';
+      ht.querySelector('.ht-arrow').textContent = body.hidden ? '▾' : '▴';
+      ht.querySelector('.ht-text').textContent = (body.hidden ? 'Visa ' : 'Dölj ') + label;
+    });
     const advance = () => { learnI++; learnI < news.length ? renderLearn() : beginQuiz(); };
     document.getElementById('next').onclick = advance;
     document.getElementById('knew').onclick = async () => {

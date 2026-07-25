@@ -134,6 +134,42 @@ export const POST: APIRoute = async ({ request }) => {
       });
     }
 
+    // Byt plats på två ord i listan (pilarna i granskningsvyn). Klienten
+    // skickar båda id:na, så bytet följer det användaren faktiskt ser även när
+    // listan är filtrerad.
+    if (body.action === 'swap') {
+      const a = Number(body.a);
+      const b = Number(body.b);
+      if (!Number.isInteger(a) || !Number.isInteger(b) || a === b) {
+        return new Response(JSON.stringify({ error: 'Ogiltig förfrågan' }), { status: 400 });
+      }
+      const client = await pool.connect();
+      try {
+        await client.query('BEGIN');
+        const { rows } = await client.query(
+          'SELECT id, position FROM mnemonic_words WHERE id = ANY($1) FOR UPDATE',
+          [[a, b]]
+        );
+        if (rows.length !== 2) {
+          await client.query('ROLLBACK');
+          return new Response(JSON.stringify({ error: 'Ordet finns inte' }), { status: 404 });
+        }
+        const pa = rows.find((r: { id: number }) => r.id === a).position;
+        const pb = rows.find((r: { id: number }) => r.id === b).position;
+        await client.query('UPDATE mnemonic_words SET position = $2, updated_at = NOW() WHERE id = $1', [a, pb]);
+        await client.query('UPDATE mnemonic_words SET position = $2, updated_at = NOW() WHERE id = $1', [b, pa]);
+        await client.query('COMMIT');
+      } catch (e) {
+        await client.query('ROLLBACK');
+        throw e;
+      } finally {
+        client.release();
+      }
+      return new Response(JSON.stringify({ ok: true }), {
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
     if (body.action === 'clear') {
       await pool.query('DELETE FROM mnemonic_words');
       return new Response(JSON.stringify({ ok: true }), {

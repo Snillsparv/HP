@@ -153,6 +153,10 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                 {w.image && <img class="word-figure" src={w.image} alt={w.word} loading="lazy" width="128" height="128" />}
                 <div class="word-head">
                   <h3 class="word-title">{w.word}</h3>
+                  <span class="word-move">
+                    <button class="mv-btn" data-move="up" type="button" title="Flytta upp" aria-label="Flytta upp">↑</button>
+                    <button class="mv-btn" data-move="down" type="button" title="Flytta ner" aria-label="Flytta ner">↓</button>
+                  </span>
                   <span class="word-status-badge"></span>
                 </div>
                 {w.definition && <p class="word-def">{w.definition}</p>}
@@ -300,6 +304,40 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
         updateCounts();
         applyFilter();
         showToast('Kunde inte spara — försök igen.');
+      }
+    });
+
+    // Flytta ord upp eller ner i listan. Bytet görs mot närmaste SYNLIGA kort,
+    // så att ordningen följer det man faktiskt ser även när listan är filtrerad.
+    list?.addEventListener('click', async (e) => {
+      const btn = (e.target as HTMLElement).closest<HTMLElement>('.mv-btn');
+      if (!btn) return;
+      const card = btn.closest<HTMLElement>('.word-card');
+      if (!card || !list) return;
+      const up = btn.dataset.move === 'up';
+      const visible = Array.from(list.querySelectorAll<HTMLElement>('.word-card'))
+        .filter(c => !c.hidden);
+      const i = visible.indexOf(card);
+      const other = visible[up ? i - 1 : i + 1];
+      if (!other) { showToast(up ? 'Ordet ligger redan först.' : 'Ordet ligger redan sist.'); return; }
+
+      if (up) card.parentElement?.insertBefore(card, other);
+      else card.parentElement?.insertBefore(other, card);
+      card.classList.add('word-card--moved');
+      setTimeout(() => card.classList.remove('word-card--moved'), 700);
+
+      try {
+        const res = await fetch('/api/admin/minnesord', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'swap', a: Number(card.dataset.id), b: Number(other.dataset.id) }),
+        });
+        if (!res.ok) throw new Error('swap');
+      } catch {
+        // Lägg tillbaka korten i ursprunglig ordning om sparandet misslyckades.
+        if (up) card.parentElement?.insertBefore(other, card);
+        else card.parentElement?.insertBefore(card, other);
+        showToast('Kunde inte spara ordningen — försök igen.');
       }
     });
 
@@ -905,6 +943,38 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
     align-items: center;
     justify-content: space-between;
     gap: 0.8rem;
+  }
+
+  .word-move {
+    display: flex;
+    gap: 0.2rem;
+    margin-left: auto;
+  }
+
+  .mv-btn {
+    font: inherit;
+    font-size: 0.85rem;
+    line-height: 1;
+    width: 26px;
+    height: 26px;
+    display: grid;
+    place-items: center;
+    border: 1.5px solid #e2e8f0;
+    background: #fff;
+    color: #64748b;
+    border-radius: 7px;
+    cursor: pointer;
+  }
+
+  .mv-btn:hover {
+    border-color: #2563eb;
+    color: #2563eb;
+    background: #eff6ff;
+  }
+
+  .word-card--moved {
+    box-shadow: 0 0 0 2px #93c5fd;
+    transition: box-shadow 0.2s ease;
   }
 
   .word-title {

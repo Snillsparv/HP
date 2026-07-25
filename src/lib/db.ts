@@ -187,21 +187,32 @@ if (canonical.length) {
     `UPDATE mnemonic_words m SET
        mnemonic = s.mnemonic,
        definition = s.definition,
-       position = s.position,
        related = s.related,
        updated_at = NOW()
-     FROM unnest($1::text[], $2::text[], $3::text[], $4::int[], $5::jsonb[]) AS s(word, mnemonic, definition, position, related)
+     FROM unnest($1::text[], $2::text[], $3::text[], $4::jsonb[]) AS s(word, mnemonic, definition, related)
      WHERE lower(m.word) = lower(s.word)
-       AND (m.mnemonic <> s.mnemonic OR m.definition <> s.definition OR m.position <> s.position
+       AND (m.mnemonic <> s.mnemonic OR m.definition <> s.definition
             OR m.related IS DISTINCT FROM s.related)`,
     [
       canonical.map(w => w.word),
       canonical.map(w => w.mnemonic),
       canonical.map(w => w.definition),
-      canonical.map((_, i) => i),
       canonical.map(w => (w.related && w.related.words && w.related.words.length ? JSON.stringify(w.related) : null)),
     ]
   );
+  // Ordningen sätts en gång från seed och ägs därefter av granskningsverktyget,
+  // så att manuell omflyttning inte skrivs över vid omstart.
+  const claimOrder = await pool.query(
+    `INSERT INTO app_flags (key) VALUES ('seed_order_v1') ON CONFLICT (key) DO NOTHING RETURNING key`
+  );
+  if (claimOrder.rowCount && claimOrder.rowCount > 0) {
+    await pool.query(
+      `UPDATE mnemonic_words m SET position = s.position, updated_at = NOW()
+       FROM unnest($1::text[], $2::int[]) AS s(word, position)
+       WHERE lower(m.word) = lower(s.word) AND m.position <> s.position`,
+      [canonical.map(w => w.word), canonical.map((_, i) => i)]
+    );
+  }
 }
 
 export default pool;

@@ -55,13 +55,14 @@ if (!user || user.email !== ADMIN_EMAIL) {
   .ot-page .bar > i { display: block; height: 100%; background: #2563eb; transition: width 0.35s ease; }
   .ot-page .body { padding: 1.4rem 1.4rem 1.5rem; }
 
-  .ot-page .ring-row { display: flex; align-items: center; gap: 1.1rem; margin: 0.2rem 0 1.2rem; }
+  .ot-page .ring-row { display: flex; flex-direction: column; align-items: center; gap: 0.6rem; margin: 0.4rem 0 1.2rem; text-align: center; }
   .ot-page .ring { width: 96px; height: 96px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0; }
   .ot-page .ring > div { width: 74px; height: 74px; border-radius: 50%; background: #fff; display: grid; place-items: center;
     text-align: center; font-size: 0.66rem; color: #64748b; line-height: 1.25; }
   .ot-page .ring b { display: block; font-size: 1.05rem; color: #1a1a2e; font-variant-numeric: tabular-nums; }
-  .ot-page .stat-lines { display: flex; flex-direction: column; gap: 0.4rem; margin-bottom: 1.4rem; }
+  .ot-page .stat-lines { display: flex; flex-direction: column; align-items: flex-start; gap: 0.4rem; margin: 0 auto 1.4rem; width: fit-content; }
   .ot-page .stat-line { display: flex; align-items: center; gap: 0.6rem; font-size: 0.86rem; color: #64748b; }
+  .ot-page .today-line { font-size: 1rem; color: #1a1a2e; }
   .ot-page .stat-line .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; }
   .ot-page .stat-line b { color: #1a1a2e; font-variant-numeric: tabular-nums; }
 
@@ -240,10 +241,7 @@ if (!user || user.email !== ADMIN_EMAIL) {
     app.innerHTML = frame('Ordträning', 'Dagens pass', 0, `
       <div class="ring-row">
         <div class="ring" style="${ring(pct)}"><div><b>${stats.learned}</b>av ${stats.total}<br>påbörjade</div></div>
-        <div>
-          <div class="stat-line"><b>${news} nya ord</b></div>
-          <div class="stat-line">+ <b>${reps} repetitioner</b></div>
-        </div>
+        <div class="stat-line today-line"><b>${news} nya ord</b> + <b>${reps} repetitioner</b></div>
       </div>
       <div class="stat-lines">
         <div class="stat-line"><span class="dot" style="background:#f59e0b"></span><b>${stats.due}</b>&nbsp;ord att repetera nu</div>
@@ -286,7 +284,10 @@ if (!user || user.email !== ADMIN_EMAIL) {
   function renderLearn() {
     const news = session.filter(w => w.isNew);
     const w = news[learnI];
-    const hasPicture = !!(w.image || w.mnemonic);
+    // Ord utan etymologi får minnesregeln utfälld direkt, så att kortet aldrig
+    // står tomt på hjälp.
+    const openMnemo = !!w.mnemonic && !w.etymology;
+    const LABELS = { 'pic-body': 'minnesbild', 'ex-body': 'exempelmening' };
     app.innerHTML = frame('Nya ord', `${learnI + 1} av ${news.length}`, 5 + (learnI / news.length) * 40, `
       <div class="learn-card">
         <div style="text-align:center"><span class="chip chip-new">Nytt ord</span></div>
@@ -294,26 +295,29 @@ if (!user || user.email !== ADMIN_EMAIL) {
         <p class="w-def">${esc(w.definition)}</p>
         <div class="ety"><span class="ety-label">Etymologi</span>${w.etymology ? esc(w.etymology) : '<span class="ety-none">—</span>'}</div>
         ${relatedHtml(w.related)}
+        ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
         <div class="reveal-row">
-          ${hasPicture ? `<button class="help-toggle" data-target="pic-body" type="button"><span class="ht-text">Visa minnesbild</span> <span class="ht-arrow">▾</span></button>` : ''}
+          ${w.mnemonic ? `<button class="help-toggle" data-target="pic-body" type="button"><span class="ht-text">${openMnemo ? 'Dölj' : 'Visa'} minnesbild</span> <span class="ht-arrow">${openMnemo ? '▴' : '▾'}</span></button>` : ''}
           ${w.example ? `<button class="help-toggle" data-target="ex-body" type="button"><span class="ht-text">Visa exempelmening</span> <span class="ht-arrow">▾</span></button>` : ''}
         </div>
-        ${hasPicture ? `<div id="pic-body" hidden>
-          ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
-          ${w.mnemonic ? `<div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>` : ''}
-        </div>` : ''}
+        ${w.mnemonic ? `<div id="pic-body" ${openMnemo ? '' : 'hidden'}><div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div></div>` : ''}
         ${w.example ? `<div id="ex-body" hidden><p class="example">»${w.example}«</p></div>` : ''}
       </div>
       <div class="btn-row">
         <button class="btn btn-primary" id="next">Jag har bilden — nästa</button>
         <button class="btn btn-outline" id="knew">Kunde det redan ✓</button>
       </div>`);
-    app.querySelectorAll('.help-toggle').forEach(ht => ht.onclick = () => {
-      const body = document.getElementById(ht.dataset.target);
-      body.hidden = !body.hidden;
-      const label = ht.dataset.target === 'pic-body' ? 'minnesbild' : 'exempelmening';
-      ht.querySelector('.ht-arrow').textContent = body.hidden ? '▾' : '▴';
-      ht.querySelector('.ht-text').textContent = (body.hidden ? 'Visa ' : 'Dölj ') + label;
+    const setOpen = (ht, open) => {
+      document.getElementById(ht.dataset.target).hidden = !open;
+      ht.querySelector('.ht-arrow').textContent = open ? '▴' : '▾';
+      ht.querySelector('.ht-text').textContent = (open ? 'Dölj ' : 'Visa ') + LABELS[ht.dataset.target];
+    };
+    const toggles = [...app.querySelectorAll('.help-toggle')];
+    toggles.forEach(ht => ht.onclick = () => {
+      const open = document.getElementById(ht.dataset.target).hidden;
+      setOpen(ht, open);
+      // Bara en av rutorna åt gången, så kortet håller sig kort.
+      if (open) toggles.filter(o => o !== ht).forEach(o => setOpen(o, false));
     });
     const advance = () => { learnI++; learnI < news.length ? renderLearn() : beginQuiz(); };
     document.getElementById('next').onclick = advance;

@@ -92,6 +92,9 @@ const exams = upcomingExams(2);
     82% { transform: scale(1.01) translateY(-3px); }
     100% { transform: scale(1) translateY(0); }
   }
+  .ot-page .ring-level { font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: #2563eb; background: #eef2ff; border-radius: 999px; padding: 0.2rem 0.7rem; margin-top: 0.1rem; }
+  .ot-page .ring-level b { font-variant-numeric: tabular-nums; }
   .ot-page .ring-count { font-size: 0.86rem; color: #64748b; }
   .ot-page .ring-count b { color: #1a1a2e; font-variant-numeric: tabular-nums; }
   @media (prefers-reduced-motion: reduce) {
@@ -349,23 +352,34 @@ const exams = upcomingExams(2);
       </div>`;
   }
 
-  function renderStart() {
+  function todayLine() {
     const news = session.filter(w => w.isNew).length;
-    const reps = session.length - news;
-    const pct = stats.total ? Math.round((stats.learned / stats.total) * 100) : 0;
+    return `<b>${news} nya ord</b> + <b>${session.length - news} repetitioner</b>`;
+  }
+  function startSlot() {
     // Ett pass per dag: när dagens kvot nya ord är slut får man vänta till
     // imorgon eller höja gränsen, precis som i vanliga repetitionsappar.
     const doneToday = newLeft === 0 && stats.today > 0;
-    const startBtn = session.length > 0
-      ? `<div class="btn-row"><button class="btn btn-primary" id="go">Starta passet (${session.length} ord)</button></div>`
-      : doneToday
-        ? `<div class="empty"><div class="big">✅</div><p>Dagens ${stats.today} nya ord är klara och inga repetitioner är förfallna. Vill du hinna mer idag kan du höja antalet nya ord per dag, annars ses vi imorgon.</p></div>`
-        : `<div class="empty"><div class="big">🎉</div><p>Inget att träna just nu, allt är repeterat. Höj antalet nya ord, kom tillbaka senare, eller använd testknapparna för att simulera framtiden.</p></div>`;
+    if (session.length > 0) {
+      return `<div class="btn-row"><button class="btn btn-primary" id="go">Starta passet (${session.length} ord)</button></div>`;
+    }
+    return doneToday
+      ? `<div class="empty"><div class="big">✅</div><p>Dagens ${stats.today} nya ord är klara och inga repetitioner är förfallna. Vill du hinna mer idag kan du höja antalet nya ord per dag, annars ses vi imorgon.</p></div>`
+      : `<div class="empty"><div class="big">🎉</div><p>Inget att träna just nu, allt är repeterat. Höj antalet nya ord, kom tillbaka senare, eller använd testknapparna för att simulera framtiden.</p></div>`;
+  }
+  function bindStart() {
+    const go = document.getElementById('go');
+    if (go) go.onclick = () => { learnI = 0; session.some(w => w.isNew) ? renderLearn() : beginQuiz(); };
+  }
+
+  function renderStart() {
+    const pct = stats.total ? Math.round((stats.learned / stats.total) * 100) : 0;
     app.innerHTML = frame('Ordträning', 'Dagens pass', 0, `
       <div class="ring-row">
         <div ${ring(pct)}><div>${faceHtml(stats.learned, stats.total)}</div></div>
+        <div class="ring-level">Nivå <b>${faceLevel(stats.learned, stats.total)}</b> av ${FACE_STEPS.length + 1}</div>
         <div class="ring-count"><b>${stats.learned}</b> av ${stats.total} ord påbörjade</div>
-        <div class="stat-line today-line"><b>${news} nya ord</b> + <b>${reps} repetitioner</b></div>
+        <div class="stat-line today-line" id="today-line">${todayLine()}</div>
       </div>
       <div class="stat-lines">
         <div class="stat-line"><span class="dot" style="background:#f59e0b"></span><b>${stats.due}</b>&nbsp;ord att repetera nu</div>
@@ -373,11 +387,10 @@ const exams = upcomingExams(2);
         <div class="stat-line"><span class="dot" style="background:#10b981"></span><b>${stats.strong}</b>&nbsp;sitter säkert</div>
       </div>
       ${settingsHtml()}
-      ${startBtn}
+      <div id="start-slot">${startSlot()}</div>
       <p class="reset-line"><button id="reset-all" class="link-btn" type="button">↺ Återställ hela träningen</button></p>`);
     bindFace();
-    const go = document.getElementById('go');
-    if (go) go.onclick = () => { learnI = 0; session.some(w => w.isNew) ? renderLearn() : beginQuiz(); };
+    bindStart();
     app.querySelectorAll('.st-btn').forEach(btn => btn.onclick = () => changeSetting(btn.dataset.set, Number(btn.dataset.d)));
     document.getElementById('set-more').onclick = () => {
       settingsOpen = !settingsOpen;
@@ -404,7 +417,17 @@ const exams = upcomingExams(2);
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
       await api('POST', { action: 'settings', newPer: settings.newPer, reviewPer: settings.reviewPer });
-      load();
+      // Hämta om passet, men rita bara om det som faktiskt ändras. Ringen och
+      // ansiktet står kvar, så de inte animeras om vid varje knapptryck.
+      const data = await api('GET');
+      session = data.session || [];
+      newLeft = data.newLeft || 0;
+      if (data.stats) stats = data.stats;
+      learnI = 0; quizQueue = []; quizTotal = 0; resultsMap = {};
+      const line = document.getElementById('today-line');
+      const slot = document.getElementById('start-slot');
+      if (line) line.innerHTML = todayLine();
+      if (slot) { slot.innerHTML = startSlot(); bindStart(); }
     }, 450);
   }
 

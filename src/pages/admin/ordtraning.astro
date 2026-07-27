@@ -110,8 +110,30 @@ const exams = upcomingExams(2);
   .ot-page .ring-level b { font-variant-numeric: tabular-nums; }
   .ot-page .ring-count { font-size: 0.86rem; color: #64748b; }
   .ot-page .ring-count b { color: #1a1a2e; font-variant-numeric: tabular-nums; }
+  .ot-page .streak { font-size: 0.8rem; font-weight: 700; color: #b45309; background: #fffbeb;
+    border: 1px solid #fde68a; border-radius: 999px; padding: 0.2rem 0.7rem; }
+
+  /* Nivåfirande: overlay med det nya ansiktet och lite konfetti. */
+  .ot-lvlup { position: fixed; inset: 0; background: rgba(15, 23, 42, 0.55); display: grid;
+    place-items: center; z-index: 300; animation: ot-fade 0.25s ease both; }
+  .ot-lvlup-card { position: relative; overflow: hidden; background: #fff; border-radius: 18px;
+    padding: 2rem 2.2rem 1.6rem; text-align: center; max-width: 320px; margin: 1rem;
+    box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35); animation: ot-pop 0.45s cubic-bezier(0.34, 1.3, 0.64, 1) both; }
+  .ot-lvlup-face { width: 150px; height: 150px; border-radius: 50%; border: 7px solid #2563eb;
+    background: #fff; object-fit: contain; animation: ot-lvl-face 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) 0.2s both; }
+  .ot-lvlup-card h3 { margin: 0.8rem 0 0.2rem; font-size: 1.5rem; color: #1a1a2e; }
+  .ot-lvlup-card p { margin: 0 0 1.1rem; color: #64748b; font-size: 0.92rem; }
+  .ot-lvlup-conf { position: absolute; inset: 0; pointer-events: none; }
+  .ot-lvlup-conf i { position: absolute; top: -14px; width: 8px; height: 14px; border-radius: 2px;
+    opacity: 0; animation: ot-conf 1.7s ease-in both; }
+  @keyframes ot-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ot-lvl-face { 0% { transform: scale(0.2); opacity: 0; } 60% { transform: scale(1.08); opacity: 1; }
+    80% { transform: scale(0.96); } 100% { transform: scale(1); opacity: 1; } }
+  @keyframes ot-conf { 0% { opacity: 1; transform: translateY(0) rotate(0deg); }
+    100% { opacity: 0; transform: translateY(340px) rotate(540deg); } }
   @media (prefers-reduced-motion: reduce) {
-    .ot-page .ring, .ot-page .ring--sweep, .ot-page .face.is-in { animation: none; }
+    .ot-page .ring, .ot-page .ring--sweep, .ot-page .face.is-in,
+    .ot-lvlup, .ot-lvlup-card, .ot-lvlup-face, .ot-lvlup-conf i { animation: none; }
   }
 
   .ot-page .calc { border-top: 1px dashed #e2e8f0; margin-top: 0.5rem; padding-top: 0.6rem; }
@@ -137,6 +159,15 @@ const exams = upcomingExams(2);
   .ot-page .set-more { font: inherit; font-size: 0.8rem; font-weight: 600; color: #64748b; background: none; border: none;
     padding: 0.35rem 0 0.1rem; cursor: pointer; }
   .ot-page .set-more:hover { color: #2563eb; }
+  .ot-page .ign { border-top: 1px dashed #e2e8f0; margin-top: 0.55rem; padding-top: 0.6rem; }
+  .ot-page .ign-head { font-size: 0.78rem; font-weight: 700; color: #64748b; margin-bottom: 0.4rem; }
+  .ot-page .ign-list { display: flex; flex-wrap: wrap; gap: 0.35rem; }
+  .ot-page .ign-item { font: inherit; font-size: 0.8rem; color: #334155; background: #fff; border: 1px solid #e2e8f0;
+    border-radius: 999px; padding: 0.22rem 0.6rem; cursor: pointer; }
+  .ot-page .ign-item span { color: #2563eb; font-weight: 700; }
+  .ot-page .ign-item:hover { border-color: #2563eb; color: #2563eb; }
+  .ot-page .ign-more { font-size: 0.78rem; color: #94a3b8; align-self: center; }
+  .ot-page .ign-all { font-size: 0.8rem; margin-top: 0.45rem; }
 
   .ot-page .btn { font: inherit; font-weight: 700; font-size: 0.98rem; border-radius: 10px; padding: 0.85rem 1.2rem;
     cursor: pointer; border: 2px solid transparent; width: 100%; }
@@ -198,6 +229,12 @@ const exams = upcomingExams(2);
   .ot-page .opt.wrong { border-color: #ef4444; background: #fee2e2; } .ot-page .opt.wrong .letter { background: #ef4444; border-color: #ef4444; color: #fff; }
   .ot-page .opt:disabled { cursor: default; } .ot-page .opt:disabled:not(.correct):not(.wrong) { opacity: 0.5; }
   .ot-page .verdict { font-weight: 700; margin: 0.4rem 0 0.6rem; } .ot-page .verdict.ok { color: #047857; } .ot-page .verdict.no { color: #ef4444; }
+  .ot-page .when-chip { font-size: 0.78rem; font-weight: 600; color: #047857; background: #ecfdf5;
+    border: 1px solid #a7f3d0; border-radius: 999px; padding: 0.15rem 0.6rem; margin-left: 0.3rem; }
+  .ot-page .peek { font: inherit; font-size: 0.82rem; font-weight: 600; color: #64748b; background: none;
+    border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 0.4rem 0.8rem; cursor: pointer; margin-bottom: 0.6rem; }
+  .ot-page .peek:hover { border-color: #2563eb; color: #2563eb; }
+  .ot-page .peek.is-open { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
   .ot-page .fb-img { display: block; width: 96px; height: 96px; object-fit: contain; border: 1px solid #e2e8f0; border-radius: 12px; padding: 5px; margin: 0.2rem auto 0.5rem; }
 
   .ot-page .done-head { text-align: center; margin: 0.4rem 0 1.1rem; }
@@ -219,6 +256,9 @@ const exams = upcomingExams(2);
   let settings = { newPer: 10, reviewPer: 100 };
   let settingsOpen = false;
   let newLeft = 0;
+  let streak = 0, trainedToday = false, ignoredWords = [];
+  let startLevel = 1; // nivån när vyn laddades, för att upptäcka nivåbyten
+  const INTERVAL_DAYS = { 1: 1, 2: 3, 3: 7, 4: 16, 5: 35, 6: 90 };
   let quizQueue = [], quizTotal = 0, resultsMap = {};
 
   function relatedHtml(rel) {
@@ -317,6 +357,10 @@ const exams = upcomingExams(2);
     session = data.session || [];
     stats = data.stats;
     newLeft = data.newLeft || 0;
+    streak = data.streak || 0;
+    trainedToday = !!data.trainedToday;
+    ignoredWords = data.ignoredWords || [];
+    startLevel = faceLevel(stats.learned, stats.total);
     if (data.settings) settings = data.settings;
     learnI = 0; quizI = 0; results = []; quizQueue = []; quizTotal = 0; resultsMap = {};
     renderStart();
@@ -346,6 +390,35 @@ const exams = upcomingExams(2);
     }).join('');
     return `<div class="calc-head">Med <b>${per}</b> nya ord per dag hinner du:</div>${rows}`;
   }
+  // Överhoppade ord kan ångras: ordet blir nytt igen och kommer tillbaka i
+  // passet enligt sin plats i listan.
+  function ignoredHtml() {
+    if (!ignoredWords.length) return '';
+    const shown = ignoredWords.slice(0, 60);
+    return `<div class="ign">
+      <div class="ign-head">Överhoppade ord (${stats.ignored})</div>
+      <div class="ign-list">${shown.map(w =>
+        `<button class="ign-item" data-restore="${w.id}" type="button" title="Ta tillbaka ordet till träningen">${esc(w.word)} <span>↺</span></button>`).join('')}
+        ${stats.ignored > shown.length ? `<span class="ign-more">och ${stats.ignored - shown.length} till</span>` : ''}</div>
+      ${ignoredWords.length > 1 ? `<button class="link-btn ign-all" id="ign-all" type="button">↺ Ta tillbaka alla</button>` : ''}
+    </div>`;
+  }
+  function bindIgnored() {
+    app.querySelectorAll('[data-restore]').forEach(btn => btn.onclick = async () => {
+      btn.disabled = true;
+      await api('POST', { action: 'unignore', wordId: Number(btn.dataset.restore) });
+      settingsOpen = true;
+      load();
+    });
+    const all = document.getElementById('ign-all');
+    if (all) all.onclick = async () => {
+      all.disabled = true;
+      await api('POST', { action: 'unignore', all: true });
+      settingsOpen = true;
+      load();
+    };
+  }
+
   function settingsHtml() {
     return `
       <div class="settings">
@@ -361,6 +434,7 @@ const exams = upcomingExams(2);
             <div class="stepper"><button class="st-btn" data-set="rev" data-d="-5" type="button">−</button><b id="v-rev">${settings.reviewPer}</b><button class="st-btn" data-set="rev" data-d="5" type="button">+</button></div>
           </div>
           <p class="set-note">Högsta antal repetitioner i ett pass. De som inte får plats försvinner inte, de kommer tillbaka i nästa pass samma dag.</p>
+          ${ignoredHtml()}
         </div>
       </div>`;
   }
@@ -392,6 +466,7 @@ const exams = upcomingExams(2);
         <div ${ring(pct)}><div>${faceHtml(stats.learned, stats.total)}</div></div>
         <div class="ring-level">Nivå <b>${faceLevel(stats.learned, stats.total)}</b> av ${FACE_STEPS.length + 1}</div>
         <div class="ring-count"><b>${stats.learned}</b> av ${stats.total} ord påbörjade</div>
+        ${streak > 0 ? `<div class="streak" title="${trainedToday ? 'Du har tränat idag' : 'Träna idag för att behålla din svit'}">🔥 ${streak} ${streak === 1 ? 'dag' : 'dagar'} i rad</div>` : ''}
         <div class="stat-line today-line" id="today-line">${todayLine()}</div>
       </div>
       <div class="stat-lines">
@@ -404,6 +479,7 @@ const exams = upcomingExams(2);
       <p class="reset-line"><button id="reset-all" class="link-btn" type="button">↺ Återställ hela träningen</button></p>`);
     bindFace();
     bindStart();
+    bindIgnored();
     app.querySelectorAll('.st-btn').forEach(btn => btn.onclick = () => changeSetting(btn.dataset.set, Number(btn.dataset.d)));
     document.getElementById('set-more').onclick = () => {
       settingsOpen = !settingsOpen;
@@ -496,7 +572,8 @@ const exams = upcomingExams(2);
       const at = session.findIndex(x => x.id === w.id);
       if (res && res.replacement) session[at] = res.replacement;
       else if (at >= 0) session.splice(at, 1);
-      if (stats) { stats.total = Math.max(0, stats.total - 1); }
+      if (stats) { stats.total = Math.max(0, stats.total - 1); stats.ignored = (stats.ignored || 0) + 1; }
+      ignoredWords.unshift({ id: w.id, word: w.word });
       const left = session.filter(x => x.isNew).length;
       learnI < left ? renderLearn() : beginQuiz();
     };
@@ -562,13 +639,35 @@ const exams = upcomingExams(2);
         if (document.querySelector('.done-list')) renderDone();
       }
     });
-    document.getElementById('fb').innerHTML = `
-      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Inte riktigt. Så här minns du (kommer igen strax):'}</p>
+    const cardHtml = `
       ${w.image ? `<img class="fb-img" src="${w.image}" alt="">` : ''}
       ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
       <div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>
-      ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}
-      <div class="btn-row"><button class="btn btn-primary" id="nq">${last ? 'Avsluta passet' : 'Nästa fråga'}</button></div>`;
+      ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}`;
+    const nextBtn = `<div class="btn-row"><button class="btn btn-primary" id="nq">${last ? 'Avsluta passet' : 'Nästa fråga'}</button></div>`;
+    if (ok) {
+      // Rätt svar: kompakt kvitto så att flödet håller tempot. Kortet finns
+      // bakom en knapp för den som vill titta ändå.
+      const nextDays = INTERVAL_DAYS[Math.min((w.box || 0) + 1, 6)] || 1;
+      document.getElementById('fb').innerHTML = `
+        <p class="verdict ok">Rätt! ✓ <span class="when-chip">repeteras ${whenLabel(nextDays)}</span></p>
+        <button class="peek" id="peek" type="button">Visa kortet</button>
+        <div id="peek-body" hidden>${cardHtml}</div>
+        ${nextBtn}`;
+      const peek = document.getElementById('peek');
+      peek.onclick = () => {
+        const bodyEl = document.getElementById('peek-body');
+        bodyEl.hidden = !bodyEl.hidden;
+        peek.classList.toggle('is-open', !bodyEl.hidden);
+      };
+    } else {
+      // Fel svar: ordet börjar om från inlärningslådan, så nästa rätta svar
+      // ska visa rätt intervall.
+      w.box = 0;
+      document.getElementById('fb').innerHTML = `
+        <p class="verdict no">Inte riktigt. Så här minns du (kommer igen strax):</p>
+        ${cardHtml}${nextBtn}`;
+    }
     document.getElementById('nq').onclick = goNext;
   }
 
@@ -582,6 +681,41 @@ const exams = upcomingExams(2);
       <div class="done-list">${rows || '<p class="q-label">Inga ord i passet.</p>'}</div>
       <div class="btn-row"><button class="btn btn-primary" id="home">Tillbaka till översikten</button></div>`);
     document.getElementById('home').onclick = () => { load(); };
+    maybeCelebrate();
+  }
+
+  // Gick användaren upp en nivå under passet? Då firar vi med det nya ansiktet.
+  async function maybeCelebrate() {
+    const r = await fetch('/api/admin/ordtraning?action=stats').then(x => x.json()).catch(() => null);
+    if (!r || !r.stats) return;
+    stats = r.stats;
+    const lvl = faceLevel(stats.learned, stats.total);
+    if (lvl <= startLevel) return;
+    startLevel = lvl; // visa bara en gång per nivå
+    showLevelUp(lvl);
+  }
+
+  function showLevelUp(lvl) {
+    const old = document.getElementById('lvlup');
+    if (old) old.remove();
+    const colors = ['#2563eb', '#f59e0b', '#10b981', '#ef4444'];
+    const bits = Array.from({ length: 18 }, (_, i) =>
+      `<i style="left:${(4 + Math.random() * 92).toFixed(1)}%; animation-delay:${(Math.random() * 0.6).toFixed(2)}s; background:${colors[i % colors.length]}"></i>`).join('');
+    const div = document.createElement('div');
+    div.className = 'ot-lvlup';
+    div.id = 'lvlup';
+    div.innerHTML = `
+      <div class="ot-lvlup-card">
+        <div class="ot-lvlup-conf">${bits}</div>
+        <img class="ot-lvlup-face" src="/ordfejs/${lvl}.webp" alt="Nivå ${lvl}">
+        <h3>Nivå ${lvl}!</h3>
+        <p>${lvl >= FACE_STEPS.length + 1 ? 'Alla ord påbörjade. Du är i mål!' : 'Du har låst upp ett nytt ansikte.'}</p>
+        <button class="btn btn-primary" id="lvlup-ok" type="button">Fortsätt</button>
+      </div>`;
+    document.body.appendChild(div);
+    const close = () => div.remove();
+    div.onclick = e => { if (e.target === div) close(); };
+    document.getElementById('lvlup-ok').onclick = close;
   }
 
   async function dev(action, extra) {

@@ -13,7 +13,7 @@ const INTERVAL_DAYS: Record<number, number> = { 1: 1, 2: 3, 3: 7, 4: 16, 5: 35, 
 const IGNORED_BOX = -1;
 const clampRange = (n: number, lo: number, hi: number) => Math.max(lo, Math.min(hi, Math.round(Number(n) || 0)));
 
-const WORD_COLS = 'm.id, m.word, m.definition, m.mnemonic, m.example, m.etymology, m.image, m.related';
+const WORD_COLS = 'm.id, m.word, m.definition, m.mnemonic, m.example, m.etymology, m.image, m.related, m.traps';
 
 function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -25,10 +25,21 @@ async function requireAdmin(request: Request) {
   return user;
 }
 
-// Bygg fem svarsalternativ: rätt definition + fyra riktiga men felaktiga.
-function buildOptions(correct: string, pool: string[]): { options: string[]; correct: string } {
+// Bygg fem svarsalternativ: rätt definition + fyra felaktiga. Ord med
+// handgjorda distraktorer (traps) använder dem; övriga får slumpade
+// definitioner från resten av listan.
+function buildOptions(correct: string, pool: string[], traps?: unknown): { options: string[]; correct: string } {
   const wrong: string[] = [];
   const seen = new Set([correct.toLowerCase()]);
+  if (Array.isArray(traps)) {
+    for (const t of traps) {
+      if (wrong.length >= 4) break;
+      if (typeof t === 'string' && t.trim() && !seen.has(t.toLowerCase())) {
+        seen.add(t.toLowerCase());
+        wrong.push(t);
+      }
+    }
+  }
   let guard = 0;
   while (wrong.length < 4 && guard < 400) {
     guard++;
@@ -44,10 +55,11 @@ function buildOptions(correct: string, pool: string[]): { options: string[]; cor
 }
 
 function buildWord(r: any, isNew: boolean, allDefs: string[]) {
-  const { options, correct } = buildOptions(r.definition, allDefs);
+  const { options, correct } = buildOptions(r.definition, allDefs, r.traps);
   return {
     id: r.id,
     word: r.word,
+    box: r.box ?? 0,
     definition: r.definition,
     mnemonic: r.mnemonic || '',
     example: r.example ? highlightWord(r.example, r.word) : '',
@@ -63,6 +75,27 @@ function buildWord(r: any, isNew: boolean, allDefs: string[]) {
 async function definitionPool(): Promise<string[]> {
   const { rows } = await pool.query(`SELECT DISTINCT definition FROM mnemonic_words WHERE definition <> ''`);
   return rows.map((d: { definition: string }) => d.definition);
+}
+
+// Antal dagar i följd med träning, räknat bakåt från idag eller igår (en
+// streak är inte bruten förrän en hel dag passerat utan träning).
+async function getStreak(userId: number): Promise<{ streak: number; trainedToday: boolean }> {
+  const { rows } = await pool.query(
+    `SELECT day::text AS d, CURRENT_DATE::text AS today
+     FROM learn_activity WHERE user_id = $1 ORDER BY day DESC LIMIT 730`,
+    [userId]
+  );
+  if (!rows.length) return { streak: 0, trainedToday: false };
+  const dayMs = 86400000;
+  const today = Date.parse(rows[0].today);
+  let cursor = Date.parse(rows[0].d);
+  if (today - cursor > dayMs) return { streak: 0, trainedToday: false };
+  let streak = 1;
+  for (let i = 1; i < rows.length; i++) {
+    const d = Date.parse(rows[i].d);
+    if (cursor - d === dayMs) { streak++; cursor = d; } else break;
+  }
+  return { streak, trainedToday: rows[0].d === rows[0].today };
 }
 
 export const GET: APIRoute = async ({ request, url }) => {
@@ -93,8 +126,15 @@ export const GET: APIRoute = async ({ request, url }) => {
   stats.total = stats.words - stats.ignored;
   // Ett pass per dag: dagens kvot nya ord minskar med de som redan tagits in.
   const newLeft = Math.max(0, newPer - stats.today);
+  const { streak, trainedToday } = await getStreak(user.id);
 
-  if (action === 'stats') return json({ stats, newLeft, settings: { newPer, reviewPer } });
+  if (action === 'stats') return json({ stats, newLeft, streak, trainedToday, settings: { newPer, reviewPer } });
+
+  const { rows: ignoredWords } = await pool.query(
+    `SELECT m.id, m.word FROM word_progress wp JOIN mnemonic_words m ON m.id = wp.word_id
+     WHERE wp.user_id = $1 AND wp.box < 0 ORDER BY wp.updated_at DESC LIMIT 500`,
+    [user.id]
+  );
 
   const { rows: dueRows } = await pool.query(
     `SELECT ${WORD_COLS}, wp.box
@@ -120,7 +160,7 @@ export const GET: APIRoute = async ({ request, url }) => {
     ...dueRows.map((r: any) => buildWord(r, false, allDefs)),
   ];
   return json({
-    stats, session, newLeft,
+    stats, session, newLeft, streak, trainedToday, ignoredWords,
     newCount: newRows.length, dueCount: dueRows.length,
     settings: { newPer, reviewPer },
   });
@@ -160,7 +200,30 @@ export const POST: APIRoute = async ({ request }) => {
          updated_at = NOW()`,
       [user.id, wordId, newBox, days, lapse]
     );
+    // Dagens träning bokförs för streak-räknaren.
+    await pool.query(
+      `INSERT INTO learn_activity (user_id, day) VALUES ($1, CURRENT_DATE) ON CONFLICT DO NOTHING`,
+      [user.id]
+    );
     return json({ ok: true, box: newBox, days });
+  }
+
+  // Ångra "Kan redan": ordet blir nytt igen och dyker upp enligt sin plats i
+  // listan. Utan wordId återställs alla överhoppade ord.
+  if (body.action === 'unignore') {
+    if (body.all === true) {
+      const { rowCount } = await pool.query(
+        'DELETE FROM word_progress WHERE user_id = $1 AND box < 0', [user.id]
+      );
+      return json({ ok: true, restored: rowCount || 0 });
+    }
+    const wordId = Number(body.wordId);
+    if (!Number.isInteger(wordId)) return json({ error: 'Ogiltigt ord' }, 400);
+    const { rowCount } = await pool.query(
+      'DELETE FROM word_progress WHERE user_id = $1 AND word_id = $2 AND box < 0',
+      [user.id, wordId]
+    );
+    return json({ ok: true, restored: rowCount || 0 });
   }
 
   // "Kan redan": ordet lämnar listan för gott och ersätts av nästa nya ord, så
@@ -191,7 +254,8 @@ export const POST: APIRoute = async ({ request }) => {
   }
 
   // Testhjälpmedel (endast admin): flytta fram tiden så repetitioner blir
-  // aktuella. Även created_at flyttas, annars ligger dagens kvot nya ord kvar.
+  // aktuella. Även created_at och streak-dagarna flyttas, annars ligger dagens
+  // kvot nya ord kvar och streaken fryser under simulering.
   if (body.action === 'simulate_day') {
     const days = Math.max(1, Math.min(90, Number(body.days) || 1));
     await pool.query(
@@ -201,11 +265,15 @@ export const POST: APIRoute = async ({ request }) => {
        WHERE user_id = $1`,
       [user.id, days]
     );
+    // Två steg för att inte krocka med primärnyckeln under flytten.
+    await pool.query(`UPDATE learn_activity SET day = day - 3650 WHERE user_id = $1`, [user.id]);
+    await pool.query(`UPDATE learn_activity SET day = day + (3650 - $2::int) WHERE user_id = $1`, [user.id, days]);
     return json({ ok: true });
   }
 
   if (body.action === 'reset') {
     await pool.query('DELETE FROM word_progress WHERE user_id = $1', [user.id]);
+    await pool.query('DELETE FROM learn_activity WHERE user_id = $1', [user.id]);
     return json({ ok: true });
   }
 

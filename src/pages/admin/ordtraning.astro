@@ -205,6 +205,53 @@ const exams = upcomingExams(2);
   .ot-page .example { font-style: italic; color: #334155; font-size: 0.97rem; margin: 0.2rem 0 0.9rem; }
   .ot-page .example strong { font-style: normal; color: #1a1a2e; }
   .ot-page .ex-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 0.15rem; font-style: normal; }
+  .ot-page .sr-info { text-align: center; margin: -0.5rem 0 1rem; }
+  .ot-page .sr-info-toggle { font: inherit; font-size: 0.8rem; font-weight: 600; color: #64748b; background: none;
+    border: none; cursor: pointer; padding: 0.2rem 0.4rem; }
+  .ot-page .sr-info-toggle:hover { color: #2563eb; }
+  .ot-page #sr-info-body { text-align: left; font-size: 0.86rem; color: #475569; background: #f8fafc;
+    border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.8rem 1rem; margin-top: 0.5rem; line-height: 1.6; }
+  .ot-page #sr-info-body p { margin: 0 0 0.5rem; }
+  .ot-page #sr-info-body p:last-child { margin: 0; }
+
+  .ot-page .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.9rem; }
+  .ot-page .mode-btn { font: inherit; text-align: left; display: flex; flex-direction: column; gap: 0.15rem;
+    padding: 0.75rem 0.9rem; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fbfcfe; cursor: pointer; }
+  .ot-page .mode-btn:hover { border-color: #2563eb; background: #eff6ff; }
+  .ot-page .mode-btn b { font-size: 0.92rem; color: #1a1a2e; }
+  .ot-page .mode-btn span:last-child { font-size: 0.76rem; color: #64748b; line-height: 1.35; }
+  .ot-page .mode-icon { font-size: 1.05rem; }
+  @media (max-width: 480px) { .ot-page .mode-row { grid-template-columns: 1fr; } }
+  .ot-page .mode-lead { font-size: 0.88rem; color: #64748b; margin: 0 0 0.8rem; line-height: 1.5; }
+
+  .ot-page .rt-list { display: flex; flex-direction: column; gap: 0.4rem; margin: 0.8rem 0 1rem; }
+  .ot-page .rt-item { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .ot-page .rt-row { font: inherit; width: 100%; display: flex; align-items: center; gap: 0.55rem;
+    padding: 0.6rem 0.8rem; background: #fff; border: none; cursor: pointer; text-align: left; }
+  .ot-page .rt-row:hover { background: #f8fafc; }
+  .ot-page .rt-row .mark { font-weight: 700; flex-shrink: 0; }
+  .ot-page .rt-word { font-weight: 700; color: #1a1a2e; white-space: nowrap; }
+  .ot-page .rt-def { color: #64748b; font-size: 0.85rem; flex: 1; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .ot-page .rt-arrow { color: #94a3b8; font-size: 0.78rem; flex-shrink: 0; transition: transform 0.15s ease; }
+  .ot-page .rt-row.is-open .rt-arrow, .ot-page .wl-row.is-open .rt-arrow { transform: rotate(180deg); }
+  .ot-page .rt-body, .ot-page .wl-body { padding: 0.75rem 0.8rem 0.85rem; border-top: 1px solid #eef2f7; background: #fbfcfe; }
+  .ot-page .rt-chosen { margin: 0 0 0.55rem; font-size: 0.85rem; font-weight: 600; color: #ef4444; }
+
+  .ot-page .wl-search { font: inherit; width: 100%; box-sizing: border-box; padding: 0.6rem 0.85rem;
+    border: 1.5px solid #e2e8f0; border-radius: 10px; margin-bottom: 0.7rem; }
+  .ot-page .wl-search:focus { outline: none; border-color: #2563eb; }
+  .ot-page .wl-list { display: flex; flex-direction: column; gap: 0.35rem; }
+  .ot-page .wl-item { border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden;
+    content-visibility: auto; contain-intrinsic-size: auto 44px; }
+  .ot-page .wl-row { font: inherit; width: 100%; display: flex; align-items: baseline; gap: 0.55rem;
+    padding: 0.55rem 0.8rem; background: #fff; border: none; cursor: pointer; text-align: left; }
+  .ot-page .wl-row:hover { background: #f8fafc; }
+  .ot-page .wl-row b { color: #1a1a2e; white-space: nowrap; }
+  .ot-page .wl-def { color: #64748b; font-size: 0.85rem; flex: 1; min-width: 0; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; }
+  .ot-page .wl-loading { margin: 0; font-size: 0.85rem; color: #94a3b8; }
+
   .ot-page .reset-line { text-align: center; margin: 1rem 0 0; }
   .ot-page .link-btn { background: none; border: none; color: #94a3b8; font: inherit; font-size: 0.82rem; cursor: pointer; text-decoration: underline; }
   .ot-page .link-btn:hover { color: #ef4444; }
@@ -474,12 +521,29 @@ const exams = upcomingExams(2);
         <div class="stat-line"><span class="dot" style="background:#2563eb"></span><b>${stats.learned - stats.strong}</b>&nbsp;på inlärning</div>
         <div class="stat-line"><span class="dot" style="background:#10b981"></span><b>${stats.strong}</b>&nbsp;sitter säkert</div>
       </div>
+      <div class="sr-info">
+        <button class="sr-info-toggle" id="sr-info-toggle" type="button">ℹ️ Så fungerar spaced repetition</button>
+        <div id="sr-info-body" hidden>
+          <p>Varje ord repeteras precis innan du annars skulle glömma det: först efter 1 dag, sedan 3 dagar, 1 vecka, 2 veckor, 5 veckor och till sist 3 månader. Svarar du rätt växer intervallet, svarar du fel börjar ordet om och repeteras samma dag tills det sitter.</p>
+          <p>På så vis fastnar orden i långtidsminnet med så få repetitioner som möjligt. Det viktigaste är att komma tillbaka varje dag, hellre korta pass ofta än långa pass sällan.</p>
+        </div>
+      </div>
       ${settingsHtml()}
       <div id="start-slot">${startSlot()}</div>
+      <div class="mode-row">
+        <button class="mode-btn" id="mode-random" type="button"><span class="mode-icon">🎲</span><b>Slumpat ordtest</b><span>Valfritt antal slumpade ord, påverkar inte repetitionerna</span></button>
+        <button class="mode-btn" id="mode-list" type="button"><span class="mode-icon">📖</span><b>Ordlista</b><span>Bläddra bland alla ${stats.total} ord och minnesregler</span></button>
+      </div>
       <p class="reset-line"><button id="reset-all" class="link-btn" type="button">↺ Återställ hela träningen</button></p>`);
     bindFace();
     bindStart();
     bindIgnored();
+    document.getElementById('sr-info-toggle').onclick = () => {
+      const body = document.getElementById('sr-info-body');
+      body.hidden = !body.hidden;
+    };
+    document.getElementById('mode-random').onclick = renderRandomSetup;
+    document.getElementById('mode-list').onclick = renderList;
     app.querySelectorAll('.st-btn').forEach(btn => btn.onclick = () => changeSetting(btn.dataset.set, Number(btn.dataset.d)));
     document.getElementById('set-more').onclick = () => {
       settingsOpen = !settingsOpen;
@@ -518,6 +582,163 @@ const exams = upcomingExams(2);
       if (line) line.innerHTML = todayLine();
       if (slot) { slot.innerHTML = startSlot(); bindStart(); }
     }, 450);
+  }
+
+  // ---------- Slumpat ordtest (fristående, rör inte repetitionssystemet) ----------
+  let rtWords = [], rtI = 0, rtResults = [], rtCount = 20;
+
+  function renderRandomSetup() {
+    app.innerHTML = frame('Slumpat ordtest', 'Sporadisk träning', 0, `
+      <p class="mode-lead">Ett fristående test med slumpade ord från hela listan. Resultatet påverkar inte dina repetitioner.</p>
+      <div class="settings">
+        <div class="set-row">
+          <span class="set-label">Antal ord</span>
+          <div class="stepper"><button class="st-btn" id="rt-minus" type="button">−</button><b id="rt-n">${rtCount}</b><button class="st-btn" id="rt-plus" type="button">+</button></div>
+        </div>
+      </div>
+      <div class="btn-row"><button class="btn btn-primary" id="rt-go">Starta testet</button></div>`, 'Tillbaka till översikten');
+    document.getElementById('back').onclick = renderStart;
+    const upd = d => { rtCount = Math.max(5, Math.min(100, rtCount + d)); document.getElementById('rt-n').textContent = rtCount; };
+    document.getElementById('rt-minus').onclick = () => upd(-5);
+    document.getElementById('rt-plus').onclick = () => upd(5);
+    document.getElementById('rt-go').onclick = async () => {
+      const btn = document.getElementById('rt-go');
+      btn.disabled = true; btn.textContent = 'Blandar ord…';
+      const d = await fetch('/api/admin/ordtraning?action=random&count=' + rtCount).then(r => r.json()).catch(() => null);
+      if (!d || !d.test || !d.test.length) { btn.disabled = false; btn.textContent = 'Starta testet'; return; }
+      rtWords = d.test; rtI = 0; rtResults = [];
+      renderRandomQuiz();
+    };
+  }
+
+  function renderRandomQuiz() {
+    if (rtI >= rtWords.length) { renderRandomDone(); return; }
+    const w = rtWords[rtI];
+    app.innerHTML = frame('Slumpat ordtest', `${rtI + 1} av ${rtWords.length}`, (rtI / rtWords.length) * 100, `
+      <p class="q-label">Vad betyder ordet?</p>
+      <h2 class="w-word">${esc(w.word)}</h2>
+      <div class="opts">${w.options.map((o, i) =>
+        `<button class="opt" data-o="${esc(o)}"><span class="letter">${'ABCDE'[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>
+      <div id="fb"></div>`, 'Avbryt testet');
+    document.getElementById('back').onclick = renderStart;
+    app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => rtAnswer(btn, w));
+  }
+
+  function rtAnswer(btn, w) {
+    const chosen = btn.getAttribute('data-o');
+    const ok = chosen === w.correct;
+    rtResults.push({ w, chosen, ok });
+    const goNext = () => { rtI++; renderRandomQuiz(); };
+    app.querySelectorAll('.opt').forEach(b => {
+      const v = b.getAttribute('data-o');
+      if (v === w.correct) b.classList.add('correct');
+      else if (b === btn) b.classList.add('wrong');
+      else b.classList.add('dim');
+      b.onclick = goNext;
+    });
+    btn.insertAdjacentHTML('beforeend', '<span class="next-arrow">→</span>');
+    const optsBox = app.querySelector('.opts');
+    if (optsBox) optsBox.classList.add('answered');
+    const last = rtI === rtWords.length - 1;
+    document.getElementById('fb').innerHTML = `
+      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Fel, rätt svar är markerat.'}</p>
+      <div class="btn-row"><button class="btn btn-primary" id="nq">${last ? 'Visa resultatet' : 'Nästa fråga'}</button></div>`;
+    document.getElementById('nq').onclick = goNext;
+  }
+
+  function renderRandomDone() {
+    const right = rtResults.filter(r => r.ok).length;
+    const rows = rtResults.map((r, i) => `
+      <div class="rt-item">
+        <button class="rt-row" data-i="${i}" type="button">
+          <span class="mark" style="color:${r.ok ? '#10b981' : '#ef4444'}">${r.ok ? '✓' : '✗'}</span>
+          <span class="rt-word">${esc(r.w.word)}</span>
+          <span class="rt-def">${esc(r.w.definition)}</span>
+          <span class="rt-arrow">▾</span>
+        </button>
+        <div class="rt-body" hidden>
+          ${r.ok ? '' : `<p class="rt-chosen">Du svarade: ${esc(r.chosen)}</p>`}
+          ${r.w.image ? `<img class="fb-img" src="${r.w.image}" alt="">` : ''}
+          ${r.w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(r.w.etymology)}</div>` : ''}
+          ${r.w.mnemonic ? `<div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(r.w.mnemonic)}</p></div>` : ''}
+          ${r.w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${r.w.example}«</p>` : ''}
+        </div>
+      </div>`).join('');
+    app.innerHTML = frame('Slumpat ordtest', 'Resultat', 100, `
+      <div class="done-head"><div class="big">${right}<span style="color:#64748b;font-size:1.4rem">/${rtResults.length}</span></div><div class="sub">rätt. Klicka på ett ord för betydelse och minnesregel.</div></div>
+      <div class="rt-list">${rows}</div>
+      <div class="btn-row"><button class="btn btn-primary" id="rt-again">Nytt test</button><button class="btn btn-outline" id="home">Klart</button></div>`, 'Tillbaka till översikten');
+    document.getElementById('back').onclick = renderStart;
+    document.getElementById('rt-again').onclick = renderRandomSetup;
+    document.getElementById('home').onclick = renderStart;
+    app.querySelectorAll('.rt-row').forEach(b => b.onclick = () => {
+      const bodyEl = b.parentElement.querySelector('.rt-body');
+      bodyEl.hidden = !bodyEl.hidden;
+      b.classList.toggle('is-open', !bodyEl.hidden);
+    });
+  }
+
+  // ---------- Ordlistan (bläddra bland alla ord) ----------
+  let wordList = null, listQ = '', listShown = 300;
+
+  async function renderList() {
+    if (!wordList) {
+      app.innerHTML = '<div class="loading">Laddar ordlistan…</div>';
+      const d = await fetch('/api/admin/ordtraning?action=words').then(r => r.json()).catch(() => null);
+      if (!d || !d.words) { renderStart(); return; }
+      wordList = d.words;
+    }
+    listQ = ''; listShown = 300;
+    app.innerHTML = frame('Ordlista', `${wordList.length} ord`, 100, `
+      <input type="search" id="wl-search" class="wl-search" placeholder="Sök ord eller betydelse…">
+      <div id="wl-list" class="wl-list"></div>
+      <div class="btn-row" id="wl-more-row" hidden><button class="btn btn-outline" id="wl-more">Visa fler</button></div>`, 'Tillbaka till översikten');
+    document.getElementById('back').onclick = renderStart;
+    const search = document.getElementById('wl-search');
+    let t = null;
+    search.oninput = () => {
+      clearTimeout(t);
+      t = setTimeout(() => { listQ = search.value.trim().toLowerCase(); listShown = 300; renderListRows(); }, 200);
+    };
+    document.getElementById('wl-more').onclick = () => { listShown += 300; renderListRows(); };
+    renderListRows();
+  }
+
+  function renderListRows() {
+    const box = document.getElementById('wl-list');
+    if (!box) return;
+    const hits = listQ
+      ? wordList.filter(w => (w.word + ' ' + w.definition).toLowerCase().includes(listQ))
+      : wordList;
+    box.innerHTML = hits.slice(0, listShown).map(w => `
+      <div class="wl-item" data-id="${w.id}">
+        <button class="wl-row" type="button"><b>${esc(w.word)}</b><span class="wl-def">${esc(w.definition)}</span><span class="rt-arrow">▾</span></button>
+        <div class="wl-body" hidden></div>
+      </div>`).join('') || '<p class="q-label">Inga ord matchar sökningen.</p>';
+    const moreRow = document.getElementById('wl-more-row');
+    if (moreRow) moreRow.hidden = hits.length <= listShown;
+    box.querySelectorAll('.wl-row').forEach(b => b.onclick = () => toggleListItem(b.parentElement));
+  }
+
+  // Detaljerna hämtas först när ordet öppnas, så att listan laddar snabbt.
+  async function toggleListItem(item) {
+    const bodyEl = item.querySelector('.wl-body');
+    const row = item.querySelector('.wl-row');
+    if (!bodyEl.hidden) { bodyEl.hidden = true; row.classList.remove('is-open'); return; }
+    bodyEl.hidden = false;
+    row.classList.add('is-open');
+    if (bodyEl.dataset.loaded) return;
+    bodyEl.innerHTML = '<p class="wl-loading">Laddar…</p>';
+    const d = await fetch('/api/admin/ordtraning?action=word&id=' + item.dataset.id).then(r => r.json()).catch(() => null);
+    if (!d || !d.word) { bodyEl.innerHTML = '<p class="wl-loading">Kunde inte ladda ordet.</p>'; return; }
+    const w = d.word;
+    bodyEl.dataset.loaded = '1';
+    bodyEl.innerHTML = `
+      ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
+      ${w.related ? relatedHtml(w.related) : ''}
+      ${w.image ? `<img class="w-img" src="${w.image}" alt="${esc(w.word)}">` : ''}
+      ${w.mnemonic ? `<div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>` : ''}
+      ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}`;
   }
 
   function renderLearn() {

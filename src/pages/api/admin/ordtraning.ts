@@ -103,6 +103,40 @@ export const GET: APIRoute = async ({ request, url }) => {
   if (!user) return json({ error: 'Unauthorized' }, 403);
   const action = url.searchParams.get('action') || 'session';
 
+  // Ordlistevyn: kompakt lista över alla ord, detaljer hämtas per ord.
+  if (action === 'words') {
+    const { rows } = await pool.query(
+      'SELECT id, word, definition FROM mnemonic_words ORDER BY position, id'
+    );
+    return json({ words: rows });
+  }
+  if (action === 'word') {
+    const id = Number(url.searchParams.get('id'));
+    if (!Number.isInteger(id)) return json({ error: 'Ogiltigt ord' }, 400);
+    const { rows: [r] } = await pool.query(
+      `SELECT ${WORD_COLS} FROM mnemonic_words m WHERE m.id = $1`, [id]
+    );
+    if (!r) return json({ error: 'Ordet finns inte' }, 404);
+    return json({
+      word: {
+        id: r.id, word: r.word, definition: r.definition, mnemonic: r.mnemonic || '',
+        example: r.example ? highlightWord(r.example, r.word) : '',
+        etymology: r.etymology || '', image: r.image || '',
+        related: r.related && Array.isArray(r.related.words) && r.related.words.length ? r.related : null,
+      },
+    });
+  }
+  // Slumpat ordtest: fristående från repetitionssystemet, rör aldrig
+  // word_progress. Bara ett gäng slumpade ord med svarsalternativ.
+  if (action === 'random') {
+    const count = clampRange(url.searchParams.get('count'), 5, 100);
+    const { rows } = await pool.query(
+      `SELECT ${WORD_COLS} FROM mnemonic_words m ORDER BY random() LIMIT $1`, [count]
+    );
+    const allDefs = await definitionPool();
+    return json({ test: rows.map((r: any) => buildWord(r, false, allDefs)) });
+  }
+
   const { rows: [settings] } = await pool.query(
     `SELECT COALESCE(learn_new_per, 10) AS new_per, COALESCE(learn_review_per, 100) AS review_per FROM users WHERE id = $1`,
     [user.id]

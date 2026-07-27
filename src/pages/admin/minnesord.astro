@@ -25,11 +25,13 @@ interface WordRow {
   etymology: string;
   image: string;
   related: { root: string; words: { word: string; gloss: string }[] } | null;
+  traps: string[] | null;
 }
 
 const { rows: words } = await pool.query(
-  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology, image, related FROM mnemonic_words ORDER BY position, id'
+  'SELECT id, word, definition, mnemonic, extra, position, status, note, example, etymology, image, related, traps FROM mnemonic_words ORDER BY position, id'
 ) as { rows: WordRow[] };
+const trapsCount = words.filter(w => w.traps && w.traps.length > 0).length;
 
 const total = words.length;
 const okCount = words.filter(w => w.status === 'ok').length;
@@ -138,6 +140,7 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
               <button class="chip" data-filter="unreviewed">Ogranskade <span class="chip-count" id="count-unreviewed">{unreviewedCount}</span></button>
               <button class="chip" data-filter="needs_work">Behöver förbättras <span class="chip-count" id="count-needs_work">{flagCount}</span></button>
               <button class="chip" data-filter="ok">Bra <span class="chip-count" id="count-ok">{okCount}</span></button>
+              <button class="chip" data-filter="traps">Svarsalternativ <span class="chip-count">{trapsCount}</span></button>
             </div>
             <button id="copy-flagged" class="btn btn-outline btn-sm">Kopiera flaggade</button>
             <a id="export-order" class="btn btn-outline btn-sm" href="/api/admin/minnesord?export=order" download="minnesord-ordning.json" title="Ladda ner ordningen som JSON, för att kunna läggas in permanent i koden">⬇ Exportera ordning</a>
@@ -149,7 +152,8 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                 class="word-card"
                 data-id={w.id}
                 data-status={w.status}
-                data-search={`${w.word} ${w.definition} ${w.mnemonic} ${w.example} ${w.etymology}`.toLowerCase()}
+                data-traps={w.traps && w.traps.length > 0 ? '1' : '0'}
+                data-search={`${w.word} ${w.definition} ${w.mnemonic} ${w.example} ${w.etymology} ${(w.traps || []).join(' ')}`.toLowerCase()}
               >
                 {w.image && <img class="word-figure" src={w.image} alt={w.word} loading="lazy" width="128" height="128" />}
                 <div class="word-head">
@@ -173,6 +177,13 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
                     {w.related.words.map((r, i) => (
                       <>{i > 0 ? ' · ' : ''}<b>{r.word}</b>{r.gloss ? ` (${r.gloss})` : ''}</>
                     ))}
+                  </p>
+                )}
+                {w.traps && w.traps.length > 0 && (
+                  <p class="word-traps">
+                    <span class="word-traps-label">Svarsalternativ i quizet</span>
+                    <span class="trap trap--right" title="Rätt svar">{w.definition}</span>
+                    {w.traps.map(t => <span class="trap" title="Fel svar">{t}</span>)}
                   </p>
                 )}
                 {w.extra && Object.keys(w.extra).length > 0 && (
@@ -226,7 +237,8 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
       const q = (searchInput?.value || '').trim().toLowerCase();
       let visible = 0;
       for (const card of cards()) {
-        const matchesFilter = activeFilter === 'all' || card.dataset.status === activeFilter;
+        const matchesFilter = activeFilter === 'all'
+          || (activeFilter === 'traps' ? card.dataset.traps === '1' : card.dataset.status === activeFilter);
         const matchesSearch = !q || (card.dataset.search || '').includes(q);
         const show = (matchesFilter && matchesSearch) || card === pinnedCard;
         card.hidden = !show;
@@ -1080,6 +1092,39 @@ const reviewedPct = total > 0 ? Math.round(((okCount + flagCount) / total) * 100
     text-transform: uppercase;
     color: #94a3b8;
     margin-bottom: 0.1rem;
+  }
+
+  .word-traps {
+    margin: 0.55rem 0 0;
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.3rem;
+  }
+
+  .word-traps-label {
+    flex-basis: 100%;
+    font-size: 0.66rem;
+    font-weight: 700;
+    letter-spacing: 0.07em;
+    text-transform: uppercase;
+    color: #94a3b8;
+  }
+
+  .trap {
+    font-size: 0.82rem;
+    color: #475569;
+    background: #fff;
+    border: 1px solid #e2e8f0;
+    border-radius: 999px;
+    padding: 0.14rem 0.6rem;
+  }
+
+  .trap--right {
+    color: #047857;
+    background: #ecfdf5;
+    border-color: #a7f3d0;
+    font-weight: 600;
   }
 
   .word-etym {

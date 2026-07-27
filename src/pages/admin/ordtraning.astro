@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import InstallApp from '../../components/InstallApp.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
 import { upcomingExams } from '../../lib/provdatum.js';
 
@@ -24,6 +25,12 @@ const exams = upcomingExams(2);
         <h1>Ordträning <span class="beta">testläge</span></h1>
         <p class="lead">Den skarpa inlärningssidan, bara synlig för dig. Testa flödet och repetitionssystemet innan vi släpper den publikt.</p>
       </div>
+
+      <InstallApp
+        name="Ordträning"
+        note="Egen ikon på hemskärmen som öppnas direkt i orden."
+        storageKey="ordtraning-install"
+      />
 
       <div class="dev">
         <span class="dev-label">Testverktyg:</span>

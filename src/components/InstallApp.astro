@@ -1,0 +1,93 @@
+---
+// Liten ruta som erbjuder att spara sidan som app på hemskärmen. Visas bara
+// när det går att installera och när man inte redan kör den installerade
+// appen. På iPhone finns ingen installations-API, så där visas i stället
+// instruktionen för dela-menyn.
+interface Props {
+  name?: string;
+  note?: string;
+  storageKey?: string;
+}
+const { name = 'HPAkuten', note = 'Öppnas utan adressfält, som en vanlig app.', storageKey = 'hpakuten-install' } = Astro.props;
+---
+
+<div class="install-card" id="install-card" hidden>
+  <div class="install-icon" aria-hidden="true">📲</div>
+  <div class="install-text">
+    <b>Spara {name} som app</b>
+    <span id="install-note">{note}</span>
+  </div>
+  <button class="install-go" id="install-go" type="button" hidden>Installera</button>
+  <button class="install-x" id="install-x" type="button" aria-label="Dölj">×</button>
+</div>
+
+<style>
+  .install-card { display: flex; align-items: center; gap: 0.8rem; max-width: 560px; margin: 0 auto 1.2rem;
+    padding: 0.75rem 0.9rem; border: 1px solid #dbeafe; background: #eff6ff; border-radius: 12px; }
+  /* display: flex slår ut hidden om vi inte säger till. */
+  .install-card[hidden], .install-go[hidden] { display: none; }
+  .install-icon { font-size: 1.4rem; line-height: 1; flex-shrink: 0; }
+  .install-text { display: flex; flex-direction: column; gap: 0.1rem; min-width: 0; flex: 1; }
+  .install-text b { font-size: 0.92rem; color: #1a1a2e; }
+  .install-text span { font-size: 0.78rem; color: #64748b; }
+  .install-go { font: inherit; font-size: 0.85rem; font-weight: 700; white-space: nowrap; cursor: pointer;
+    border: none; border-radius: 9px; padding: 0.55rem 0.9rem; background: #2563eb; color: #fff; }
+  .install-go:hover { background: #1d4ed8; }
+  .install-x { font: inherit; font-size: 1.2rem; line-height: 1; cursor: pointer; border: none; background: none;
+    color: #94a3b8; padding: 0.2rem 0.3rem; flex-shrink: 0; }
+  .install-x:hover { color: #475569; }
+  @media (max-width: 480px) {
+    .install-card { flex-wrap: wrap; }
+    .install-go { width: 100%; order: 3; }
+  }
+</style>
+
+<script is:inline define:vars={{ storageKey }}>
+(function () {
+  const card = document.getElementById('install-card');
+  const goBtn = document.getElementById('install-go');
+  const noteEl = document.getElementById('install-note');
+  if (!card) return;
+
+  const installed = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true
+    || document.referrer.startsWith('android-app://');
+  let hidden = false;
+  try { hidden = localStorage.getItem(storageKey) === 'dolj'; } catch {}
+  if (installed || hidden) return;
+
+  const show = () => { card.hidden = false; };
+
+  // Android och datorer: webbläsaren säger till när den kan installera.
+  let deferred = null;
+  window.addEventListener('beforeinstallprompt', e => {
+    e.preventDefault();
+    deferred = e;
+    goBtn.hidden = false;
+    show();
+  });
+  goBtn.onclick = async () => {
+    if (!deferred) return;
+    goBtn.disabled = true;
+    deferred.prompt();
+    const choice = await deferred.userChoice.catch(() => null);
+    deferred = null;
+    if (choice && choice.outcome === 'accepted') card.hidden = true;
+    else goBtn.disabled = false;
+  };
+  window.addEventListener('appinstalled', () => { card.hidden = true; });
+
+  // iPhone och iPad: ingen knapp finns, så vi visar hur man gör i dela-menyn.
+  const iOS = /iphone|ipad|ipod/i.test(navigator.userAgent)
+    || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  if (iOS) {
+    noteEl.textContent = 'Tryck på dela-knappen i Safari och välj "Lägg till på hemskärmen".';
+    show();
+  }
+
+  document.getElementById('install-x').onclick = () => {
+    card.hidden = true;
+    try { localStorage.setItem(storageKey, 'dolj'); } catch {}
+  };
+})();
+</script>

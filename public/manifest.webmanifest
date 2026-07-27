@@ -1,0 +1,33 @@
+{
+  "name": "HPAkuten",
+  "short_name": "HPAkuten",
+  "description": "Träna inför högskoleprovet med övningsprov, strategier och minnestekniker.",
+  "lang": "sv",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#2563eb",
+  "categories": ["education"],
+  "icons": [
+    { "src": "/icons/hpakuten-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/hpakuten-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/hpakuten-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    {
+      "name": "Träna",
+      "short_name": "Träna",
+      "url": "/trana",
+      "icons": [{ "src": "/icons/hpakuten-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Forum",
+      "short_name": "Forum",
+      "url": "/forum",
+      "icons": [{ "src": "/icons/hpakuten-192.png", "sizes": "192x192", "type": "image/png" }]
+    }
+  ]
+}

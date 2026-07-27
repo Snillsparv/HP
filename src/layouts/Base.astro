@@ -5,9 +5,23 @@ interface Props {
   title: string;
   description?: string;
   ogImage?: string;
+  // Sidor kan peka ut ett eget manifest, så att de kan sparas som en egen app
+  // på hemskärmen med eget namn och egen ikon.
+  manifest?: string;
+  appleIcon?: string;
+  appName?: string;
+  themeColor?: string;
 }
 
-const { title, description = 'Jonas von Essen hjälper dig nå ditt drömresultat på högskoleprovet. Strategier, minnestekniker och studieplanering från Sveriges mest framgångsrika HP-skrivare.', ogImage = '/jonas_hp.webp' } = Astro.props;
+const {
+  title,
+  description = 'Jonas von Essen hjälper dig nå ditt drömresultat på högskoleprovet. Strategier, minnestekniker och studieplanering från Sveriges mest framgångsrika HP-skrivare.',
+  ogImage = '/jonas_hp.webp',
+  manifest = '/manifest.webmanifest',
+  appleIcon = '/icons/hpakuten-apple-180.png',
+  appName = 'HPAkuten',
+  themeColor = '#2563eb',
+} = Astro.props;
 const currentPath = Astro.url.pathname;
 const canonicalUrl = new URL(currentPath, 'https://www.hpakuten.se').href;
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
@@ -23,6 +37,16 @@ const isBB = user?.email?.includes('jessica.ahrling') ?? false;
   <link rel="canonical" href={canonicalUrl} />
   <title>{title}</title>
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Spara på hemskärmen -->
+  <link rel="manifest" href={manifest} />
+  <link rel="apple-touch-icon" href={appleIcon} />
+  <meta name="theme-color" content={themeColor} />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content={appName} />
+  <meta name="application-name" content={appName} />
 
   <!-- Open Graph -->
   <meta property="og:type" content="website" />
@@ -179,6 +203,16 @@ const isBB = user?.email?.includes('jessica.ahrling') ?? false;
     document.getElementById('signup-modal-close')?.addEventListener('click', () => {
       document.getElementById('signup-modal').style.display = 'none';
     });
+  </script>
+
+  <script is:inline>
+    // Krävs för att sajten ska gå att installera som app. Cachar bara statiska
+    // filer, aldrig sidor eller API-svar (se /sw.js).
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      });
+    }
   </script>
 </body>
 </html>

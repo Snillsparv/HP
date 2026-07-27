@@ -1,0 +1,19 @@
+{
+  "name": "Ordträning – HPAkuten",
+  "short_name": "Ordträning",
+  "description": "Lär dig högskoleprovets ord med minnesregler och repetition med växande intervall.",
+  "lang": "sv",
+  "dir": "ltr",
+  "start_url": "/admin/ordtraning",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#1a1a2e",
+  "categories": ["education"],
+  "icons": [
+    { "src": "/icons/ordtraning-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/ordtraning-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icons/ordtraning-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

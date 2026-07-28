@@ -50,10 +50,14 @@ export const GET: APIRoute = async ({ request }) => {
 
     const token = await createSession(user.id);
 
+    // state bär målsidan från /api/auth/google?next=... genom OAuth-flödet.
+    const state = url.searchParams.get('state') || '';
+    const target = state.startsWith('/') && !state.startsWith('//') ? state : '/forum';
+
     return new Response(null, {
       status: 302,
       headers: {
-        Location: '/forum',
+        Location: target,
         'Set-Cookie': `session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 3600}`,
       },
     });

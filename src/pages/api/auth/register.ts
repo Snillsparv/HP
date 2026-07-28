@@ -27,11 +27,12 @@ export const POST: APIRoute = async ({ request }) => {
     checkNewUser(name, email).catch(() => {});
     const token = await createSession(user.id);
     const redirect = form.get('redirect')?.toString() || '/forum';
+    const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/forum';
 
     return new Response(null, {
       status: 302,
       headers: {
-        Location: redirect,
+        Location: safeRedirect,
         'Set-Cookie': `session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 3600}`,
       },
     });

@@ -18,10 +18,14 @@ export const POST: APIRoute = async ({ request }) => {
 
     const token = await createSession(user.id);
 
+    // Sidor som kräver inloggning kan skicka med vart användaren ska efteråt.
+    const redirect = form.get('redirect')?.toString() || '/trana';
+    const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/trana';
+
     return new Response(null, {
       status: 302,
       headers: {
-        Location: '/trana',
+        Location: safeRedirect,
         'Set-Cookie': `session=${token}; Path=/; HttpOnly; SameSite=Lax; Max-Age=${30 * 24 * 3600}`,
       },
     });

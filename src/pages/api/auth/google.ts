@@ -3,11 +3,13 @@ import type { APIRoute } from 'astro';
 const GOOGLE_CLIENT_ID = import.meta.env.GOOGLE_CLIENT_ID || '';
 const REDIRECT_URI = import.meta.env.GOOGLE_REDIRECT_URI || 'http://localhost:4321/api/auth/google/callback';
 
-export const GET: APIRoute = async () => {
+export const GET: APIRoute = async ({ url }) => {
   if (!GOOGLE_CLIENT_ID) {
     return new Response(null, { status: 302, headers: { Location: '/konto/login?error=Google-inloggning+ej+konfigurerad' } });
   }
 
+  // Målsidan efter inloggning följer med genom OAuth-flödet via state.
+  const next = url.searchParams.get('next') || '';
   const params = new URLSearchParams({
     client_id: GOOGLE_CLIENT_ID,
     redirect_uri: REDIRECT_URI,
@@ -16,6 +18,7 @@ export const GET: APIRoute = async () => {
     access_type: 'offline',
     prompt: 'select_account',
   });
+  if (next.startsWith('/') && !next.startsWith('//')) params.set('state', next);
 
   return new Response(null, {
     status: 302,

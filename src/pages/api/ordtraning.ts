@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
-import { getSessionFromCookies } from '../../../lib/auth.js';
-import pool from '../../../lib/db.js';
-import { highlightWord } from '../../../lib/highlight.js';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import pool from '../../lib/db.js';
+import { highlightWord } from '../../lib/highlight.js';
 
 const ADMIN_EMAIL = 'snillsparv@gmail.com';
 const NEW_MIN = 0, NEW_MAX = 40;
@@ -19,10 +19,10 @@ function json(data: unknown, status = 200) {
   return new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
 }
 
-async function requireAdmin(request: Request) {
-  const user = await getSessionFromCookies(request.headers.get('cookie'));
-  if (!user || user.email !== ADMIN_EMAIL) return null;
-  return user;
+// Ordträningen är öppen för alla inloggade. Testverktygen (simulera dagar)
+// är fortsatt bara för admin.
+async function requireUser(request: Request) {
+  return getSessionFromCookies(request.headers.get('cookie'));
 }
 
 // Bygg fem svarsalternativ: rätt definition + fyra felaktiga. Ord med
@@ -99,7 +99,7 @@ async function getStreak(userId: number): Promise<{ streak: number; trainedToday
 }
 
 export const GET: APIRoute = async ({ request, url }) => {
-  const user = await requireAdmin(request);
+  const user = await requireUser(request);
   if (!user) return json({ error: 'Unauthorized' }, 403);
   const action = url.searchParams.get('action') || 'session';
 
@@ -201,7 +201,7 @@ export const GET: APIRoute = async ({ request, url }) => {
 };
 
 export const POST: APIRoute = async ({ request }) => {
-  const user = await requireAdmin(request);
+  const user = await requireUser(request);
   if (!user) return json({ error: 'Unauthorized' }, 403);
 
   let body: any;
@@ -291,6 +291,7 @@ export const POST: APIRoute = async ({ request }) => {
   // aktuella. Även created_at och streak-dagarna flyttas, annars ligger dagens
   // kvot nya ord kvar och streaken fryser under simulering.
   if (body.action === 'simulate_day') {
+    if (user.email !== ADMIN_EMAIL) return json({ error: 'Endast admin' }, 403);
     const days = Math.max(1, Math.min(90, Number(body.days) || 1));
     await pool.query(
       `UPDATE word_progress SET

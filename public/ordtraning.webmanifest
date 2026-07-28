@@ -4,7 +4,7 @@
   "description": "Lär dig högskoleprovets ord med minnesregler och repetition med växande intervall.",
   "lang": "sv",
   "dir": "ltr",
-  "start_url": "/admin/ordtraning",
+  "start_url": "/ord",
   "scope": "/",
   "display": "standalone",
   "orientation": "portrait",

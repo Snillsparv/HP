@@ -84,6 +84,7 @@ const isBB = user?.email?.includes('jessica.ahrling') ?? false;
       <button class="nav-toggle" aria-label="Meny" id="nav-toggle">☰</button>
       <nav class="site-nav" id="site-nav">
         <a href="/trana" class:list={['nav-cta', { active: currentPath.startsWith('/trana') || currentPath.startsWith('/prov') || currentPath.startsWith('/delprov') }]}>{isBB ? 'Förbereda' : 'Träna'}</a>
+        <a href="/ord" class:list={[{ active: currentPath === '/ord' }]}>Ordträning</a>
         <a href="/ovningsuppgifter" class:list={[{ active: currentPath.startsWith('/ovningsuppgifter') }]}>{isBB ? 'Blöjrepetition' : 'Matterepetition'}</a>
         <a href="/forum" class:list={[{ active: currentPath.startsWith('/forum') }]}>{isBB ? 'Mammaforumet' : 'Forum'}</a>
         <a href="/om-hp" class:list={[{ active: currentPath.startsWith('/om-hp') }]}>{isBB ? 'Om BB' : 'Om HP'}</a>

@@ -11,6 +11,12 @@ const serverStep = user?.train_step || 1;
       <h1>Träna på Högskoleprovet</h1>
       <p class="page-intro">Följ planen steg för steg och du kommer att vara betydligt mer redo på provdagen.</p>
 
+      <a href="/ord" class="ord-banner">
+        <span class="ord-banner-nyhet">Nyhet</span>
+        <span><strong>Ordträningen är här!</strong> Lär dig över 4000 högskoleprovsord med minnesregler och smart repetition, några ord om dagen räcker.</span>
+        <span class="ord-banner-cta">Testa →</span>
+      </a>
+
       <div class="train-steps" id="train-steps">
 
         <div class="train-step" id="step-1" data-step="1">
@@ -464,4 +470,12 @@ const serverStep = user?.train_step || 1;
     display: none;
     margin-top: 1rem;
   }
+
+  .ord-banner { display: flex; align-items: center; gap: 0.8rem; margin: 0 0 1.6rem; padding: 0.85rem 1.1rem;
+    background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; color: inherit; text-decoration: none;
+    font-size: 0.95rem; line-height: 1.4; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+  .ord-banner:hover { border-color: #2563eb; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12); text-decoration: none; }
+  .ord-banner-nyhet { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+    background: #2563eb; color: #fff; padding: 0.25rem 0.6rem; border-radius: 999px; }
+  .ord-banner-cta { flex-shrink: 0; margin-left: auto; color: #2563eb; font-weight: 700; white-space: nowrap; }
 </style>

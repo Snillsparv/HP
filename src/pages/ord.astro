@@ -120,8 +120,9 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
 
   /* Nivåansiktet i mitten av ringen: tonar upp medan ringen snurrar fram och
      studsar till när man klickar på det. */
-  /* Ansiktet behåller sin storlek och flyter i mitten av den större ringen. */
-  .ot-page .face { width: 146px; height: 146px; border-radius: 50%; object-fit: contain; display: block;
+  /* Ansiktet behåller sin storlek och flyter i mitten av den större ringen.
+     Ingen cirkelklippning: bilderna är frilagda och håret ska få sticka ut. */
+  .ot-page .face { width: 146px; height: 146px; object-fit: contain; display: block;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
     -webkit-user-select: none; user-select: none; }
@@ -152,8 +153,11 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   .ot-lvlup-card { position: relative; overflow: hidden; background: #fff; border-radius: 18px;
     padding: 2rem 2.2rem 1.6rem; text-align: center; max-width: 320px; margin: 1rem;
     box-shadow: 0 24px 60px rgba(15, 23, 42, 0.35); animation: ot-pop 0.45s cubic-bezier(0.34, 1.3, 0.64, 1) both; }
-  .ot-lvlup-face { width: 150px; height: 150px; border-radius: 50%; border: 7px solid #2563eb;
-    background: #fff; object-fit: contain; animation: ot-lvl-face 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) 0.2s both; }
+  /* Blå ring som egen behållare så att ansiktet slipper cirkelklippas. */
+  .ot-lvlup-ring { width: 164px; height: 164px; border-radius: 50%; border: 7px solid #2563eb;
+    background: #fff; display: grid; place-items: center; margin: 0 auto;
+    animation: ot-lvl-face 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) 0.2s both; }
+  .ot-lvlup-face { width: 140px; height: 140px; object-fit: contain; display: block; }
   .ot-lvlup-card h3 { margin: 0.8rem 0 0.2rem; font-size: 1.5rem; color: #1a1a2e; }
   .ot-lvlup-card p { margin: 0 0 1.1rem; color: #64748b; font-size: 0.92rem; }
   .ot-lvlup-conf { position: absolute; inset: 0; pointer-events: none; }
@@ -166,7 +170,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
     100% { opacity: 0; transform: translateY(340px) rotate(540deg); } }
   @media (prefers-reduced-motion: reduce) {
     .ot-page .ring, .ot-page .ring--sweep, .ot-page .face.is-in,
-    .ot-lvlup, .ot-lvlup-card, .ot-lvlup-face, .ot-lvlup-conf i { animation: none; }
+    .ot-lvlup, .ot-lvlup-card, .ot-lvlup-ring, .ot-lvlup-conf i { animation: none; }
   }
 
   /* Introrundtur: fyra skuggremsor runt det aktuella elementet, en ram runt
@@ -1274,7 +1278,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
     div.innerHTML = `
       <div class="ot-lvlup-card">
         <div class="ot-lvlup-conf">${bits}</div>
-        <img class="ot-lvlup-face" src="/ordfejs/${lvl}.webp" alt="Nivå ${lvl}">
+        <span class="ot-lvlup-ring"><img class="ot-lvlup-face" src="/ordfejs/${lvl}.webp" alt="Nivå ${lvl}"></span>
         <h3>Nivå ${lvl}!</h3>
         <p>${lvl >= FACE_STEPS.length + 1 ? 'Alla ord påbörjade. Du är i mål!' : 'Du har låst upp ett nytt ansikte.'}</p>
         <button class="btn btn-primary" id="lvlup-ok" type="button">Fortsätt</button>

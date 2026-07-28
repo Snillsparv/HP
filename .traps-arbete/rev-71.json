@@ -1,0 +1,18 @@
+{
+ "urskillning": ["livlig fantasi", "exakt tidmätning", "orubblig envishet", "värme och medkänsla"],
+ "respiration": ["sväljning", "blodomlopp", "matsmältning", "hjärtklappning"],
+ "dissekera": ["lösa upp i vätska", "smutskasta offentligt", "sy ihop ett sår", "rengöra och sterilisera"],
+ "trainee": ["inhyrd konsult", "utsänd förhandlare", "arvoderad styrelseledamot", "säsongsanställd i butik"],
+ "kovändning": ["plötsligt vädersomslag", "vändplats för plogen", "envis principfasthet", "hetsig ordväxling"],
+ "jumbo": ["en nybörjare", "en publikfavorit", "en tävlingsdomare", "en andraplacerad"],
+ "siesta": ["folkfest", "torgplats", "kryddstark soppa", "kastanjettdans"],
+ "decimera": ["utsmycka", "avgöra", "tyda", "fördubbla"],
+ "leva i sus och dus": ["leva i misär", "duza med alla", "arbeta oavbrutet", "ständigt oroa sig"],
+ "plebej": ["person ur prästerskapet", "beväpnad livvakt", "kringresande köpman", "nyutnämnd ämbetsman"],
+ "ockra": ["ett bindemedel", "en fernissa", "ett lösningsmedel", "en ätlig baljväxt"],
+ "luttra": ["böja", "bedra", "smickra", "muttra"],
+ "karsk": ["snål", "tystlåten", "godtrogen", "storvuxen"],
+ "durkdriven": ["envis och tjurskallig", "trött och utsliten", "godmodig och trögtänkt", "högljudd och skrytsam"],
+ "fotsid": ["som saknar ärmar", "som räcker till knäna", "som knäpps i ryggen", "som är fodrad med päls"],
+ "tendentiös": ["överdrivet ömsint", "svår att förstå", "full av upprepningar", "torrt saklig"]
+}

@@ -75,9 +75,9 @@ const exams = upcomingExams(2);
   .ot-page .body { padding: 1.4rem 1.4rem 1.5rem; }
 
   .ot-page .ring-row { display: flex; flex-direction: column; align-items: center; gap: 0.55rem; margin: 0.4rem 0 1.2rem; text-align: center; }
-  .ot-page .ring { width: 164px; height: 164px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0;
+  .ot-page .ring { width: 188px; height: 188px; border-radius: 50%; display: grid; place-items: center; flex-shrink: 0;
     animation: ot-pop 0.45s cubic-bezier(0.34, 1.3, 0.64, 1) both; }
-  .ot-page .ring > div { width: 132px; height: 132px; border-radius: 50%; background: #fff; padding: 3px;
+  .ot-page .ring > div { width: 152px; height: 152px; border-radius: 50%; background: #fff; padding: 3px;
     box-sizing: border-box; display: grid; place-items: center; }
   .ot-page .ring--sweep { animation: ot-pop 0.45s cubic-bezier(0.34, 1.3, 0.64, 1) both, ot-sweep 1.1s cubic-bezier(0.33, 1, 0.68, 1) both; }
   @keyframes ot-pop { from { transform: scale(0.88); opacity: 0; } to { transform: scale(1); opacity: 1; } }
@@ -213,14 +213,17 @@ const exams = upcomingExams(2);
     border: 1px solid #e2e8f0; border-radius: 10px; padding: 0.8rem 1rem; margin-top: 0.5rem; line-height: 1.6; }
   .ot-page #sr-info-body p { margin: 0 0 0.5rem; }
   .ot-page #sr-info-body p:last-child { margin: 0; }
+  .ot-page #sr-info-body a { color: #2563eb; font-weight: 700; text-decoration: none; }
+  .ot-page #sr-info-body a:hover { text-decoration: underline; }
 
   .ot-page .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.9rem; }
-  .ot-page .mode-btn { font: inherit; text-align: left; display: flex; flex-direction: column; gap: 0.15rem;
-    padding: 0.75rem 0.9rem; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fbfcfe; cursor: pointer; }
+  .ot-page .mode-btn { font: inherit; text-align: center; display: flex; flex-direction: column; align-items: center; gap: 0.2rem;
+    padding: 0.85rem 0.9rem 0.8rem; border: 1.5px solid #e2e8f0; border-radius: 12px; background: #fbfcfe; cursor: pointer; }
   .ot-page .mode-btn:hover { border-color: #2563eb; background: #eff6ff; }
   .ot-page .mode-btn b { font-size: 0.92rem; color: #1a1a2e; }
   .ot-page .mode-btn span:last-child { font-size: 0.76rem; color: #64748b; line-height: 1.35; }
-  .ot-page .mode-icon { font-size: 1.05rem; }
+  .ot-page .mode-img { width: 68px; height: 68px; border-radius: 14px; margin-bottom: 0.15rem;
+    background: #fff; border: 1px solid #eef2f7; object-fit: cover; }
   @media (max-width: 480px) { .ot-page .mode-row { grid-template-columns: 1fr; } }
   .ot-page .mode-lead { font-size: 0.88rem; color: #64748b; margin: 0 0 0.8rem; line-height: 1.5; }
 
@@ -237,6 +240,19 @@ const exams = upcomingExams(2);
   .ot-page .rt-row.is-open .rt-arrow, .ot-page .wl-row.is-open .rt-arrow { transform: rotate(180deg); }
   .ot-page .rt-body, .ot-page .wl-body { padding: 0.75rem 0.8rem 0.85rem; border-top: 1px solid #eef2f7; background: #fbfcfe; }
   .ot-page .rt-chosen { margin: 0 0 0.55rem; font-size: 0.85rem; font-weight: 600; color: #ef4444; }
+
+  .ot-page .seg { display: flex; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
+  .ot-page .seg button { font: inherit; font-size: 0.82rem; padding: 0.45rem 0.7rem; background: #fff;
+    border: none; cursor: pointer; color: #64748b; white-space: nowrap; }
+  .ot-page .seg button + button { border-left: 1.5px solid #e2e8f0; }
+  .ot-page .seg button.is-on { background: #2563eb; color: #fff; font-weight: 700; }
+  .ot-page .opt.chosen { border-color: #2563eb; background: #eff6ff; }
+  .ot-page .opt.chosen .letter { background: #2563eb; border-color: #2563eb; color: #fff; }
+  .ot-page .rt-nav { display: flex; justify-content: space-between; gap: 0.5rem; margin-top: 0.8rem; }
+  .ot-page .rt-nav button { font: inherit; font-size: 0.85rem; font-weight: 600; color: #64748b; background: #fff;
+    border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 0.45rem 0.85rem; cursor: pointer; }
+  .ot-page .rt-nav button:hover { border-color: #2563eb; color: #2563eb; }
+  .ot-page .rt-nav .spacer { flex: 1; }
 
   .ot-page .wl-search { font: inherit; width: 100%; box-sizing: border-box; padding: 0.6rem 0.85rem;
     border: 1.5px solid #e2e8f0; border-radius: 10px; margin-bottom: 0.7rem; }
@@ -274,7 +290,7 @@ const exams = upcomingExams(2);
     display: grid; place-items: center; font-weight: 700; font-size: 0.8rem; flex-shrink: 0; }
   .ot-page .opt.correct { border-color: #10b981; background: #d1fae5; } .ot-page .opt.correct .letter { background: #10b981; border-color: #10b981; color: #fff; }
   .ot-page .opt.wrong { border-color: #ef4444; background: #fee2e2; } .ot-page .opt.wrong .letter { background: #ef4444; border-color: #ef4444; color: #fff; }
-  .ot-page .opt:disabled { cursor: default; } .ot-page .opt:disabled:not(.correct):not(.wrong) { opacity: 0.5; }
+  .ot-page .opt:disabled { cursor: default; } .ot-page .opt:disabled:not(.correct):not(.wrong):not(.chosen) { opacity: 0.5; }
   .ot-page .verdict { font-weight: 700; margin: 0.4rem 0 0.6rem; } .ot-page .verdict.ok { color: #047857; } .ot-page .verdict.no { color: #ef4444; }
   .ot-page .when-chip { font-size: 0.78rem; font-weight: 600; color: #047857; background: #ecfdf5;
     border: 1px solid #a7f3d0; border-radius: 999px; padding: 0.15rem 0.6rem; margin-left: 0.3rem; }
@@ -367,7 +383,7 @@ const exams = upcomingExams(2);
   }
   function faceHtml(learned, total) {
     const lvl = faceLevel(learned, total);
-    return `<img class="face is-in" id="face" src="/ordfejs/${lvl}.webp" width="126" height="126"
+    return `<img class="face is-in" id="face" src="/ordfejs/${lvl}.webp" width="146" height="146"
       alt="Nivå ${lvl} av ${FACE_STEPS.length + 1}" title="Nivå ${lvl} av ${FACE_STEPS.length + 1}">`;
   }
   function bindFace() {
@@ -526,13 +542,14 @@ const exams = upcomingExams(2);
         <div id="sr-info-body" hidden>
           <p>Varje ord repeteras precis innan du annars skulle glömma det: först efter 1 dag, sedan 3 dagar, 1 vecka, 2 veckor, 5 veckor och till sist 3 månader. Svarar du rätt växer intervallet, svarar du fel börjar ordet om och repeteras samma dag tills det sitter.</p>
           <p>På så vis fastnar orden i långtidsminnet med så få repetitioner som möjligt. Det viktigaste är att komma tillbaka varje dag, hellre korta pass ofta än långa pass sällan.</p>
+          <p><a href="https://www.youtube.com/watch?v=Xa2HgOwGG08" target="_blank" rel="noopener">▶ Se videon där jag förklarar spaced repetition</a></p>
         </div>
       </div>
       ${settingsHtml()}
       <div id="start-slot">${startSlot()}</div>
       <div class="mode-row">
-        <button class="mode-btn" id="mode-random" type="button"><span class="mode-icon">🎲</span><b>Slumpat ordtest</b><span>Valfritt antal slumpade ord, påverkar inte repetitionerna</span></button>
-        <button class="mode-btn" id="mode-list" type="button"><span class="mode-icon">📖</span><b>Ordlista</b><span>Bläddra bland alla ${stats.total} ord och minnesregler</span></button>
+        <button class="mode-btn" id="mode-random" type="button"><img class="mode-img" src="/ordtraning/tarning.webp" alt="" width="68" height="68"><b>Slumpat ordtest</b><span>Valfritt antal slumpade ord, påverkar inte repetitionerna</span></button>
+        <button class="mode-btn" id="mode-list" type="button"><img class="mode-img" src="/ordtraning/ordlista.webp" alt="" width="68" height="68"><b>Ordlista</b><span>Bläddra bland alla ${stats.total} ord och minnesregler</span></button>
       </div>
       <p class="reset-line"><button id="reset-all" class="link-btn" type="button">↺ Återställ hela träningen</button></p>`);
     bindFace();
@@ -585,7 +602,10 @@ const exams = upcomingExams(2);
   }
 
   // ---------- Slumpat ordtest (fristående, rör inte repetitionssystemet) ----------
-  let rtWords = [], rtI = 0, rtResults = [], rtCount = 20;
+  let rtWords = [], rtI = 0, rtResults = [], rtCount = 20, rtDirect = true, rtView = 0;
+
+  const RT_NOTE_DIRECT = 'Rätt svar och hela ordkortet med minnesregel visas direkt efter varje svar.';
+  const RT_NOTE_AFTER = 'Du svarar på alla frågor först, som på riktiga provet, och får facit och ordkorten på resultatsidan.';
 
   function renderRandomSetup() {
     app.innerHTML = frame('Slumpat ordtest', 'Sporadisk träning', 0, `
@@ -595,40 +615,95 @@ const exams = upcomingExams(2);
           <span class="set-label">Antal ord</span>
           <div class="stepper"><button class="st-btn" id="rt-minus" type="button">−</button><b id="rt-n">${rtCount}</b><button class="st-btn" id="rt-plus" type="button">+</button></div>
         </div>
+        <div class="set-row">
+          <span class="set-label">Visa facit</span>
+          <div class="seg" id="rt-seg">
+            <button type="button" data-v="1" class="${rtDirect ? 'is-on' : ''}">Direkt</button>
+            <button type="button" data-v="0" class="${rtDirect ? '' : 'is-on'}">Efter testet</button>
+          </div>
+        </div>
+        <p class="set-note" id="rt-note">${rtDirect ? RT_NOTE_DIRECT : RT_NOTE_AFTER}</p>
       </div>
       <div class="btn-row"><button class="btn btn-primary" id="rt-go">Starta testet</button></div>`, 'Tillbaka till översikten');
     document.getElementById('back').onclick = renderStart;
     const upd = d => { rtCount = Math.max(5, Math.min(100, rtCount + d)); document.getElementById('rt-n').textContent = rtCount; };
     document.getElementById('rt-minus').onclick = () => upd(-5);
     document.getElementById('rt-plus').onclick = () => upd(5);
+    app.querySelectorAll('#rt-seg button').forEach(b => b.onclick = () => {
+      rtDirect = b.dataset.v === '1';
+      app.querySelectorAll('#rt-seg button').forEach(x => x.classList.toggle('is-on', x === b));
+      document.getElementById('rt-note').textContent = rtDirect ? RT_NOTE_DIRECT : RT_NOTE_AFTER;
+    });
     document.getElementById('rt-go').onclick = async () => {
       const btn = document.getElementById('rt-go');
       btn.disabled = true; btn.textContent = 'Blandar ord…';
       const d = await fetch('/api/admin/ordtraning?action=random&count=' + rtCount).then(r => r.json()).catch(() => null);
       if (!d || !d.test || !d.test.length) { btn.disabled = false; btn.textContent = 'Starta testet'; return; }
-      rtWords = d.test; rtI = 0; rtResults = [];
+      rtWords = d.test; rtI = 0; rtView = 0; rtResults = [];
       renderRandomQuiz();
     };
   }
 
+  function rtCardHtml(w) {
+    return `
+      ${w.image ? `<img class="fb-img" src="${w.image}" alt="">` : ''}
+      ${w.etymology ? `<div class="ety"><span class="ety-label">Etymologi</span>${esc(w.etymology)}</div>` : ''}
+      ${w.mnemonic ? `<div class="mnemo"><div class="m-label">Minnesregel</div><p>${hooks(w.mnemonic)}</p></div>` : ''}
+      ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}`;
+  }
+
+  // rtView är frågan som visas. Ligger den före rtI bläddrar man bland sina
+  // tidigare svar (facit syns bara i direktläget), annars är det frågan man
+  // ska svara på.
   function renderRandomQuiz() {
     if (rtI >= rtWords.length) { renderRandomDone(); return; }
-    const w = rtWords[rtI];
-    app.innerHTML = frame('Slumpat ordtest', `${rtI + 1} av ${rtWords.length}`, (rtI / rtWords.length) * 100, `
-      <p class="q-label">Vad betyder ordet?</p>
+    if (rtView > rtI) rtView = rtI;
+    const reviewing = rtView < rtI;
+    const w = rtWords[rtView];
+    const res = reviewing ? rtResults[rtView] : null;
+    const optHtml = w.options.map((o, i) => {
+      let cls = 'opt';
+      if (reviewing) {
+        const chosen = res.chosen === o;
+        if (rtDirect) {
+          if (o === w.correct) cls += ' correct';
+          else if (chosen) cls += ' wrong';
+          else cls += ' dim';
+        } else {
+          cls += chosen ? ' chosen' : ' dim';
+        }
+      }
+      return `<button class="${cls}" data-o="${esc(o)}"${reviewing ? ' disabled' : ''}><span class="letter">${'ABCDE'[i]}</span><span>${esc(o)}</span></button>`;
+    }).join('');
+    app.innerHTML = frame('Slumpat ordtest', `${rtView + 1} av ${rtWords.length}`, (rtView / rtWords.length) * 100, `
+      <p class="q-label">${reviewing ? `Ditt svar${rtDirect ? '' : ' – facit visas efter testet'}` : 'Vad betyder ordet?'}</p>
       <h2 class="w-word">${esc(w.word)}</h2>
-      <div class="opts">${w.options.map((o, i) =>
-        `<button class="opt" data-o="${esc(o)}"><span class="letter">${'ABCDE'[i]}</span><span>${esc(o)}</span></button>`).join('')}</div>
-      <div id="fb"></div>`, 'Avbryt testet');
+      <div class="opts${reviewing ? ' answered' : ''}">${optHtml}</div>
+      <div id="fb">${reviewing && rtDirect ? rtCardHtml(w) : ''}</div>
+      ${rtView > 0 || reviewing ? `<div class="rt-nav">
+        ${rtView > 0 ? '<button type="button" id="rt-prev">‹ Föregående</button>' : '<span class="spacer"></span>'}
+        ${reviewing ? '<button type="button" id="rt-return">Framåt ›</button>' : ''}
+      </div>` : ''}`, 'Avbryt testet');
     document.getElementById('back').onclick = renderStart;
-    app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => rtAnswer(btn, w));
+    const prev = document.getElementById('rt-prev');
+    if (prev) prev.onclick = () => { rtView--; renderRandomQuiz(); };
+    const ret = document.getElementById('rt-return');
+    if (ret) ret.onclick = () => { rtView++; renderRandomQuiz(); };
+    if (!reviewing) app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => rtAnswer(btn, w));
   }
 
   function rtAnswer(btn, w) {
     const chosen = btn.getAttribute('data-o');
     const ok = chosen === w.correct;
     rtResults.push({ w, chosen, ok });
-    const goNext = () => { rtI++; renderRandomQuiz(); };
+    const goNext = () => { rtI++; rtView = rtI; renderRandomQuiz(); };
+    if (!rtDirect) {
+      // Facit väntar till resultatsidan: markera valet kort och gå vidare.
+      app.querySelectorAll('.opt').forEach(b => { b.disabled = true; if (b !== btn) b.classList.add('dim'); });
+      btn.classList.add('chosen');
+      setTimeout(goNext, 280);
+      return;
+    }
     app.querySelectorAll('.opt').forEach(b => {
       const v = b.getAttribute('data-o');
       if (v === w.correct) b.classList.add('correct');
@@ -642,6 +717,7 @@ const exams = upcomingExams(2);
     const last = rtI === rtWords.length - 1;
     document.getElementById('fb').innerHTML = `
       <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Fel, rätt svar är markerat.'}</p>
+      ${rtCardHtml(w)}
       <div class="btn-row"><button class="btn btn-primary" id="nq">${last ? 'Visa resultatet' : 'Nästa fråga'}</button></div>`;
     document.getElementById('nq').onclick = goNext;
   }

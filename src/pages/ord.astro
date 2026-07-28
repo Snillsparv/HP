@@ -59,6 +59,10 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
 </Base>
 
 <style is:global>
+  /* Ingen blå tapp-markering någonstans i ordträningen på mobil. */
+  .ot-page, .ot-page *, .ot-tour, .ot-tour *, .ot-lvlup, .ot-lvlup * {
+    -webkit-tap-highlight-color: transparent; }
+
   .ot-page .head { margin-bottom: 1rem; text-align: center; }
   .ot-page .head .lead { margin-left: auto; margin-right: auto; }
   .ot-page .beta { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
@@ -93,8 +97,11 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
 
   .ot-page .app { display: flex; justify-content: center; }
   .ot-page .loading { color: #64748b; padding: 3rem; }
+  /* Nollställ globala .card-regler (padding och hover-lyft) som annars
+     drar in hela innehållet och får toppbilderna att hamna i en ram. */
   .ot-page .card { width: 100%; max-width: 560px; background: #fff; border: 1px solid #e2e8f0; border-radius: 18px;
-    box-shadow: 0 10px 30px rgba(20,24,43,.08); overflow: hidden; }
+    box-shadow: 0 10px 30px rgba(20,24,43,.08); overflow: hidden; padding: 0; }
+  .ot-page .card:hover { transform: none; box-shadow: 0 10px 30px rgba(20,24,43,.08); }
   .ot-page .card-top { display: flex; justify-content: space-between; align-items: center; padding: 0.8rem 1.2rem; border-bottom: 1px solid #e2e8f0; }
   .ot-page .card-top .top-left { display: flex; align-items: center; gap: 0.5rem; }
   .ot-page .card-top .tag { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #2563eb; }
@@ -275,9 +282,11 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   .ot-page #sr-info-body a { color: #2563eb; font-weight: 700; text-decoration: none; }
   .ot-page #sr-info-body a:hover { text-decoration: underline; }
 
-  /* Toppbild inne i ett läge: går kant till kant genom att äta upp body-paddingen. */
-  .ot-page .hero { display: block; width: calc(100% + 2.8rem); margin: -1.4rem -1.4rem 1.1rem;
-    height: 132px; object-fit: cover; }
+  /* Toppbild inne i ett läge: går kant till kant genom att äta upp
+     body-paddingen. max-width: none krävs för att inte globala img-regeln
+     ska klampa bredden så att bilden hamnar snett. */
+  .ot-page .hero { display: block; width: calc(100% + 2.8rem); max-width: none;
+    margin: -1.4rem -1.4rem 1.1rem; height: 132px; object-fit: cover; }
 
   .ot-page .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.9rem; }
   /* Lägesknapparna är foton med texten på en mörk tonplatta i nederkant. */
@@ -970,7 +979,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   // ---------- Introrundtur första gången man ser ett ordkort ----------
   const TOUR_FLAG = 'ot-intro-v1';
 
-  function startTour(openBody) {
+  function startTour(openBody, onDone) {
     const steps = [
       { sel: ['.w-word', '.w-def'], title: 'Ordet och betydelsen', text: 'Överst står dagens ord tillsammans med sin betydelse. Börja alltid här.' },
       { sel: ['.ety'], title: 'Etymologin', text: 'Ordets ursprung. Ofta räcker den här raden för att både förstå och minnas betydelsen.' },
@@ -1045,6 +1054,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
       window.removeEventListener('resize', layout);
       window.removeEventListener('scroll', layout, true);
       ov.remove();
+      if (onDone) onDone();
     };
     window.addEventListener('resize', layout);
     window.addEventListener('scroll', layout, true);
@@ -1120,6 +1130,14 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
         if (ht) {
           setOpen(ht, true);
           toggles.filter(o => o !== ht).forEach(o => setOpen(o, false));
+        }
+      }, () => {
+        // Efter guiden: fäll ihop det den öppnade och visa hela kortet igen.
+        toggles.forEach(o => setOpen(o, o.dataset.target === 'pic-body' && openMnemo));
+        const card = app.querySelector('.card');
+        if (card) {
+          const y = card.getBoundingClientRect().top + window.scrollY - 76;
+          window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
         }
       });
     }

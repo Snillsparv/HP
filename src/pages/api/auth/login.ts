@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { findUserByEmail, verifyPassword, createSession } from '../../../lib/auth.js';
+import { findUserByEmail, verifyPassword, createSession, getSessionFromCookies, migrateGuestToUser } from '../../../lib/auth.js';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -15,6 +15,11 @@ export const POST: APIRoute = async ({ request }) => {
     if (!user || !user.password_hash || !verifyPassword(password, user.password_hash)) {
       return new Response(null, { status: 302, headers: { Location: `/konto/login?error=${encodeURIComponent('Fel e-post eller lösenord')}` } });
     }
+
+    // Loggar en gäst in på ett befintligt konto flyttas gästens ordframsteg
+    // med (utan att skriva över kontots egna) och gästen städas bort.
+    const current = await getSessionFromCookies(request.headers.get('cookie'));
+    if (current?.is_guest) await migrateGuestToUser(current.id, user.id).catch(() => {});
 
     const token = await createSession(user.id);
 

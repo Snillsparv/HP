@@ -4,8 +4,8 @@ import { createThread } from '../../../lib/forum.js';
 
 export const POST: APIRoute = async ({ request }) => {
   const user = await getSessionFromCookies(request.headers.get('cookie'));
-  if (!user) {
-    return new Response(null, { status: 302, headers: { Location: '/konto/login' } });
+  if (!user || user.is_guest) {
+    return new Response(null, { status: 302, headers: { Location: '/konto/login?next=%2Fforum' } });
   }
 
   const form = await request.formData();

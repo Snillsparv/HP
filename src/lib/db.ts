@@ -60,6 +60,11 @@ await pool.query(`
 await pool.query(`
   ALTER TABLE users ADD COLUMN IF NOT EXISTS train_step INTEGER DEFAULT 1;
 `);
+// Gästkonton: skapas osynligt när någon börjar ordträna utan att logga in,
+// och uppgraderas till riktiga konton vid registrering.
+await pool.query(`
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest BOOLEAN NOT NULL DEFAULT FALSE;
+`);
 await pool.query(`
   ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_new_per INTEGER DEFAULT 10;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_review_per INTEGER DEFAULT 100;
@@ -94,6 +99,14 @@ await pool.query(`
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS related JSONB;
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS traps JSONB;
 `);
+// Gäster nås bara via sin sessionskaka. När sista sessionen gått ut är
+// kontot oåtkomligt och kan städas bort tillsammans med sina framsteg.
+await pool.query(`
+  DELETE FROM users u WHERE u.is_guest
+    AND u.created_at < NOW() - INTERVAL '60 days'
+    AND NOT EXISTS (SELECT 1 FROM sessions s WHERE s.user_id = u.id AND s.expires_at > NOW());
+`);
+
 // En rad per dag användaren tränat ord. Grunden för streak-räknaren.
 await pool.query(`
   CREATE TABLE IF NOT EXISTS learn_activity (

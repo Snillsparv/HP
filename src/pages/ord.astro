@@ -3,11 +3,15 @@ import Base from '../layouts/Base.astro';
 import InstallApp from '../components/InstallApp.astro';
 import { getSessionFromCookies } from '../lib/auth.js';
 import { upcomingExams } from '../lib/provdatum.js';
+import pool from '../lib/db.js';
 
 const ADMIN_EMAIL = 'snillsparv@gmail.com';
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const isAdmin = !!user && user.email === ADMIN_EMAIL;
 const exams = upcomingExams(2);
+// Utan session visas startvyn med riktiga siffror ändå; gästkontot skapas
+// först när besökaren faktiskt börjar träna.
+const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM mnemonic_words');
 ---
 
 <Base
@@ -34,31 +38,11 @@ const exams = upcomingExams(2);
         </div>
       </div>
 
-      {user ? (
-        <InstallApp
-          name="Ordträning"
-          note="Egen ikon på hemskärmen som öppnas direkt i orden."
-          storageKey="ordtraning-install"
-        />
-      ) : (
-        <div class="land">
-          <img class="land-img" src="/ordtraning/ordbok-bg.webp" alt="" width="900" height="675" />
-          <div class="land-body">
-            <ul class="land-list">
-              <li><b>Över 4000 ord</b> som är typiska för högskoleprovets ORD-del</li>
-              <li><b>Etymologi och besläktade ord</b> så att du kan lista ut betydelser i stället för att gissa</li>
-              <li><b>En minnesregel för varje ord</b> när du behöver extra hjälp</li>
-              <li><b>Spaced repetition</b> som lägger repetitionerna precis innan du annars skulle glömma</li>
-              <li><b>Slumpade ordtest och hela ordlistan</b> att bläddra i</li>
-            </ul>
-            <p class="land-note">Allt är gratis. Du behöver bara ett konto, så att dina framsteg sparas och följer med mellan mobilen och datorn.</p>
-            <div class="land-cta">
-              <a class="btn btn-primary" href="/konto/registrera?next=/ord">Skapa gratis konto</a>
-              <a class="btn-plain" href="/konto/login?next=/ord">Jag har redan ett konto</a>
-            </div>
-          </div>
-        </div>
-      )}
+      <InstallApp
+        name="Ordträning"
+        note="Egen ikon på hemskärmen som öppnas direkt i orden."
+        storageKey="ordtraning-install"
+      />
 
       {isAdmin && (
         <div class="dev">
@@ -69,7 +53,7 @@ const exams = upcomingExams(2);
         </div>
       )}
 
-      {user && <div id="app" class="app"><div class="loading">Laddar…</div></div>}
+      <div id="app" class="app"><div class="loading">Laddar…</div></div>
     </div>
   </div>
 </Base>
@@ -90,19 +74,22 @@ const exams = upcomingExams(2);
   .ot-page .dev-danger:hover { border-color: #ef4444; color: #ef4444; }
   .ot-page .dev-msg { font-size: 0.8rem; color: #10b981; font-weight: 600; }
 
-  /* Landningsvyn för utloggade besökare. */
-  .ot-page .land { max-width: 560px; margin: 0 auto; background: #fff; border: 1px solid #e2e8f0;
-    border-radius: 18px; box-shadow: 0 10px 30px rgba(20,24,43,.08); overflow: hidden; }
-  .ot-page .land-img { display: block; width: 100%; height: 190px; object-fit: cover; }
-  .ot-page .land-body { padding: 1.3rem 1.4rem 1.5rem; }
-  .ot-page .land-list { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 0.55rem; }
-  .ot-page .land-list li { padding-left: 1.6rem; position: relative; color: #334155; line-height: 1.45; }
-  .ot-page .land-list li::before { content: '✓'; position: absolute; left: 0; color: #10b981; font-weight: 800; }
-  .ot-page .land-list b { color: #1a1a2e; }
-  .ot-page .land-note { color: #64748b; font-size: 0.9rem; margin: 1rem 0 1.2rem; }
-  .ot-page .land-cta { display: flex; flex-direction: column; gap: 0.6rem; align-items: center; }
-  .ot-page .land-cta .btn-primary { width: 100%; text-align: center; box-sizing: border-box; }
-  .ot-page .btn-plain { color: #2563eb; font-weight: 600; font-size: 0.92rem; }
+  /* Kontouppmuntran för gäster: liten i lägena, större efter första passet. */
+  .ot-page a.btn { display: block; text-align: center; text-decoration: none; box-sizing: border-box; }
+  .ot-page .gnudge { margin: 0 0 1rem; background: #eff6ff; border: 1.5px solid #bfdbfe;
+    border-radius: 12px; padding: 0.8rem 1rem; }
+  .ot-page .gnudge p { margin: 0 0 0.6rem; font-size: 0.9rem; color: #334155; }
+  .ot-page .gnudge-row { display: flex; align-items: center; gap: 0.9rem; flex-wrap: wrap; }
+  .ot-page .gnudge-btn { width: auto; padding: 0.55rem 1rem; font-size: 0.9rem; }
+  .ot-page .gnudge .link-btn { color: #64748b; }
+  .ot-page .gsave { background: #f0fdf4; border: 1.5px solid #bbf7d0; border-radius: 12px;
+    padding: 1rem 1.1rem 0.9rem; margin: 0 0 1rem; text-align: center; }
+  .ot-page .gsave h3 { margin: 0 0 0.3rem; color: #1a1a2e; }
+  .ot-page .gsave p { margin: 0; font-size: 0.92rem; color: #475569; line-height: 1.5; }
+  .ot-page .gsave .btn-row { margin-top: 0.9rem; }
+  .ot-page .gsave .link-btn { color: #64748b; }
+  .ot-page .gsave-line { text-align: center; font-size: 0.88rem; color: #64748b; margin: 0 0 1rem; }
+  .ot-page .gsave-line a { color: #2563eb; font-weight: 700; }
 
   .ot-page .app { display: flex; justify-content: center; }
   .ot-page .loading { color: #64748b; padding: 3rem; }
@@ -399,12 +386,15 @@ const exams = upcomingExams(2);
   };
 </script>
 
-<script is:inline define:vars={{ EXAMS: exams }}>
+<script is:inline define:vars={{ EXAMS: exams, HAS_SESSION: !!user, IS_GUEST: !!user?.is_guest, TOTAL_WORDS: wordCount.n }}>
 (function () {
   const app = document.getElementById('app');
   if (!app) return; // utloggad besökare ser landningsvyn i stället
   const devMsg = document.getElementById('dev-msg');
   let session = [], stats = null, learnI = 0, quizI = 0, results = [];
+  // Utan session körs sidan i gästläge: startvyn visas direkt och ett osynligt
+  // gästkonto skapas först när besökaren börjar träna eller öppnar ett läge.
+  let hasSession = HAS_SESSION, isGuest = IS_GUEST;
   let settings = { newPer: 10, reviewPer: 100 };
   let settingsOpen = false;
   let newLeft = 0;
@@ -503,7 +493,22 @@ const exams = upcomingExams(2);
     return r.json();
   }
 
+  async function ensureSession() {
+    if (hasSession) return;
+    const r = await fetch('/api/auth/guest', { method: 'POST' }).then(x => x.json()).catch(() => null);
+    if (r && r.ok) { hasSession = true; isGuest = !!r.guest; }
+  }
+
   async function load() {
+    if (!hasSession) {
+      // Gäst utan konto ännu: visa startvyn med nollställd statistik.
+      stats = { total: TOTAL_WORDS, learned: 0, strong: 0, due: 0, today: 0, ignored: 0 };
+      session = []; newLeft = settings.newPer; streak = 0; trainedToday = false; ignoredWords = [];
+      startLevel = 1;
+      learnI = 0; quizI = 0; results = []; quizQueue = []; quizTotal = 0; resultsMap = {};
+      renderStart();
+      return;
+    }
     app.innerHTML = '<div class="loading">Laddar…</div>';
     const data = await api('GET');
     session = data.session || [];
@@ -516,6 +521,28 @@ const exams = upcomingExams(2);
     if (data.settings) settings = data.settings;
     learnI = 0; quizI = 0; results = []; quizQueue = []; quizTotal = 0; resultsMap = {};
     renderStart();
+  }
+
+  // Diskret kontouppmuntran för gäster. Visas i lägena tills den avfärdats.
+  function guestNudgeHtml() {
+    if (!isGuest) return '';
+    let done = null;
+    try { done = localStorage.getItem('ot-nudge-done'); } catch {}
+    if (done) return '';
+    return `<div class="gnudge" id="gnudge">
+      <p><b>Tips!</b> Skapa ett gratis konto så sparas dina framsteg och följer med mellan mobilen och datorn.</p>
+      <div class="gnudge-row">
+        <a class="btn btn-primary gnudge-btn" href="/konto/registrera?next=/ord">Skapa gratis konto</a>
+        <button class="link-btn" id="gnudge-skip" type="button">Fortsätt utan konto</button>
+      </div></div>`;
+  }
+  function bindGuestNudge() {
+    const skip = document.getElementById('gnudge-skip');
+    if (skip) skip.onclick = () => {
+      try { localStorage.setItem('ot-nudge-done', '1'); } catch {}
+      const el = document.getElementById('gnudge');
+      if (el) el.remove();
+    };
   }
 
   function frame(tag, step, pct, inner, back) {
@@ -592,10 +619,15 @@ const exams = upcomingExams(2);
   }
 
   function todayLine() {
+    if (!hasSession) return `<b>${settings.newPer} nya ord</b> + <b>0 repetitioner</b>`;
     const news = session.filter(w => w.isNew).length;
     return `<b>${news} nya ord</b> + <b>${session.length - news} repetitioner</b>`;
   }
   function startSlot() {
+    // Gäst utan konto ännu: knappen finns, kontot skapas först vid klick.
+    if (!hasSession) {
+      return `<div class="btn-row"><button class="btn btn-primary" id="go">Starta passet (${settings.newPer} ord)</button></div>`;
+    }
     // Ett pass per dag: när dagens kvot nya ord är slut får man vänta till
     // imorgon eller höja gränsen, precis som i vanliga repetitionsappar.
     const doneToday = newLeft === 0 && stats.today > 0;
@@ -604,11 +636,31 @@ const exams = upcomingExams(2);
     }
     return doneToday
       ? `<div class="empty"><div class="big">✅</div><p>Dagens ${stats.today} nya ord är klara och inga repetitioner är förfallna. Vill du hinna mer idag kan du höja antalet nya ord per dag, annars ses vi imorgon.</p></div>`
-      : `<div class="empty"><div class="big">🎉</div><p>Inget att träna just nu, allt är repeterat. Höj antalet nya ord, kom tillbaka senare, eller använd testknapparna för att simulera framtiden.</p></div>`;
+      : `<div class="empty"><div class="big">🎉</div><p>Inget att träna just nu, allt är repeterat. Höj antalet nya ord eller kom tillbaka senare.</p></div>`;
   }
   function bindStart() {
     const go = document.getElementById('go');
-    if (go) go.onclick = () => { learnI = 0; session.some(w => w.isNew) ? renderLearn() : beginQuiz(); };
+    if (!go) return;
+    go.onclick = async () => {
+      if (!hasSession) {
+        go.disabled = true;
+        await ensureSession();
+        if (!hasSession) { go.disabled = false; return; }
+        // Gästens val i steppern innan kontot fanns följer med in.
+        if (settings.newPer !== 10 || settings.reviewPer !== 100) {
+          await api('POST', { action: 'settings', newPer: settings.newPer, reviewPer: settings.reviewPer });
+        }
+        const data = await api('GET');
+        session = data.session || [];
+        if (data.stats) stats = data.stats;
+        newLeft = data.newLeft || 0;
+        ignoredWords = data.ignoredWords || [];
+        if (data.settings) settings = data.settings;
+        if (!session.length) { renderStart(); return; }
+      }
+      learnI = 0;
+      session.some(w => w.isNew) ? renderLearn() : beginQuiz();
+    };
   }
 
   function renderStart() {
@@ -628,16 +680,16 @@ const exams = upcomingExams(2);
       </div>
       ${settingsHtml()}
       <div id="start-slot">${startSlot()}</div>
-      <div class="mode-row">
+      <div class="mode-row" id="mode-row">
         <button class="mode-btn" id="mode-random" type="button"><img class="mode-bg" src="/ordtraning/tarningar-bg.webp" alt=""><span class="mode-txt"><b>Slumpat ordtest</b><span>Valfritt antal slumpade ord, påverkar inte repetitionerna</span></span></button>
         <button class="mode-btn" id="mode-list" type="button"><img class="mode-bg" src="/ordtraning/ordbok-bg.webp" alt=""><span class="mode-txt"><b>Ordlista</b><span>Bläddra bland alla ${stats.total} ord och minnesregler</span></span></button>
       </div>
-      <p class="reset-line"><button id="reset-all" class="link-btn" type="button">↺ Återställ hela träningen</button></p>`);
+      ${hasSession ? '<p class="reset-line"><button id="reset-all" class="link-btn" type="button">↺ Återställ hela träningen</button></p>' : ''}`);
     bindFace();
     bindStart();
     bindIgnored();
-    document.getElementById('mode-random').onclick = renderRandomSetup;
-    document.getElementById('mode-list').onclick = renderList;
+    document.getElementById('mode-random').onclick = async () => { await ensureSession(); renderRandomSetup(); };
+    document.getElementById('mode-list').onclick = async () => { await ensureSession(); renderList(); };
     app.querySelectorAll('.st-btn').forEach(btn => btn.onclick = () => changeSetting(btn.dataset.set, Number(btn.dataset.d)));
     document.getElementById('set-more').onclick = () => {
       settingsOpen = !settingsOpen;
@@ -645,7 +697,8 @@ const exams = upcomingExams(2);
       extra.hidden = !settingsOpen;
       document.querySelector('#set-more span').textContent = settingsOpen ? '▴' : '▾';
     };
-    document.getElementById('reset-all').onclick = async () => {
+    const resetAll = document.getElementById('reset-all');
+    if (resetAll) resetAll.onclick = async () => {
       if (confirm('Vill du återställa hela träningen? All inlärning och alla intervall nollställs och du börjar om från första ordet.')) {
         await api('POST', { action: 'reset' });
         load();
@@ -661,6 +714,16 @@ const exams = upcomingExams(2);
     if (el) el.textContent = which === 'new' ? settings.newPer : settings.reviewPer;
     const calc = document.getElementById('calc');
     if (calc && which === 'new') calc.innerHTML = calcInner();
+    if (!hasSession) {
+      // Inget konto att spara i ännu: uppdatera bara vyn, valet skickas med
+      // när gästkontot skapas vid start.
+      newLeft = settings.newPer;
+      const line = document.getElementById('today-line');
+      if (line) line.innerHTML = todayLine();
+      const slot = document.getElementById('start-slot');
+      if (slot) { slot.innerHTML = startSlot(); bindStart(); }
+      return;
+    }
     clearTimeout(saveTimer);
     saveTimer = setTimeout(async () => {
       await api('POST', { action: 'settings', newPer: settings.newPer, reviewPer: settings.reviewPer });
@@ -687,6 +750,7 @@ const exams = upcomingExams(2);
   function renderRandomSetup() {
     app.innerHTML = frame('Slumpat ordtest', 'Sporadisk träning', 0, `
       <img class="hero" src="/ordtraning/tarningar-bg.webp" alt="">
+      ${guestNudgeHtml()}
       <p class="mode-lead">Ett fristående test med slumpade ord från hela listan. Resultatet påverkar inte dina repetitioner.</p>
       <div class="settings">
         <div class="set-row">
@@ -704,6 +768,7 @@ const exams = upcomingExams(2);
       </div>
       <div class="btn-row"><button class="btn btn-primary" id="rt-go">Starta testet</button></div>`, 'Tillbaka till översikten');
     document.getElementById('back').onclick = renderStart;
+    bindGuestNudge();
     const upd = d => { rtCount = Math.max(5, Math.min(100, rtCount + d)); document.getElementById('rt-n').textContent = rtCount; };
     document.getElementById('rt-minus').onclick = () => upd(-5);
     document.getElementById('rt-plus').onclick = () => upd(5);
@@ -845,10 +910,12 @@ const exams = upcomingExams(2);
     listQ = ''; listShown = 300;
     app.innerHTML = frame('Ordlista', `${wordList.length} ord`, 100, `
       <img class="hero" src="/ordtraning/ordbok-bg.webp" alt="">
+      ${guestNudgeHtml()}
       <input type="search" id="wl-search" class="wl-search" placeholder="Sök ord eller betydelse…">
       <div id="wl-list" class="wl-list"></div>
       <div class="btn-row" id="wl-more-row" hidden><button class="btn btn-outline" id="wl-more">Visa fler</button></div>`, 'Tillbaka till översikten');
     document.getElementById('back').onclick = renderStart;
+    bindGuestNudge();
     const search = document.getElementById('wl-search');
     let t = null;
     search.oninput = () => {
@@ -1151,11 +1218,36 @@ const exams = upcomingExams(2);
     const firstTry = list.filter(r => r.ok && !r.lapsed).length;
     const rows = list.map(r =>
       `<div class="done-row ${r.lapsed ? 'rep' : 'ok'}"><span class="mark">${r.lapsed ? '↻' : '✓'}</span> ${esc(r.word)} <span class="when">${whenLabel(r.days)}</span></div>`).join('');
+    // Efter passet uppmuntras gäster att skapa konto: stort första gången,
+    // därefter bara en liten rad. Man kan alltid fortsätta som gäst.
+    let promptDone = '1';
+    try { promptDone = localStorage.getItem('ot-passprompt-done') || ''; } catch {}
+    const guestBlock = !isGuest ? '' : (promptDone
+      ? `<p class="gsave-line"><a href="/konto/registrera?next=/ord">Skapa ett gratis konto</a> så sparas dina framsteg säkert.</p>`
+      : `<div class="gsave" id="gsave">
+          <h3>Snyggt jobbat! 🎉</h3>
+          <p>Du tränar just nu som gäst. Skapa ett gratis konto så sparas framstegen säkert, följer med mellan mobilen och datorn, och repetitionerna väntar på dig imorgon.</p>
+          <div class="btn-row">
+            <a class="btn btn-primary" href="/konto/registrera?next=/ord">Skapa gratis konto</a>
+            <a class="btn btn-outline" href="/konto/login?next=/ord">Jag har redan ett konto</a>
+            <button class="link-btn" id="gsave-skip" type="button">Fortsätt som gäst</button>
+          </div>
+        </div>`);
     app.innerHTML = frame('Passet klart', 'Klart', 100, `
       <div class="done-head"><div class="big">${firstTry}<span style="color:#64748b;font-size:1.4rem">/${list.length}</span></div><div class="sub">rätt på första försöket</div></div>
       <div class="done-list">${rows || '<p class="q-label">Inga ord i passet.</p>'}</div>
+      ${guestBlock}
       <div class="btn-row"><button class="btn btn-primary" id="home">Tillbaka till översikten</button></div>`);
     document.getElementById('home').onclick = () => { load(); };
+    const gskip = document.getElementById('gsave-skip');
+    if (gskip) gskip.onclick = () => {
+      try { localStorage.setItem('ot-passprompt-done', '1'); } catch {}
+      const el = document.getElementById('gsave');
+      if (el) el.remove();
+    };
+    if (guestBlock && !promptDone) {
+      try { localStorage.setItem('ot-passprompt-done', '1'); } catch {}
+    }
     maybeCelebrate();
   }
 

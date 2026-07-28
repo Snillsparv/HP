@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { createUser, findUserByEmail, createSession } from '../../../lib/auth.js';
+import { createUser, findUserByEmail, createSession, getSessionFromCookies, upgradeGuestToUser } from '../../../lib/auth.js';
 import { checkNewUser } from '../../../lib/alerts.js';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -23,7 +23,14 @@ export const POST: APIRoute = async ({ request }) => {
       return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('E-postadressen används redan')}` } });
     }
 
-    const user = await createUser(name, email, password);
+    // En gäst som registrerar sig blir sitt riktiga konto på samma rad i
+    // databasen, så att ordframstegen följer med automatiskt.
+    const current = await getSessionFromCookies(request.headers.get('cookie'));
+    let user;
+    if (current?.is_guest) {
+      user = await upgradeGuestToUser(current.id, name, email, password);
+    }
+    if (!user) user = await createUser(name, email, password);
     checkNewUser(name, email).catch(() => {});
     const token = await createSession(user.id);
     const redirect = form.get('redirect')?.toString() || '/forum';

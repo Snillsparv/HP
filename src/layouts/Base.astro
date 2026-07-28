@@ -89,7 +89,7 @@ const isBB = user?.email?.includes('jessica.ahrling') ?? false;
         <a href="/forum" class:list={[{ active: currentPath.startsWith('/forum') }]}>{isBB ? 'Mammaforumet' : 'Forum'}</a>
         <a href="/om-hp" class:list={[{ active: currentPath.startsWith('/om-hp') }]}>{isBB ? 'Om BB' : 'Om HP'}</a>
         <a href="/om" class:list={[{ active: currentPath === '/om' }]}>{isBB ? 'Om Pappan' : 'Om Jonas'}</a>
-        {user ? (
+        {user && !user.is_guest ? (
           <a href="/konto/profil" class:list={['nav-login', { 'nav-login--bb': isBB }]}>{user.name}</a>
         ) : (
           <a href="/konto/login" class:list={['nav-login', { 'nav-login--bb': isBB }]}>Logga in</a>

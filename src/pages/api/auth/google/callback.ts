@@ -1,5 +1,5 @@
 import type { APIRoute } from 'astro';
-import { findUserByGoogleId, findUserByEmail, createGoogleUser, createSession } from '../../../../lib/auth.js';
+import { findUserByGoogleId, findUserByEmail, createGoogleUser, createSession, getSessionFromCookies, migrateGuestToUser, upgradeGuestToGoogleUser } from '../../../../lib/auth.js';
 import pool from '../../../../lib/db.js';
 import { checkNewUser } from '../../../../lib/alerts.js';
 
@@ -36,16 +36,27 @@ export const GET: APIRoute = async ({ request }) => {
     });
     const profile = await userRes.json();
 
+    const current = await getSessionFromCookies(request.headers.get('cookie'));
     let user = await findUserByGoogleId(profile.id);
     if (!user) {
       const existing = await findUserByEmail(profile.email);
       if (existing) {
         await pool.query('UPDATE users SET google_id = $1 WHERE id = $2', [profile.id, existing.id]);
         user = { ...existing, google_id: profile.id };
-      } else {
+      } else if (current?.is_guest) {
+        // Gäst som blir ny Google-användare: uppgradera gästen på plats så
+        // att ordframstegen följer med.
+        user = await upgradeGuestToGoogleUser(current.id, profile.name || profile.email, profile.email, profile.id);
+        if (user) checkNewUser(profile.name || '', profile.email).catch(() => {});
+      }
+      if (!user) {
         user = await createGoogleUser(profile.name || profile.email, profile.email, profile.id);
         checkNewUser(profile.name || '', profile.email).catch(() => {});
       }
+    }
+    // Gäst som loggar in på ett befintligt konto: flytta med framstegen.
+    if (current?.is_guest && current.id !== user.id) {
+      await migrateGuestToUser(current.id, user.id).catch(() => {});
     }
 
     const token = await createSession(user.id);

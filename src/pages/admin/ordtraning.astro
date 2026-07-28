@@ -217,6 +217,10 @@ const exams = upcomingExams(2);
   .ot-page #sr-info-body a { color: #2563eb; font-weight: 700; text-decoration: none; }
   .ot-page #sr-info-body a:hover { text-decoration: underline; }
 
+  /* Toppbild inne i ett läge: går kant till kant genom att äta upp body-paddingen. */
+  .ot-page .hero { display: block; width: calc(100% + 2.8rem); margin: -1.4rem -1.4rem 1.1rem;
+    height: 132px; object-fit: cover; }
+
   .ot-page .mode-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.6rem; margin-top: 0.9rem; }
   /* Lägesknapparna är foton med texten på en mörk tonplatta i nederkant. */
   .ot-page .mode-btn { font: inherit; position: relative; isolation: isolate; overflow: hidden; text-align: left;
@@ -618,6 +622,7 @@ const exams = upcomingExams(2);
 
   function renderRandomSetup() {
     app.innerHTML = frame('Slumpat ordtest', 'Sporadisk träning', 0, `
+      <img class="hero" src="/ordtraning/tarningar-bg.webp" alt="">
       <p class="mode-lead">Ett fristående test med slumpade ord från hela listan. Resultatet påverkar inte dina repetitioner.</p>
       <div class="settings">
         <div class="set-row">
@@ -775,6 +780,7 @@ const exams = upcomingExams(2);
     }
     listQ = ''; listShown = 300;
     app.innerHTML = frame('Ordlista', `${wordList.length} ord`, 100, `
+      <img class="hero" src="/ordtraning/ordbok-bg.webp" alt="">
       <input type="search" id="wl-search" class="wl-search" placeholder="Sök ord eller betydelse…">
       <div id="wl-list" class="wl-list"></div>
       <div class="btn-row" id="wl-more-row" hidden><button class="btn btn-outline" id="wl-more">Visa fler</button></div>`, 'Tillbaka till översikten');

@@ -182,6 +182,27 @@ const exams = upcomingExams(2);
     .ot-lvlup, .ot-lvlup-card, .ot-lvlup-face, .ot-lvlup-conf i { animation: none; }
   }
 
+  /* Introrundtur: fyra skuggremsor runt det aktuella elementet, en ram runt
+     hålet och en pratbubbla. Ligger på body, utanför .ot-page. */
+  .ot-tour { position: fixed; inset: 0; z-index: 400; animation: ot-fade 0.25s ease both; }
+  .ot-tour-shade { position: fixed; background: rgba(15, 23, 42, 0.6); }
+  .ot-tour-frame { position: fixed; border-radius: 10px; box-shadow: 0 0 0 3px #60a5fa; cursor: default; }
+  .ot-tour-tip { position: fixed; left: 50%; transform: translateX(-50%); width: min(92vw, 360px);
+    box-sizing: border-box; background: #fff; border-radius: 14px; padding: 1rem 1.1rem 1.05rem;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, 0.4); transition: top 0.25s ease; }
+  .ot-tour-count { font-size: 0.72rem; font-weight: 700; letter-spacing: 0.06em; color: #2563eb;
+    text-transform: uppercase; margin-bottom: 0.3rem; }
+  .ot-tour-tip h4 { margin: 0 0 0.3rem; font-size: 1.05rem; color: #1a1a2e; }
+  .ot-tour-tip p { margin: 0 0 0.85rem; font-size: 0.92rem; line-height: 1.55; color: #475569; }
+  .ot-tour-btns { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; }
+  .ot-tour-skip { font: inherit; font-size: 0.85rem; background: none; border: none; color: #94a3b8;
+    cursor: pointer; text-decoration: underline; }
+  .ot-tour-skip:hover { color: #64748b; }
+  .ot-tour-next { font: inherit; font-weight: 700; font-size: 0.92rem; background: #2563eb; color: #fff;
+    border: none; border-radius: 10px; padding: 0.55rem 1.2rem; cursor: pointer; }
+  .ot-tour-next:hover { background: #1d4ed8; }
+  @media (prefers-reduced-motion: reduce) { .ot-tour, .ot-tour-tip { animation: none; transition: none; } }
+
   .ot-page .calc { border-top: 1px dashed #e2e8f0; margin-top: 0.5rem; padding-top: 0.6rem; }
   .ot-page .calc-head { font-size: 0.78rem; color: #64748b; margin-bottom: 0.35rem; }
   .ot-page .calc-row { padding: 0.14rem 0; font-size: 0.84rem; line-height: 1.4; color: #64748b; }
@@ -875,6 +896,92 @@ const exams = upcomingExams(2);
       ${w.example ? `<p class="example"><span class="ex-label">Exempel</span>»${w.example}«</p>` : ''}`;
   }
 
+  // ---------- Introrundtur första gången man ser ett ordkort ----------
+  const TOUR_FLAG = 'ot-intro-v1';
+
+  function startTour(openBody) {
+    const steps = [
+      { sel: ['.w-word', '.w-def'], title: 'Ordet och betydelsen', text: 'Överst står dagens ord tillsammans med sin betydelse. Börja alltid här.' },
+      { sel: ['.ety'], title: 'Etymologin', text: 'Ordets ursprung. Ofta räcker den här raden för att både förstå och minnas betydelsen.' },
+      { sel: ['.rel'], title: 'Ord med samma rot', text: 'Besläktade ord som delar ursprung. Känner du igen något av dem har du en gratis minneskrok.' },
+      { sel: ['#pic-body'], open: 'pic-body', title: 'Minnesregeln', text: 'Behöver du mer hjälp finns en minnesregel som gör ordet svårt att glömma.' },
+      { sel: ['#ex-body'], open: 'ex-body', title: 'Exempelmeningen', text: 'Så här används ordet i en riktig mening.' },
+      { sel: ['.btn-row'], title: 'Vidare', text: 'Klar med ordet? Gå till nästa. Kan du ordet sedan tidigare hoppar du över det, då räknas det bort och du får ett annat i stället.' },
+      { sel: ['.card-top .step'], title: 'Din egen takt', text: 'Du väljer själv hur många nya ord du vill ha varje dag. Varje dag kommer du att få dessa samt uppmanas repetera de gamla ord som behöver repeteras med den smarta repetitionsalgoritmen. Lycka till! :)' },
+    ].filter(st => st.sel.every(q => app.querySelector(q)));
+    if (!steps.length) return;
+
+    const ov = document.createElement('div');
+    ov.className = 'ot-tour';
+    ov.innerHTML = `
+      <div class="ot-tour-shade" data-side="top"></div>
+      <div class="ot-tour-shade" data-side="bottom"></div>
+      <div class="ot-tour-shade" data-side="left"></div>
+      <div class="ot-tour-shade" data-side="right"></div>
+      <div class="ot-tour-frame"></div>
+      <div class="ot-tour-tip">
+        <div class="ot-tour-count"></div>
+        <h4></h4><p></p>
+        <div class="ot-tour-btns">
+          <button class="ot-tour-skip" type="button">Hoppa över</button>
+          <button class="ot-tour-next" type="button">Nästa</button>
+        </div>
+      </div>`;
+    document.body.appendChild(ov);
+
+    let i = 0;
+    const els = () => steps[i].sel.map(q => app.querySelector(q)).filter(Boolean);
+
+    // Placerar remsor, ram och bubbla kring aktuellt element. Anropas även
+    // vid scroll och storleksändring så att hålet följer med.
+    function layout() {
+      const rects = els().map(e => e.getBoundingClientRect());
+      if (!rects.length) return;
+      const pad = 8;
+      const hole = {
+        left: Math.max(0, Math.min(...rects.map(r => r.left)) - pad),
+        top: Math.max(0, Math.min(...rects.map(r => r.top)) - pad),
+        right: Math.min(innerWidth, Math.max(...rects.map(r => r.right)) + pad),
+        bottom: Math.min(innerHeight, Math.max(...rects.map(r => r.bottom)) + pad),
+      };
+      const S = side => ov.querySelector(`[data-side="${side}"]`).style;
+      S('top').cssText = `left:0; top:0; width:100vw; height:${hole.top}px`;
+      S('bottom').cssText = `left:0; top:${hole.bottom}px; width:100vw; height:${Math.max(0, innerHeight - hole.bottom)}px`;
+      S('left').cssText = `left:0; top:${hole.top}px; width:${hole.left}px; height:${hole.bottom - hole.top}px`;
+      S('right').cssText = `left:${hole.right}px; top:${hole.top}px; width:${Math.max(0, innerWidth - hole.right)}px; height:${hole.bottom - hole.top}px`;
+      ov.querySelector('.ot-tour-frame').style.cssText =
+        `left:${hole.left}px; top:${hole.top}px; width:${hole.right - hole.left}px; height:${hole.bottom - hole.top}px`;
+      const tip = ov.querySelector('.ot-tour-tip');
+      const th = tip.offsetHeight;
+      const below = hole.bottom + 12;
+      tip.style.top = (below + th < innerHeight - 8 ? below : Math.max(8, hole.top - th - 12)) + 'px';
+    }
+
+    function focusStep() {
+      const st = steps[i];
+      if (st.open) openBody(st.open);
+      ov.querySelector('.ot-tour-count').textContent = `${i + 1} av ${steps.length}`;
+      ov.querySelector('h4').textContent = st.title;
+      ov.querySelector('p').textContent = st.text;
+      ov.querySelector('.ot-tour-next').textContent = i === steps.length - 1 ? 'Klart, nu kör vi!' : 'Nästa';
+      const first = els()[0];
+      if (first) first.scrollIntoView({ block: 'center', behavior: 'auto' });
+      requestAnimationFrame(layout);
+    }
+
+    const finish = () => {
+      try { localStorage.setItem(TOUR_FLAG, '1'); } catch {}
+      window.removeEventListener('resize', layout);
+      window.removeEventListener('scroll', layout, true);
+      ov.remove();
+    };
+    window.addEventListener('resize', layout);
+    window.addEventListener('scroll', layout, true);
+    ov.querySelector('.ot-tour-skip').onclick = finish;
+    ov.querySelector('.ot-tour-next').onclick = () => { i++; i >= steps.length ? finish() : focusStep(); };
+    focusStep();
+  }
+
   function renderLearn() {
     const news = session.filter(w => w.isNew);
     const w = news[learnI];
@@ -932,6 +1039,19 @@ const exams = upcomingExams(2);
       const left = session.filter(x => x.isNew).length;
       learnI < left ? renderLearn() : beginQuiz();
     };
+
+    // Första ordkortet någonsin får en guidad genomgång av kortets delar.
+    let tourFlag = null;
+    try { tourFlag = localStorage.getItem(TOUR_FLAG); } catch {}
+    if (!tourFlag) {
+      startTour(id => {
+        const ht = toggles.find(t => t.dataset.target === id);
+        if (ht) {
+          setOpen(ht, true);
+          toggles.filter(o => o !== ht).forEach(o => setOpen(o, false));
+        }
+      });
+    }
   }
 
   function beginQuiz() {

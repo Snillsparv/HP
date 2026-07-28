@@ -25,6 +25,15 @@ const exams = upcomingExams(2);
         <p class="lead">Lär dig orden som brukar dyka upp på högskoleprovet, med etymologi, minnesregler och repetition precis när du behöver den.</p>
       </div>
 
+      <div class="sr-info">
+        <button class="sr-info-toggle" id="sr-info-toggle" type="button">ℹ️ Så fungerar spaced repetition</button>
+        <div id="sr-info-body" hidden>
+          <p>Varje ord repeteras precis innan du annars skulle glömma det: först efter 1 dag, sedan 3 dagar, 1 vecka, 2 veckor, 5 veckor och till sist 3 månader. Svarar du rätt växer intervallet, svarar du fel börjar ordet om och repeteras samma dag tills det sitter.</p>
+          <p>På så vis fastnar orden i långtidsminnet med så få repetitioner som möjligt. Det viktigaste är att komma tillbaka varje dag, hellre korta pass ofta än långa pass sällan.</p>
+          <p><a href="https://www.youtube.com/watch?v=Xa2HgOwGG08" target="_blank" rel="noopener">▶ Se videon där jag förklarar spaced repetition</a></p>
+        </div>
+      </div>
+
       {user ? (
         <InstallApp
           name="Ordträning"
@@ -66,7 +75,8 @@ const exams = upcomingExams(2);
 </Base>
 
 <style is:global>
-  .ot-page .head { margin-bottom: 1rem; }
+  .ot-page .head { margin-bottom: 1rem; text-align: center; }
+  .ot-page .head .lead { margin-left: auto; margin-right: auto; }
   .ot-page .beta { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
     background: #eef2ff; color: #2563eb; padding: 0.15rem 0.5rem; border-radius: 999px; vertical-align: middle; }
   .ot-page .lead { color: #64748b; max-width: 60ch; }
@@ -241,7 +251,8 @@ const exams = upcomingExams(2);
   .ot-page .example { font-style: italic; color: #334155; font-size: 0.97rem; margin: 0.2rem 0 0.9rem; }
   .ot-page .example strong { font-style: normal; color: #1a1a2e; }
   .ot-page .ex-label { font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; display: block; margin-bottom: 0.15rem; font-style: normal; }
-  .ot-page .sr-info { text-align: center; margin: -0.5rem 0 1rem; }
+  /* Ligger fristående under ingressen, i samma bredd som appkortet. */
+  .ot-page .sr-info { text-align: center; max-width: 560px; margin: -0.3rem auto 1.3rem; }
   .ot-page .sr-info-toggle { font: inherit; font-size: 0.8rem; font-weight: 600; color: #64748b; background: none;
     border: none; cursor: pointer; padding: 0.2rem 0.4rem; }
   .ot-page .sr-info-toggle:hover { color: #2563eb; }
@@ -358,6 +369,14 @@ const exams = upcomingExams(2);
   .ot-page .empty { text-align: center; color: #64748b; padding: 1.5rem 0.5rem; }
   .ot-page .empty .big { font-size: 2.2rem; }
 </style>
+
+<script is:inline>
+  // Spaced repetition-rutan ligger utanför appen och ska funka även utloggad.
+  document.getElementById('sr-info-toggle').onclick = () => {
+    const body = document.getElementById('sr-info-body');
+    body.hidden = !body.hidden;
+  };
+</script>
 
 <script is:inline define:vars={{ EXAMS: exams }}>
 (function () {
@@ -586,14 +605,6 @@ const exams = upcomingExams(2);
         <div class="stat-line"><span class="dot" style="background:#2563eb"></span><b>${stats.learned - stats.strong}</b>&nbsp;på inlärning</div>
         <div class="stat-line"><span class="dot" style="background:#10b981"></span><b>${stats.strong}</b>&nbsp;sitter säkert</div>
       </div>
-      <div class="sr-info">
-        <button class="sr-info-toggle" id="sr-info-toggle" type="button">ℹ️ Så fungerar spaced repetition</button>
-        <div id="sr-info-body" hidden>
-          <p>Varje ord repeteras precis innan du annars skulle glömma det: först efter 1 dag, sedan 3 dagar, 1 vecka, 2 veckor, 5 veckor och till sist 3 månader. Svarar du rätt växer intervallet, svarar du fel börjar ordet om och repeteras samma dag tills det sitter.</p>
-          <p>På så vis fastnar orden i långtidsminnet med så få repetitioner som möjligt. Det viktigaste är att komma tillbaka varje dag, hellre korta pass ofta än långa pass sällan.</p>
-          <p><a href="https://www.youtube.com/watch?v=Xa2HgOwGG08" target="_blank" rel="noopener">▶ Se videon där jag förklarar spaced repetition</a></p>
-        </div>
-      </div>
       ${settingsHtml()}
       <div id="start-slot">${startSlot()}</div>
       <div class="mode-row">
@@ -604,10 +615,6 @@ const exams = upcomingExams(2);
     bindFace();
     bindStart();
     bindIgnored();
-    document.getElementById('sr-info-toggle').onclick = () => {
-      const body = document.getElementById('sr-info-body');
-      body.hidden = !body.hidden;
-    };
     document.getElementById('mode-random').onclick = renderRandomSetup;
     document.getElementById('mode-list').onclick = renderList;
     app.querySelectorAll('.st-btn').forEach(btn => btn.onclick = () => changeSetting(btn.dataset.set, Number(btn.dataset.d)));

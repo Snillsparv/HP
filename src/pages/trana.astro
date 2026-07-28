@@ -107,6 +107,27 @@ const serverStep = user?.train_step || 1;
         <div class="train-step train-step--locked" id="step-5" data-step="5">
           <button class="train-back-btn" data-back="4">&uarr;</button>
           <div class="train-step-header">
+            <span class="train-step-num">4b</span>
+            <h2>Börja träna på HP-ord</h2>
+          </div>
+          <p>Frivilligt men smart: kom igång med ordträningen redan nu, så hinner repetitionerna göra sitt jobb till provdagen. Några ord om dagen räcker långt.</p>
+          <a href="/ord" class="prov-hero-link">
+            <div class="prov-hero-card prov-hero-card--ord">
+              <h3>Ordträningen</h3>
+              <div class="prov-hero-stats">
+                <span><strong>4000+</strong> HP-ord</span>
+                <span><strong>minnesregler</strong> och etymologi</span>
+                <span>smart repetition</span>
+              </div>
+              <span class="btn btn-primary prov-btn--ord" style="margin-top:1rem;">Till ordträningen</span>
+            </div>
+          </a>
+          <button class="btn btn-primary train-done-btn" data-next="6">Vidare</button>
+        </div>
+
+        <div class="train-step train-step--locked" id="step-6" data-step="6">
+          <button class="train-back-btn" data-back="5">&uarr;</button>
+          <div class="train-step-header">
             <span class="train-step-num">5a</span>
             <h2>Gör kvantitativt prov 2</h2>
           </div>
@@ -123,11 +144,11 @@ const serverStep = user?.train_step || 1;
               <span class="btn btn-primary prov-btn--kvant" style="margin-top:1rem;">Starta provet</span>
             </div>
           </a>
-          <button class="btn btn-primary train-done-btn" data-next="6">Klar</button>
+          <button class="btn btn-primary train-done-btn" data-next="7">Klar</button>
         </div>
 
-        <div class="train-step train-step--locked" id="step-6" data-step="6">
-          <button class="train-back-btn" data-back="5">&uarr;</button>
+        <div class="train-step train-step--locked" id="step-7" data-step="7">
+          <button class="train-back-btn" data-back="6">&uarr;</button>
           <div class="train-step-header">
             <span class="train-step-num">5b</span>
             <h2>Gör verbalt prov 2</h2>
@@ -145,10 +166,10 @@ const serverStep = user?.train_step || 1;
               <span class="btn btn-primary prov-btn--verbal" style="margin-top:1rem;">Starta provet</span>
             </div>
           </a>
-          <button class="btn btn-primary train-done-btn" data-next="7">Klar</button>
+          <button class="btn btn-primary train-done-btn" data-next="8">Klar</button>
         </div>
 
-        <div class="train-step train-step--locked" id="step-7" data-step="7">
+        <div class="train-step train-step--locked" id="step-8" data-step="8">
           <div class="tip-box success" style="text-align: center; margin: 0;">
             <strong style="font-size: 1.2rem;">Du är nu i ett mycket bättre läge än du var i tidigare! Lycka till! :D</strong>
           </div>
@@ -168,7 +189,17 @@ const serverStep = user?.train_step || 1;
 
   <script>
     const STORAGE_KEY = 'hp-train-step';
-    const localStep = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10);
+    // Ordsteget 4b sköts in som steg 5, så sparade steg från gamla
+    // numreringen (5, 6, 7) knuffas fram ett snäpp en gång.
+    const MIGRATED_KEY = 'hp-train-step-ord';
+    let localStep = parseInt(localStorage.getItem(STORAGE_KEY) || '1', 10);
+    if (!localStorage.getItem(MIGRATED_KEY)) {
+      if (localStep >= 5) {
+        localStep += 1;
+        localStorage.setItem(STORAGE_KEY, String(localStep));
+      }
+      localStorage.setItem(MIGRATED_KEY, '1');
+    }
     const sStep = (window as any).__serverStep || 1;
     const saved = Math.max(localStep, sStep);
 
@@ -195,7 +226,7 @@ const serverStep = user?.train_step || 1;
       });
 
       // Load cheers gif only when reaching final step
-      if (n >= 7) {
+      if (n >= 8) {
         const gif = document.getElementById('cheers-gif') as HTMLImageElement | null;
         if (gif && !gif.src) {
           gif.src = gif.getAttribute('data-src') || '';
@@ -304,9 +335,15 @@ const serverStep = user?.train_step || 1;
     border-color: #16a34a;
   }
 
+  .prov-hero-card--ord {
+    background: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 100%);
+    border-color: #9333ea;
+  }
+
   .prov-btn--kvant { background: #ea580c; }
   .prov-btn--verbal { background: #2563eb; }
   .prov-btn--matte { background: #16a34a; }
+  .prov-btn--ord { background: #9333ea; }
 
   .prov-hero-card h3 { margin: 0 0 0.5rem; font-size: 1.15rem; }
   .prov-hero-card > p { color: var(--color-muted); }

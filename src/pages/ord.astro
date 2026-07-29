@@ -54,6 +54,14 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
       )}
 
       <div id="app" class="app"><div class="loading">Laddar…</div></div>
+
+      <div class="credit">
+        <img class="credit-img" src="/ordtraning/david.webp" alt="David Munkhammar" width="112" height="112" loading="lazy" />
+        <div class="credit-text">
+          <b>Tack, David!</b>
+          <p>Minnesreglerna i ordträningen, tusentals små berättelser som får orden att fastna, är skrivna av <b>David Munkhammar</b>. Stort tack David, utan dig hade det här inte funnits!</p>
+        </div>
+      </div>
     </div>
   </div>
 </Base>
@@ -65,6 +73,19 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
 
   .ot-page .head { margin-bottom: 1rem; text-align: center; }
   .ot-page .head .lead { margin-left: auto; margin-right: auto; }
+
+  /* Tack till David som skrivit minnesreglerna. */
+  .ot-page .credit { max-width: 560px; margin: 1.6rem auto 0.4rem; display: flex; align-items: center; gap: 1.1rem;
+    background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; padding: 1rem 1.2rem;
+    box-shadow: 0 6px 20px rgba(20, 24, 43, 0.06); }
+  .ot-page .credit-img { width: 112px; height: 112px; max-width: none; border-radius: 50%; object-fit: cover;
+    border: 4px solid #2563eb; flex-shrink: 0; }
+  .ot-page .credit-text b { color: #1a1a2e; }
+  .ot-page .credit-text > b { display: block; font-size: 1.05rem; margin-bottom: 0.25rem; }
+  .ot-page .credit-text p { margin: 0; color: #475569; font-size: 0.92rem; line-height: 1.55; }
+  @media (max-width: 480px) {
+    .ot-page .credit { flex-direction: column; text-align: center; gap: 0.7rem; }
+  }
   .ot-page .beta { font-size: 0.7rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
     background: #eef2ff; color: #2563eb; padding: 0.15rem 0.5rem; border-radius: 999px; vertical-align: middle; }
   .ot-page .lead { color: #64748b; max-width: 60ch; }

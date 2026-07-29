@@ -408,6 +408,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   // Utan session körs sidan i gästläge: startvyn visas direkt och ett osynligt
   // gästkonto skapas först när besökaren börjar träna eller öppnar ett läge.
   let hasSession = HAS_SESSION, isGuest = IS_GUEST;
+  let dataLoaded = false; // sant först när ett riktigt pass hämtats från servern
   let settings = { newPer: 10, reviewPer: 100 };
   let settingsOpen = false;
   let newLeft = 0;
@@ -524,6 +525,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
     }
     app.innerHTML = '<div class="loading">Laddar…</div>';
     const data = await api('GET');
+    dataLoaded = true;
     session = data.session || [];
     stats = data.stats;
     newLeft = data.newLeft || 0;
@@ -664,6 +666,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
           await api('POST', { action: 'settings', newPer: settings.newPer, reviewPer: settings.reviewPer });
         }
         const data = await api('GET');
+        dataLoaded = true;
         session = data.session || [];
         if (data.stats) stats = data.stats;
         newLeft = data.newLeft || 0;
@@ -677,6 +680,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   }
 
   function renderStart() {
+    if (hasSession && !dataLoaded) { load(); return; }
     const pct = stats.total ? Math.round((stats.learned / stats.total) * 100) : 0;
     app.innerHTML = frame('Ordträning', 'Dagens pass', 0, `
       <div class="ring-row">
@@ -760,6 +764,17 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   const RT_NOTE_DIRECT = 'Rätt svar och hela ordkortet med minnesregel visas direkt efter varje svar.';
   const RT_NOTE_AFTER = 'Du svarar på alla frågor först, som på riktiga provet, och får facit och ordkorten på resultatsidan.';
 
+  // På mobilen ligger lägesknapparna långt ner; när man klickar in i ett
+  // läge scrollas apprutan upp i bild.
+  function scrollToCard() {
+    requestAnimationFrame(() => {
+      const card = app.querySelector('.card');
+      if (!card) return;
+      const y = card.getBoundingClientRect().top + window.scrollY - 76;
+      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+    });
+  }
+
   function renderRandomSetup() {
     app.innerHTML = frame('Slumpat ordtest', 'Sporadisk träning', 0, `
       <img class="hero" src="/ordtraning/tarningar-bg.webp" alt="">
@@ -782,6 +797,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
       <div class="btn-row"><button class="btn btn-primary" id="rt-go">Starta testet</button></div>`, 'Tillbaka till översikten');
     document.getElementById('back').onclick = renderStart;
     bindGuestNudge();
+    scrollToCard();
     const upd = d => { rtCount = Math.max(5, Math.min(100, rtCount + d)); document.getElementById('rt-n').textContent = rtCount; };
     document.getElementById('rt-minus').onclick = () => upd(-5);
     document.getElementById('rt-plus').onclick = () => upd(5);
@@ -937,6 +953,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
     };
     document.getElementById('wl-more').onclick = () => { listShown += 300; renderListRows(); };
     renderListRows();
+    scrollToCard();
   }
 
   function renderListRows() {

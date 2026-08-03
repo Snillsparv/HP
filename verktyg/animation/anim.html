@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>Ordträningen: från nybörjare till mästare</title>
+<style>
+  /* Deterministisk animation som styrs helt av window.SEEK(t) från renderskriptet.
+     Inga CSS-animationer: varje bildruta beräknas från tiden t. */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 540px; height: 960px; overflow: hidden; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: linear-gradient(180deg, #f8fafc 0%, #eef2ff 100%);
+    color: #1a1a2e;
+    position: relative;
+  }
+
+  /* Bakgrundsord som driver långsamt uppåt bakom allt. */
+  .bgword { position: absolute; left: 0; top: 0; color: #cbd5e1; font-weight: 700; opacity: 0.4;
+    white-space: nowrap; will-change: transform; }
+
+  .brand { position: absolute; top: 64px; width: 100%; text-align: center;
+    font-size: 15px; font-weight: 700; letter-spacing: 0.22em; color: #2563eb; text-transform: uppercase; }
+
+  .headline { position: absolute; top: 96px; width: 100%; text-align: center; line-height: 1.16; }
+  .headline .l1 { display: block; font-size: 44px; font-weight: 800; color: #1a1a2e; }
+  .headline .l2 { display: block; font-size: 44px; font-weight: 800; color: #cbd5e1; }
+
+  /* Ringen ritas i SVG. Ansiktet ligger fritt OVANPÅ, aldrig i en klippande
+     behållare: ingen border-radius, ingen overflow, object-fit contain. */
+  .stage { position: absolute; left: 50%; top: 470px; width: 0; height: 0; }
+  .ringwrap { position: absolute; left: -230px; top: -230px; width: 460px; height: 460px; }
+  .ringwrap svg { display: block; width: 460px; height: 460px; }
+  .face { position: absolute; left: 50%; top: 50%; width: 300px; height: 300px; margin: -150px 0 0 -150px;
+    object-fit: contain; will-change: transform; }
+
+  .chip { position: absolute; top: 742px; width: 100%; text-align: center; }
+  .chip span { display: inline-block; font-size: 19px; font-weight: 800; letter-spacing: 0.09em;
+    text-transform: uppercase; color: #2563eb; background: #eef2ff; border-radius: 999px;
+    padding: 9px 26px; }
+  .chip.gold span { color: #b45309; background: #fffbeb; box-shadow: inset 0 0 0 2px #fde68a; }
+
+  .count { position: absolute; top: 800px; width: 100%; text-align: center;
+    font-size: 24px; color: #64748b; font-variant-numeric: tabular-nums; }
+  .count b { color: #1a1a2e; font-weight: 800; }
+
+  .endpill { position: absolute; top: 856px; width: 100%; text-align: center; }
+  .endpill span { display: inline-block; font-size: 26px; font-weight: 800; color: #fff;
+    background: #2563eb; border-radius: 999px; padding: 13px 34px;
+    box-shadow: 0 12px 30px rgba(37, 99, 235, 0.35); }
+  .endsub { position: absolute; top: 922px; width: 100%; text-align: center; font-size: 16px; color: #64748b; }
+
+  /* Ordchips som flyger in mot ringen. */
+  .flychip { position: absolute; left: 0; top: 0; font-size: 21px; font-weight: 700; color: #1a1a2e;
+    background: #fff; border: 1.5px solid #e2e8f0; border-radius: 999px; padding: 8px 20px;
+    box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08); white-space: nowrap; will-change: transform; }
+
+  .dot { position: absolute; left: 0; top: 0; width: 10px; height: 10px; border-radius: 50%; will-change: transform; }
+  .conf { position: absolute; left: 0; top: 0; width: 10px; height: 16px; border-radius: 2px; will-change: transform; }
+</style>
+</head>
+<body>
+  <div id="bg"></div>
+
+  <div class="brand">Ordträningen på hpakuten.se</div>
+  <div class="headline">
+    <span class="l1" id="hl1">Från nybörjare</span>
+    <span class="l2" id="hl2">till mästare</span>
+  </div>
+
+  <div id="fx"></div>
+
+  <div class="stage">
+    <div class="ringwrap" id="ringwrap">
+      <svg viewBox="0 0 460 460">
+        <circle cx="230" cy="230" r="212" fill="#fff"/>
+        <circle cx="230" cy="230" r="212" fill="none" stroke="#e2e8f0" stroke-width="16"/>
+        <circle id="arc" cx="230" cy="230" r="212" fill="none" stroke="#2563eb" stroke-width="16"
+          stroke-linecap="round" transform="rotate(-90 230 230)"/>
+      </svg>
+      <img class="face" id="face" src="../../public/ordfejs/1.webp" alt="">
+    </div>
+  </div>
+
+  <div class="chip" id="chipbox"><span id="chip">Nivå 1 av 10</span></div>
+  <div class="count" id="count"><b>0</b> av 4 136 ord</div>
+  <div class="endpill" id="endpill"><span>hpakuten.se/ord</span></div>
+  <div class="endsub" id="endsub">Gratis ordträning med smart repetition</div>
+
+<script>
+  // ---------- Hjälpfunktioner ----------
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const lerp = (a, b, p) => a + (b - a) * p;
+  const easeOutCubic = p => 1 - Math.pow(1 - p, 3);
+  const easeInOutQuad = p => p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2;
+  const easeOutBack = p => { const c = 1.70158; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); };
+  const fmt = n => Math.round(n).toLocaleString('sv-SE');
+
+  // ---------- Tidslinje ----------
+  // Nivå 1 visas i intro. Nivåbyten sker i slut på varje slot; sloten blir
+  // kortare ju högre nivå (montagekänsla).
+  const INTRO_END = 2.0;
+  const SLOT_DUR = [1.9, 1.7, 1.6, 1.5, 1.4, 1.3, 1.2, 1.1, 1.1]; // nivå 2..10
+  const TARGETS = [0, 30, 100, 220, 420, 720, 1150, 2000, 3000, 4136]; // ord vid nivå 1..10
+  const TOTAL_WORDS = 4136;
+  const slots = [];
+  { let s = INTRO_END;
+    for (let k = 0; k < SLOT_DUR.length; k++) { slots.push({ s0: s, s1: s + SLOT_DUR[k] }); s += SLOT_DUR[k]; } }
+  const FINALE = slots[slots.length - 1].s1;   // 14.8
+  const DURATION = 19.0;
+
+  // ---------- Bakgrundsord ----------
+  const BG_WORDS = ['efemär','prekär','lakonisk','obsolet','gängse','vederhäftig','eklektisk','altruism',
+    'sinekur','dogmatisk','paradigm','utopi','apati','koncis','nogräknad','vedermöda','förment','gemen',
+    'akribi','ambivalent','bespotta','celeber','diskrepans','ekivok'];
+  const bgEls = [];
+  { const bg = document.getElementById('bg');
+    for (let i = 0; i < BG_WORDS.length; i++) {
+      const el = document.createElement('div');
+      el.className = 'bgword';
+      el.textContent = BG_WORDS[i];
+      el.style.fontSize = (14 + (i * 7) % 13) + 'px';
+      bg.appendChild(el);
+      // Deterministiska banor: spridda x-lägen, olika starthöjd och fart.
+      bgEls.push({ el, x: ((i * 137) % 24) * 22 + 8, y0: (i * 331) % 1160, v: 26 + (i * 53) % 22 });
+    } }
+
+  // ---------- Flygande ordchips ----------
+  const FLY_WORDS = ['amper','enveten','habil','idog','celeber','frapperande','gedigen','hätsk','kategorisk',
+    'lukrativ','mangrann','nitisk','obestridlig','pregnant','rannsaka','sardonisk','tillika','vidlyftig'];
+  const flyEls = [];
+  { const fx = document.getElementById('fx');
+    for (let k = 0; k < slots.length; k++) {
+      for (let j = 0; j < 2; j++) {
+        const i = k * 2 + j;
+        const el = document.createElement('div');
+        el.className = 'flychip';
+        el.textContent = FLY_WORDS[i % FLY_WORDS.length];
+        fx.appendChild(el);
+        const fromLeft = (i % 2 === 0);
+        flyEls.push({ el, t0: slots[k].s0 + (j === 0 ? 0.08 : 0.5), dur: 0.75,
+          x0: fromLeft ? -180 : 560, y0: 200 + ((i * 197) % 560), x1: 270, y1: 470 });
+      } } }
+
+  // ---------- Punkter vid nivåbyte ----------
+  const burstEls = [];
+  { const fx = document.getElementById('fx');
+    const COLORS = ['#2563eb', '#9333ea', '#f59e0b', '#16a34a'];
+    for (let k = 0; k < slots.length; k++) {
+      for (let j = 0; j < 12; j++) {
+        const el = document.createElement('div');
+        el.className = 'dot';
+        el.style.background = COLORS[(k + j) % COLORS.length];
+        fx.appendChild(el);
+        const ang = (j / 12) * Math.PI * 2 + (k * 0.4);
+        burstEls.push({ el, t0: slots[k].s1, ang, sp: 190 + ((k * 31 + j * 17) % 60) });
+      } } }
+
+  // ---------- Konfetti i finalen ----------
+  const confEls = [];
+  { const fx = document.getElementById('fx');
+    const COLORS = ['#2563eb', '#9333ea', '#f59e0b', '#16a34a', '#ef4444', '#eab308'];
+    for (let i = 0; i < 110; i++) {
+      const el = document.createElement('div');
+      el.className = 'conf';
+      el.style.background = COLORS[i % COLORS.length];
+      fx.appendChild(el);
+      const ang = (i / 110) * Math.PI * 2 + ((i * 7) % 13) / 13;
+      confEls.push({ el, t0: FINALE + 0.1 + (i % 22) * 0.018, ang,
+        sp: 260 + ((i * 53) % 97) / 97 * 400, rot: 360 + ((i * 29) % 400) });
+    } }
+
+  // ---------- Förladdning av ansikten ----------
+  const FACES = [];
+  for (let i = 1; i <= 10; i++) { const im = new Image(); im.src = '../../public/ordfejs/' + i + '.webp'; FACES.push(im); }
+  window.READY = Promise.all(FACES.map(im => im.decode().catch(() => {})));
+
+  // ---------- Element ----------
+  const $ = id => document.getElementById(id);
+  const arcEl = $('arc'), faceEl = $('face'), chipEl = $('chip'), chipBox = $('chipbox'),
+    countEl = $('count'), hl2 = $('hl2'), ringwrap = $('ringwrap'),
+    endpill = $('endpill'), endsub = $('endsub');
+  const ARC_LEN = 2 * Math.PI * 212;
+  arcEl.style.strokeDasharray = ARC_LEN;
+
+  // ---------- SEEK ----------
+  window.SEEK = function (t) {
+    t = clamp(t, 0, DURATION);
+
+    // Bakgrundsord: konstant drift uppåt, wrappar runt.
+    for (const w of bgEls) {
+      let y = w.y0 - w.v * t;
+      y = ((y % 1160) + 1160) % 1160 - 100;
+      w.el.style.transform = 'translate(' + w.x + 'px,' + y + 'px)';
+    }
+
+    // Aktuell nivå = antal passerade nivåbyten + 1.
+    let level = 1;
+    for (const s of slots) if (t >= s.s1) level++;
+    const lastSwap = level === 1 ? null : slots[level - 2].s1;
+
+    // Räknare och ringbåge: animeras inom aktiv slot.
+    let words = TARGETS[level - 1];
+    if (t < INTRO_END) {
+      words = 0;
+    } else {
+      for (let k = 0; k < slots.length; k++) {
+        const s = slots[k];
+        if (t >= s.s0 && t < s.s1) {
+          const p = easeInOutQuad(clamp((t - s.s0) / ((s.s1 - s.s0) * 0.85), 0, 1));
+          words = lerp(TARGETS[k], TARGETS[k + 1], p);
+        } }
+    }
+    const frac = clamp(words / TOTAL_WORDS, 0, 1);
+    arcEl.style.strokeDashoffset = ARC_LEN * (1 - frac);
+    arcEl.style.opacity = frac > 0.001 ? 1 : 0;
+    countEl.innerHTML = '<b>' + fmt(words) + '</b> av 4 136 ord';
+
+    // Intro: brand/rubrik/ring/chip tonas in.
+    const iP = clamp(t / 0.6, 0, 1);
+    document.querySelector('.brand').style.opacity = iP;
+    document.querySelector('.headline').style.opacity = iP;
+    const ringP = easeOutBack(clamp((t - 0.25) / 0.55, 0, 1));
+    const uiP = clamp((t - 0.9) / 0.4, 0, 1);
+    chipBox.style.opacity = uiP; countEl.style.opacity = uiP;
+
+    // Ansikte: byts vid nivåbyte med studs.
+    faceEl.src = FACES[level - 1].src;
+    let faceScale;
+    if (level === 1) {
+      faceScale = easeOutBack(clamp((t - 0.55) / 0.55, 0, 1));
+    } else {
+      const since = t - lastSwap;
+      faceScale = since < 0.5 ? easeOutBack(clamp(since / 0.5, 0, 1)) : 1;
+      if (level === 10) faceScale *= (t > FINALE + 0.4 ? 1.06 : 1); // mästaren står lite större
+    }
+    faceEl.style.transform = 'scale(' + Math.max(faceScale, 0.001) + ')';
+    let ringScale = ringP;
+    if (level === 10) { // liten puls när sista nivån slår in
+      const p = clamp((t - FINALE) / 0.5, 0, 1);
+      ringScale = 1 + 0.05 * Math.sin(p * Math.PI);
+    }
+    ringwrap.style.transform = 'scale(' + Math.max(ringScale, 0.001) + ')';
+
+    // Chip och rubrikrad 2.
+    if (level >= 10 && t >= FINALE + 0.15) {
+      chipBox.classList.add('gold');
+      chipEl.textContent = 'Mästare · nivå 10 av 10';
+      const gp = easeOutBack(clamp((t - FINALE - 0.15) / 0.5, 0, 1));
+      chipBox.style.transform = 'scale(' + Math.max(0.8 + 0.2 * gp, 0.001) + ')';
+      hl2.style.color = '#b45309';
+      hl2.style.transform = 'scale(' + (1 + 0.08 * Math.sin(clamp((t - FINALE - 0.15) / 0.6, 0, 1) * Math.PI)) + ')';
+    } else {
+      chipBox.classList.remove('gold');
+      chipEl.textContent = 'Nivå ' + level + ' av 10';
+      chipBox.style.transform = 'scale(1)';
+      hl2.style.color = '#cbd5e1';
+      hl2.style.transform = 'scale(1)';
+    }
+
+    // Flygande ordchips.
+    for (const f of flyEls) {
+      const p = (t - f.t0) / f.dur;
+      if (p <= 0 || p >= 1) { f.el.style.opacity = 0; continue; }
+      const e = easeInOutQuad(p);
+      const x = lerp(f.x0, f.x1, e), y = lerp(f.y0, f.y1, e);
+      const sc = 1 - 0.6 * clamp((p - 0.55) / 0.45, 0, 1);
+      f.el.style.opacity = p > 0.8 ? (1 - p) / 0.2 : 1;
+      f.el.style.transform = 'translate(' + x + 'px,' + y + 'px) translate(-50%,-50%) scale(' + sc + ')';
+    }
+
+    // Nivåbytespunkter.
+    for (const b of burstEls) {
+      const p = (t - b.t0) / 0.55;
+      if (p <= 0 || p >= 1) { b.el.style.opacity = 0; continue; }
+      const e = easeOutCubic(p);
+      const x = 270 + Math.cos(b.ang) * b.sp * e;
+      const y = 470 + Math.sin(b.ang) * b.sp * e;
+      b.el.style.opacity = 1 - p;
+      b.el.style.transform = 'translate(' + x + 'px,' + y + 'px)';
+    }
+
+    // Konfetti.
+    for (const c of confEls) {
+      const life = t - c.t0;
+      if (life <= 0 || life > 2.4) { c.el.style.opacity = 0; continue; }
+      const e = easeOutCubic(clamp(life / 1.1, 0, 1));
+      const x = 270 + Math.cos(c.ang) * c.sp * e;
+      const y = 470 + Math.sin(c.ang) * c.sp * e * 0.72 + 300 * life * life * 0.55;
+      c.el.style.opacity = life > 1.7 ? clamp((2.4 - life) / 0.7, 0, 1) : 1;
+      c.el.style.transform = 'translate(' + x + 'px,' + y + 'px) rotate(' + (life * c.rot) + 'deg)';
+    }
+
+    // Slutplatta.
+    const eP = easeOutBack(clamp((t - 16.4) / 0.5, 0, 1));
+    endpill.style.opacity = clamp((t - 16.4) / 0.3, 0, 1);
+    endpill.style.transform = 'scale(' + Math.max(eP, 0.001) + ')';
+    endsub.style.opacity = clamp((t - 16.9) / 0.4, 0, 1);
+  };
+  window.SEEK(0);
+</script>
+</body>
+</html>

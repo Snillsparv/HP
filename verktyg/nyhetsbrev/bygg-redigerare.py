@@ -35,6 +35,12 @@ for namn in ['app.png', 'fejs1.png', 'fejs10.png', 'david.png']:
 with open(f'{REPO}/verktyg/nyhetsbrev/editor-shell.html') as f:
     skal = f.read()
 
+# Varje platshållare måste finnas exakt en gång, annars hamnar brevet
+# på fler ställen än i redigeringsytan (hänt en gång, aldrig igen).
+for token in ('__HEAD__', '__FOOT__', '__PREVIEW__'):
+    n = skal.count(token)
+    assert n == 1, f'{token} förekommer {n} gånger i skalet, förväntade 1'
+
 sida = (skal
         .replace('__HEAD__', json.dumps(head, ensure_ascii=False))
         .replace('__FOOT__', json.dumps(foot, ensure_ascii=False))

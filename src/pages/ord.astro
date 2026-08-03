@@ -55,7 +55,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
 
       <div id="app" class="app"><div class="loading">Laddar…</div></div>
 
-      <div class="credit">
+      <div class="credit" id="credit">
         <img class="credit-img" src="/ordtraning/david.webp" alt="David Munkhammar" width="112" height="112" loading="lazy" />
         <div class="credit-text">
           <b>Tack, David!</b>
@@ -582,6 +582,10 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   }
 
   function frame(tag, step, pct, inner, back) {
+    // Tacket till David hör hemma på översikten, inte mitt i ett pass.
+    // Varje vy döljer det; renderStart visar det igen.
+    const creditEl = document.getElementById('credit');
+    if (creditEl) creditEl.style.display = 'none';
     const backBtn = back
       ? `<button class="back-btn" id="back" type="button" title="${esc(back)}" aria-label="${esc(back)}">‹</button>`
       : '';
@@ -723,6 +727,8 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
         <button class="mode-btn" id="mode-list" type="button"><img class="mode-bg" src="/ordtraning/ordbok-bg.webp" alt=""><span class="mode-txt"><b>Ordlista</b><span>Bläddra bland alla ${stats.total} ord och minnesregler</span></span></button>
       </div>
       ${hasSession ? '<p class="reset-line"><button id="reset-all" class="link-btn" type="button">↺ Återställ hela träningen</button></p>' : ''}`);
+    const creditEl = document.getElementById('credit');
+    if (creditEl) creditEl.style.display = '';
     bindFace();
     bindStart();
     bindIgnored();

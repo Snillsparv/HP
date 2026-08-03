@@ -150,7 +150,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
      studsar till när man klickar på det. */
   /* Ansiktet behåller sin storlek och flyter i mitten av den större ringen.
      Ingen cirkelklippning: bilderna är frilagda och håret ska få sticka ut. */
-  .ot-page .face { width: 146px; height: 146px; object-fit: contain; display: block;
+  .ot-page .face { width: 158px; height: 158px; object-fit: contain; display: block;
     cursor: pointer;
     -webkit-tap-highlight-color: transparent; -webkit-touch-callout: none;
     -webkit-user-select: none; user-select: none; }
@@ -185,7 +185,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   .ot-lvlup-ring { width: 164px; height: 164px; border-radius: 50%; border: 7px solid #2563eb;
     background: #fff; display: grid; place-items: center; margin: 0 auto;
     animation: ot-lvl-face 0.9s cubic-bezier(0.34, 1.4, 0.64, 1) 0.2s both; }
-  .ot-lvlup-face { width: 140px; height: 140px; object-fit: contain; display: block; }
+  .ot-lvlup-face { width: 148px; height: 148px; object-fit: contain; display: block; }
   .ot-lvlup-card h3 { margin: 0.8rem 0 0.2rem; font-size: 1.5rem; color: #1a1a2e; }
   .ot-lvlup-card p { margin: 0 0 1.1rem; color: #64748b; font-size: 0.92rem; }
   .ot-lvlup-conf { position: absolute; inset: 0; pointer-events: none; }
@@ -497,7 +497,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   }
   function faceHtml(learned, total) {
     const lvl = faceLevel(learned, total);
-    return `<img class="face is-in" id="face" src="/ordfejs/${lvl}.webp" width="146" height="146"
+    return `<img class="face is-in" id="face" src="/ordfejs/${lvl}.webp" width="158" height="158"
       alt="Nivå ${lvl} av ${FACE_STEPS.length + 1}" title="Nivå ${lvl} av ${FACE_STEPS.length + 1}">`;
   }
   function bindFace() {

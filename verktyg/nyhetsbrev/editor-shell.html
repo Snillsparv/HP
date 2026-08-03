@@ -1,0 +1,147 @@
+<!-- Skal för nyhetsbrevsredigeraren. bygg-redigerare.py ersätter
+     __HEAD__ (JSON-sträng), __FOOT__ (JSON-sträng) och __PREVIEW__ (HTML). -->
+<meta charset="utf-8">
+<title>Nyhetsbrev: Ordträningen</title>
+<style>
+  :root {
+    --bg: #eef2f7;
+    --panel: #ffffff;
+    --text: #1a1a2e;
+    --muted: #64748b;
+    --line: #dbe3ec;
+    --accent: #2563eb;
+    --accent-ink: #ffffff;
+    --ok: #16a34a;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #0f172a; --panel: #1e293b; --text: #e2e8f0; --muted: #94a3b8;
+      --line: #334155; --accent: #3b82f6; --accent-ink: #ffffff; --ok: #4ade80; }
+  }
+  :root[data-theme="dark"] { --bg: #0f172a; --panel: #1e293b; --text: #e2e8f0; --muted: #94a3b8;
+    --line: #334155; --accent: #3b82f6; --accent-ink: #ffffff; --ok: #4ade80; }
+  :root[data-theme="light"] { --bg: #eef2f7; --panel: #ffffff; --text: #1a1a2e; --muted: #64748b;
+    --line: #dbe3ec; --accent: #2563eb; --accent-ink: #ffffff; --ok: #16a34a; }
+
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif; }
+
+  .topbar { position: sticky; top: 0; z-index: 10; background: var(--panel);
+    border-bottom: 1px solid var(--line); padding: 0.7rem 1rem; }
+  .topbar-inner { max-width: 720px; margin: 0 auto; display: flex; flex-wrap: wrap;
+    align-items: center; gap: 0.6rem; }
+  .topbar h1 { margin: 0; font-size: 1rem; font-weight: 700; }
+  .topbar h1 small { display: block; font-size: 0.72rem; font-weight: 600; color: var(--muted); }
+  #status { font-size: 0.8rem; color: var(--ok); font-weight: 600; min-width: 4.5rem; }
+  .knappar { margin-left: auto; display: flex; flex-wrap: wrap; gap: 0.45rem; }
+  button { font: inherit; font-size: 0.84rem; font-weight: 600; border-radius: 9px;
+    padding: 0.5rem 0.9rem; cursor: pointer; border: 1px solid var(--line);
+    background: var(--panel); color: var(--text); }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  button.primar { background: var(--accent); border-color: var(--accent); color: var(--accent-ink); }
+  button.primar:hover { filter: brightness(1.08); color: var(--accent-ink); }
+
+  .hjalp { max-width: 720px; margin: 0.9rem auto 0; padding: 0 1rem;
+    font-size: 0.85rem; color: var(--muted); line-height: 1.5; }
+  .hjalp b { color: var(--text); }
+
+  /* Själva brevet: alltid ljust, precis som i inkorgen. */
+  .brevram { max-width: 720px; margin: 1rem auto 3rem; padding: 0 1rem; }
+  #mail { border: 1px solid var(--line); border-radius: 14px; overflow: hidden;
+    background: #f1f5f9; }
+  #mail:focus-within { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 30%, transparent); }
+  [contenteditable] { outline: none; }
+</style>
+
+<div class="topbar"><div class="topbar-inner">
+  <h1>Nyhetsbrev: Ordträningen<small>hpakuten.se</small></h1>
+  <span id="status" role="status"></span>
+  <span class="knappar">
+    <button class="primar" id="kopiera" type="button">Kopiera HTML till Mailchimp</button>
+    <button id="ladda-ner" type="button">Ladda ner .html</button>
+    <button id="aterstall" type="button">Återställ originalet</button>
+  </span>
+</div></div>
+
+<p class="hjalp"><b>Klicka i brevet och skriv</b> för att ändra texten. Allt sparas automatiskt
+i din webbläsare medan du skriver. När du är nöjd: <b>Kopiera HTML till Mailchimp</b> och
+klistra in under <b>Code your own → Paste in code</b>. Bilderna hämtas från hpakuten.se
+i det riktiga utskicket.</p>
+
+<div class="brevram">
+  <div id="mail" contenteditable="true" spellcheck="false">__PREVIEW__</div>
+</div>
+
+<script>
+  var HEAD = __HEAD__;
+  var FOOT = __FOOT__;
+  var KEY = 'nyhetsbrev-ordtraning-v2';
+
+  var mail = document.getElementById('mail');
+  var status = document.getElementById('status');
+  var ORIGINAL = mail.innerHTML;
+
+  // Ladda ev. tidigare utkast.
+  try {
+    var draft = localStorage.getItem(KEY);
+    if (draft) { mail.innerHTML = draft; visa('Utkast laddat'); }
+  } catch (e) {}
+
+  var timer = null;
+  mail.addEventListener('input', function () {
+    clearTimeout(timer);
+    timer = setTimeout(function () {
+      try { localStorage.setItem(KEY, mail.innerHTML); visa('Sparat ✓'); } catch (e) {}
+    }, 400);
+  });
+
+  function visa(text) {
+    status.textContent = text;
+    clearTimeout(visa.t);
+    visa.t = setTimeout(function () { status.textContent = ''; }, 2500);
+  }
+
+  // Byter tillbaka förhandsvisningens inbäddade bilder till riktiga adresser.
+  function exportHtml() {
+    var klon = mail.cloneNode(true);
+    klon.querySelectorAll('img[data-mailsrc]').forEach(function (img) {
+      img.setAttribute('src', img.getAttribute('data-mailsrc'));
+      img.removeAttribute('data-mailsrc');
+    });
+    return HEAD + '\n' + klon.innerHTML + '\n' + FOOT;
+  }
+
+  document.getElementById('kopiera').onclick = function () {
+    var html = exportHtml();
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(html).then(function () { visa('Kopierat ✓'); },
+        function () { fallbackKopiera(html); });
+    } else { fallbackKopiera(html); }
+  };
+  function fallbackKopiera(html) {
+    var ta = document.createElement('textarea');
+    ta.value = html; document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); visa('Kopierat ✓'); }
+    catch (e) { visa('Kunde inte kopiera'); }
+    document.body.removeChild(ta);
+  }
+
+  document.getElementById('ladda-ner').onclick = function () {
+    var blob = new Blob([exportHtml()], { type: 'text/html;charset=utf-8' });
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'nyhetsbrev-ordtraning.html';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(a.href);
+    visa('Nedladdad ✓');
+  };
+
+  document.getElementById('aterstall').onclick = function () {
+    if (confirm('Återställa brevet till originalet? Dina ändringar försvinner.')) {
+      mail.innerHTML = ORIGINAL;
+      try { localStorage.removeItem(KEY); } catch (e) {}
+      visa('Återställt');
+    }
+  };
+</script>

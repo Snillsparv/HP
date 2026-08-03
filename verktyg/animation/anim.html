@@ -36,8 +36,8 @@
 
   .chip { position: absolute; top: 742px; width: 100%; text-align: center; }
   .chip span { display: inline-block; font-size: 19px; font-weight: 800; letter-spacing: 0.09em;
-    text-transform: uppercase; color: #2563eb; background: #eef2ff; border-radius: 999px;
-    padding: 9px 26px; }
+    text-transform: uppercase; color: #2563eb; background: #fff; border-radius: 999px;
+    padding: 9px 26px; box-shadow: 0 4px 14px rgba(15, 23, 42, 0.08), inset 0 0 0 1.5px #e2e8f0; }
   .chip.gold span { color: #b45309; background: #fffbeb; box-shadow: inset 0 0 0 2px #fde68a; }
 
   .count { position: absolute; top: 800px; width: 100%; text-align: center;
@@ -121,8 +121,10 @@
       el.textContent = BG_WORDS[i];
       el.style.fontSize = (14 + (i * 7) % 13) + 'px';
       bg.appendChild(el);
-      // Deterministiska banor: spridda x-lägen, olika starthöjd och fart.
-      bgEls.push({ el, x: ((i * 137) % 24) * 22 + 8, y0: (i * 331) % 1160, v: 26 + (i * 53) % 22 });
+      el.style.opacity = 0.32;
+      // Deterministiska banor: spridda x-lägen, jämn starthöjd (gyllene steg)
+      // och nästan samma fart så att orden inte klumpar ihop sig över tid.
+      bgEls.push({ el, x: ((i * 137) % 24) * 22 + 8, y0: (i * 483) % 1160, v: 24 + (i * 7) % 10 });
     } }
 
   // ---------- Flygande ordchips ----------
@@ -211,7 +213,10 @@
           words = lerp(TARGETS[k], TARGETS[k + 1], p);
         } }
     }
-    const frac = clamp(words / TOTAL_WORDS, 0, 1);
+    // Ringen sveper ett helt varv per nivå (som ett pass i appen) och står
+    // fullt fylld när mästarnivån är nådd.
+    const lo = TARGETS[level - 1], hi = TARGETS[Math.min(level, TARGETS.length - 1)];
+    const frac = level >= 10 ? 1 : hi > lo ? clamp((words - lo) / (hi - lo), 0, 1) : 0;
     arcEl.style.strokeDashoffset = ARC_LEN * (1 - frac);
     arcEl.style.opacity = frac > 0.001 ? 1 : 0;
     countEl.innerHTML = '<b>' + fmt(words) + '</b> av 4 136 ord';

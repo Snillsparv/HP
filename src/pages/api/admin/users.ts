@@ -12,15 +12,19 @@ export const GET: APIRoute = async ({ request }) => {
 
   const url = new URL(request.url);
   const q = url.searchParams.get('q')?.trim();
+  // Gästkonton (osynliga konton från ordträningen) är brus i e-postlistan
+  // och utelämnas därför som standard. ?guests=1 tar med dem, t.ex. i sök.
+  const includeGuests = url.searchParams.get('guests') === '1';
 
   if (!q) {
     return new Response(JSON.stringify({ error: 'Missing ?q= search query' }), { status: 400 });
   }
 
   const { rows } = await pool.query(
-    `SELECT id, name, email, avatar_color, train_step, created_at
+    `SELECT id, name, email, avatar_color, train_step, created_at, is_guest
      FROM users
-     WHERE name ILIKE $1 OR email ILIKE $1
+     WHERE (name ILIKE $1 OR email ILIKE $1)
+       ${includeGuests ? '' : 'AND is_guest = FALSE'}
      ORDER BY created_at DESC
      LIMIT 100000`,
     [`%${q}%`]

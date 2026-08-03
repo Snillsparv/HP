@@ -18,7 +18,10 @@ const { rows: unseenAlerts } = await pool.query(
 );
 
 // Stats
-const { rows: [userCount] } = await pool.query('SELECT COUNT(*) as count FROM users');
+// Gäster räknas separat så att användarsiffran visar riktiga konton.
+const { rows: [userCount] } = await pool.query(
+  'SELECT COUNT(*) FILTER (WHERE NOT is_guest) as count, COUNT(*) FILTER (WHERE is_guest) as guests FROM users'
+);
 const { rows: [resultCount] } = await pool.query('SELECT COUNT(*) as count FROM test_results');
 const { rows: [threadCount] } = await pool.query('SELECT COUNT(*) as count FROM threads');
 const { rows: [replyCount] } = await pool.query('SELECT COUNT(*) as count FROM replies');
@@ -30,7 +33,7 @@ const { rows: recentMessages } = await pool.query('SELECT * FROM contact_message
 // Recent users
 const { rows: recentUsers } = await pool.query(`
   SELECT id, name, email, avatar_color, train_step, created_at
-  FROM users ORDER BY created_at DESC LIMIT 20
+  FROM users WHERE is_guest = FALSE ORDER BY created_at DESC LIMIT 20
 `);
 
 // Test results per test
@@ -134,7 +137,7 @@ const usersWithResults = [...userMap.values()].filter(u => u.kvant1n || u.verbal
 // Daily stats for charts
 const { rows: dailyUsers } = await pool.query(`
   SELECT DATE(created_at) as day, COUNT(*) as count
-  FROM users GROUP BY DATE(created_at) ORDER BY day
+  FROM users WHERE is_guest = FALSE GROUP BY DATE(created_at) ORDER BY day
 `);
 const { rows: dailyResults } = await pool.query(`
   SELECT DATE(created_at) as day, COUNT(*) as count
@@ -173,7 +176,7 @@ function timeAgo(d: string) {
       <div class="admin-stats">
         <div class="admin-stat">
           <div class="admin-stat-num">{userCount.count}</div>
-          <div class="admin-stat-label">Användare</div>
+          <div class="admin-stat-label">Användare{Number(userCount.guests) > 0 ? ` (+${userCount.guests} gäster)` : ''}</div>
         </div>
         <div class="admin-stat">
           <div class="admin-stat-num">{resultCount.count}</div>
@@ -399,7 +402,7 @@ function timeAgo(d: string) {
       if (!q) return;
       results.innerHTML = '<p style="color:var(--color-muted);">Söker...</p>';
       try {
-        const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q)}`);
+        const res = await fetch(`/api/admin/users?q=${encodeURIComponent(q)}&guests=1`);
         if (!res.ok) { results.innerHTML = '<p style="color:#ef4444;">Fel vid sökning</p>'; return; }
         const data = await res.json();
         if (data.count === 0) {
@@ -408,7 +411,8 @@ function timeAgo(d: string) {
         }
         const rows = data.users.map((u: any) => {
           const date = new Date(u.created_at).toLocaleDateString('sv-SE');
-          return `<tr><td>${u.id}</td><td><strong>${u.name}</strong></td><td style="color:var(--color-muted);">${u.email}</td><td>${u.train_step || 1}</td><td>${date}</td></tr>`;
+          const guestTag = u.is_guest ? ' <span style="font-size:0.75rem; color:#9333ea; font-weight:600;">(gäst)</span>' : '';
+          return `<tr><td>${u.id}</td><td><strong>${u.name}</strong>${guestTag}</td><td style="color:var(--color-muted);">${u.email}</td><td>${u.train_step || 1}</td><td>${date}</td></tr>`;
         }).join('');
         results.innerHTML = `<p style="font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">${data.count} träff${data.count === 1 ? '' : 'ar'}</p>
           <table class="search-result-table"><thead><tr><th>ID</th><th>Namn</th><th>E-post</th><th>Steg</th><th>Registrerad</th></tr></thead><tbody>${rows}</tbody></table>`;

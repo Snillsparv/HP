@@ -31,6 +31,13 @@
   .sec .text { font-size: 20.5px; line-height: 1.38; color: #334155; }
   .sec-ety > div { background: #eff6ff; }
   .sec-ety .label { color: #2563eb; }
+  .sec-rel > div { background: #fffbeb; }
+  .sec-rel .label { color: #b45309; }
+  .relrow { display: flex; flex-wrap: wrap; gap: 9px; }
+  .relchip { background: #fff; border: 1.5px solid #fde68a; border-radius: 11px;
+    padding: 7px 13px; font-size: 19px; color: #334155; }
+  .relchip b { color: #1a1a2e; }
+  .relchip i { color: #64748b; font-style: normal; }
   .sec-mne > div { background: #faf5ff; }
   .sec-mne .label { color: #9333ea; }
   .sec-bet > div { background: #f0fdf4; text-align: center; }
@@ -57,6 +64,13 @@
       <div class="text">Av franskans parler, tala: en bok som hjälper dig att tala språket.
         Samma rot som parlament.</div>
     </div></div>
+    <div class="sec sec-rel" id="rel"><div>
+      <div class="label">Ord med samma rot</div>
+      <div class="relrow">
+        <span class="relchip"><b>parlament</b> <i>folkvald församling</i></span>
+        <span class="relchip"><b>paroll</b> <i>slagord, lösen</i></span>
+      </div>
+    </div></div>
     <div class="sec sec-mne" id="mne"><div>
       <div class="label">Minnesregel</div>
       <div class="text">Din fickordbok är dekorerad med PÄRLOR.</div>
@@ -77,13 +91,14 @@
 
   // Sektionernas starttider och slutet. Parlörs texter är kortare än
   // lakonisks, så tempot är något stramare med samma rytm.
-  const T_ETY = 1.0, T_MNE = 4.4, T_BET = 7.4, T_OUT = 9.6, DURATION = 11.5;
-  const GLOW = { ety: '37, 99, 235', mne: '147, 51, 234', bet: '22, 163, 74' };
+  const T_ETY = 1.0, T_REL = 4.4, T_MNE = 7.2, T_BET = 10.0, T_OUT = 12.0, DURATION = 13.8;
+  const GLOW = { ety: '37, 99, 235', rel: '245, 158, 11', mne: '147, 51, 234', bet: '22, 163, 74' };
 
   const $ = id => document.getElementById(id);
   const kortEl = $('kort'), pillEl = $('pill'), subEl = $('sub');
   const secs = [
-    { el: $('ety'), key: 'ety', t0: T_ETY, t1: T_MNE },
+    { el: $('ety'), key: 'ety', t0: T_ETY, t1: T_REL },
+    { el: $('rel'), key: 'rel', t0: T_REL, t1: T_MNE },
     { el: $('mne'), key: 'mne', t0: T_MNE, t1: T_BET },
     { el: $('bet'), key: 'bet', t0: T_BET, t1: T_OUT },
   ];

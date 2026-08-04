@@ -798,7 +798,26 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
       const card = app.querySelector('.card');
       if (!card) return;
       const y = card.getBoundingClientRect().top + window.scrollY - 76;
-      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+      window.scrollTo({ top: Math.max(0, y), behavior: glid() });
+    });
+  }
+
+  function glid() {
+    return window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth';
+  }
+
+  // Innehåll som fälls fram under en knapp (ordkortet efter ett svar) hamnar
+  // ofta under skärmkanten på mobilen. Här scrollas det fram automatiskt, men
+  // bara när det behövs: syns det redan i sin helhet står sidan still.
+  function revealInView(el, topMargin) {
+    if (!el) return;
+    const marginal = topMargin || 84;
+    requestAnimationFrame(() => {
+      const r = el.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      if (r.top >= marginal && r.bottom <= vh - 8) return;
+      const y = r.top + window.scrollY - marginal;
+      window.scrollTo({ top: Math.max(0, y), behavior: glid() });
     });
   }
 
@@ -885,9 +904,9 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
       </div>` : ''}`, 'Avbryt testet');
     document.getElementById('back').onclick = renderStart;
     const prev = document.getElementById('rt-prev');
-    if (prev) prev.onclick = () => { rtView--; renderRandomQuiz(); };
+    if (prev) prev.onclick = () => { rtView--; renderRandomQuiz(); scrollToCard(); };
     const ret = document.getElementById('rt-return');
-    if (ret) ret.onclick = () => { rtView++; renderRandomQuiz(); };
+    if (ret) ret.onclick = () => { rtView++; renderRandomQuiz(); scrollToCard(); };
     if (!reviewing) app.querySelectorAll('.opt').forEach(btn => btn.onclick = () => rtAnswer(btn, w));
   }
 
@@ -895,7 +914,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
     const chosen = btn.getAttribute('data-o');
     const ok = chosen === w.correct;
     rtResults.push({ w, chosen, ok });
-    const goNext = () => { rtI++; rtView = rtI; renderRandomQuiz(); };
+    const goNext = () => { rtI++; rtView = rtI; renderRandomQuiz(); scrollToCard(); };
     if (!rtDirect) {
       // Facit väntar till resultatsidan: markera valet kort och gå vidare.
       app.querySelectorAll('.opt').forEach(b => { b.disabled = true; if (b !== btn) b.classList.add('dim'); });
@@ -918,6 +937,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
       <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Fel, rätt svar är markerat.'}</p>
       ${rtCardHtml(w)}
       <div class="btn-row"><button class="btn btn-primary" id="nq">${last ? 'Visa resultatet' : 'Nästa fråga'}</button></div>`;
+    revealInView(document.getElementById('fb'));
     document.getElementById('nq').onclick = goNext;
   }
 
@@ -1215,7 +1235,9 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   function answer(btn, w) {
     const chosen = btn.getAttribute('data-o');
     const ok = chosen === w.correct;
-    const goNext = () => { quizQueue.length === 0 ? renderDone() : renderQuiz(); };
+    // Nästa fråga byter ut hela vyn: scrolla upp så att frågan syns direkt,
+    // annars står man kvar längre ner på sidan där kortet nyss låg.
+    const goNext = () => { quizQueue.length === 0 ? renderDone() : renderQuiz(); scrollToCard(); };
     // Efter svar: alla alternativ blir "gå vidare"-ytor, med en pil på det man
     // tryckte, så att tummen inte behöver flyttas.
     app.querySelectorAll('.opt').forEach(b => {
@@ -1267,6 +1289,7 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
         const bodyEl = document.getElementById('peek-body');
         bodyEl.hidden = !bodyEl.hidden;
         peek.classList.toggle('is-open', !bodyEl.hidden);
+        if (!bodyEl.hidden) revealInView(bodyEl);
       };
     } else {
       // Fel svar: ordet börjar om från inlärningslådan, så nästa rätta svar
@@ -1275,6 +1298,8 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
       document.getElementById('fb').innerHTML = `
         <p class="verdict no">Inte riktigt. Så här minns du (kommer igen strax):</p>
         ${cardHtml}${nextBtn}`;
+      // Kortet visas automatiskt vid fel svar och är långt: fram med det.
+      revealInView(document.getElementById('fb'));
     }
     document.getElementById('nq').onclick = goNext;
   }

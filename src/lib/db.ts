@@ -98,6 +98,16 @@ await pool.query(`
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS image TEXT NOT NULL DEFAULT '';
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS related JSONB;
   ALTER TABLE mnemonic_words ADD COLUMN IF NOT EXISTS traps JSONB;
+
+  -- Inspelat uttal per ord, ett aktuellt tagningsljud per ord. Ljudet ligger
+  -- som bytea: filsystemet på Railway är flyktigt men databasen består.
+  CREATE TABLE IF NOT EXISTS word_pron (
+    word_id INTEGER PRIMARY KEY REFERENCES mnemonic_words(id) ON DELETE CASCADE,
+    mime TEXT NOT NULL,
+    data BYTEA NOT NULL,
+    dur_ms INTEGER NOT NULL DEFAULT 0,
+    updated_at TIMESTAMPTZ DEFAULT NOW()
+  );
 `);
 // Gäster nås bara via sin sessionskaka. När sista sessionen gått ut är
 // kontot oåtkomligt och kan städas bort tillsammans med sina framsteg.

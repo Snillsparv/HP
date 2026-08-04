@@ -1,0 +1,273 @@
+---
+import Base from '../../layouts/Base.astro';
+import { getSessionFromCookies } from '../../lib/auth.js';
+
+const ADMIN_EMAIL = 'snillsparv@gmail.com';
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+if (!user || user.email !== ADMIN_EMAIL) {
+  return Astro.redirect('/');
+}
+---
+
+<Base title="Spela in uttal – HPAkuten">
+  <div class="page-content">
+    <div class="container" style="max-width: 560px;">
+      <p style="margin-bottom: 0.4rem;"><a href="/admin">← Admin</a></p>
+      <h1 style="margin-bottom: 0.2rem;">Spela in uttal</h1>
+      <p id="framsteg" class="page-intro" style="margin-bottom: 1rem;">Laddar…</p>
+
+      <div class="ut-flikar">
+        <button id="flik-spela" class="ut-flik aktiv" type="button">Spela in</button>
+        <button id="flik-lista" class="ut-flik" type="button">Lista</button>
+      </div>
+
+      <div id="vy-spela" class="ut-kort">
+        <div class="ut-raknare" id="raknare"></div>
+        <div class="ut-ord" id="ordet">…</div>
+        <div class="ut-notation" id="notationen"></div>
+        <div class="ut-def" id="definitionen"></div>
+
+        <div class="ut-knappar">
+          <button id="spela-in" class="ut-rec" type="button" aria-label="Spela in">
+            <span class="ut-rec-prick"></span>
+          </button>
+        </div>
+        <div class="ut-status" id="statusrad">Tryck för att spela in. Mellanslag funkar också.</div>
+
+        <div class="ut-rad">
+          <button id="lyssna" class="btn btn-outline btn-sm" type="button" disabled>▶ Lyssna</button>
+          <button id="forra" class="btn btn-outline btn-sm" type="button">‹ Föregående</button>
+          <button id="nasta" class="btn btn-outline btn-sm" type="button">Hoppa över ›</button>
+        </div>
+        <label class="ut-auto"><input type="checkbox" id="auto" checked /> Gå vidare automatiskt efter inspelning</label>
+        <p class="ut-kallnot">Uttalsnotation: Lexin (Isof, CC BY 4.0) och NST-lexikonet (Nasjonalbiblioteket). Notationen är vägledning, lita på ditt eget uttal om något ser fel ut.</p>
+      </div>
+
+      <div id="vy-lista" class="ut-kort" hidden>
+        <div class="ut-filter">
+          <button data-f="alla" class="ut-fbtn aktiv" type="button">Alla</button>
+          <button data-f="utan" class="ut-fbtn" type="button">Utan ljud</button>
+          <button data-f="med" class="ut-fbtn" type="button">Med ljud</button>
+          <input id="sok" type="search" placeholder="Sök ord…" />
+        </div>
+        <div id="listan"></div>
+      </div>
+    </div>
+  </div>
+</Base>
+
+<style>
+  .ut-flikar { display: flex; gap: 0.5rem; margin-bottom: 1rem; }
+  .ut-flik { flex: 1; padding: 0.6rem; font: inherit; font-weight: 600; border: 1.5px solid var(--color-border);
+    border-radius: 10px; background: var(--color-surface); cursor: pointer; }
+  .ut-flik.aktiv { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+
+  .ut-kort { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 16px;
+    padding: 1.4rem 1.2rem 1.2rem; text-align: center; }
+  .ut-raknare { font-size: 0.8rem; color: var(--color-muted); font-variant-numeric: tabular-nums; }
+  .ut-ord { font-size: 2.4rem; font-weight: 800; line-height: 1.15; margin: 0.5rem 0 0.2rem; overflow-wrap: anywhere; }
+  .ut-notation { font-size: 1.15rem; color: #2563eb; min-height: 1.5em; }
+  .ut-notation .kalla { font-size: 0.68rem; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--color-muted); margin-left: 0.4rem; }
+  .ut-def { color: var(--color-muted); font-size: 0.95rem; margin-top: 0.2rem; min-height: 1.4em; }
+
+  .ut-knappar { margin: 1.1rem 0 0.4rem; }
+  .ut-rec { width: 92px; height: 92px; border-radius: 50%; border: 3px solid #dc2626; background: #fff;
+    cursor: pointer; display: inline-grid; place-items: center; transition: transform 0.1s; }
+  .ut-rec:active { transform: scale(0.95); }
+  .ut-rec-prick { width: 40px; height: 40px; border-radius: 50%; background: #dc2626; transition: border-radius 0.15s; }
+  .ut-rec.spelar .ut-rec-prick { border-radius: 8px; animation: ut-puls 1.1s ease-in-out infinite; }
+  @keyframes ut-puls { 50% { opacity: 0.55; } }
+  .ut-status { font-size: 0.85rem; color: var(--color-muted); min-height: 1.4em; margin-bottom: 0.8rem; }
+  .ut-status.ok { color: #16a34a; font-weight: 600; }
+  .ut-status.fel { color: #dc2626; font-weight: 600; }
+
+  .ut-rad { display: flex; justify-content: center; gap: 0.5rem; flex-wrap: wrap; }
+  .ut-auto { display: block; margin-top: 0.9rem; font-size: 0.85rem; color: var(--color-muted); }
+  .ut-kallnot { margin: 1rem 0 0; font-size: 0.72rem; color: var(--color-muted); line-height: 1.5; }
+
+  .ut-filter { display: flex; gap: 0.4rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+  .ut-fbtn { padding: 0.35rem 0.7rem; font: inherit; font-size: 0.85rem; border: 1.5px solid var(--color-border);
+    border-radius: 999px; background: var(--color-surface); cursor: pointer; }
+  .ut-fbtn.aktiv { border-color: #2563eb; color: #2563eb; background: #eff6ff; }
+  .ut-filter input { flex: 1; min-width: 130px; padding: 0.35rem 0.6rem; font: inherit; font-size: 0.9rem;
+    border: 1.5px solid var(--color-border); border-radius: 999px; }
+  #listan { max-height: 60vh; overflow-y: auto; text-align: left; }
+  .ut-item { display: flex; align-items: center; gap: 0.55rem; padding: 0.45rem 0.2rem;
+    border-bottom: 1px solid var(--color-border); font-size: 0.95rem; }
+  .ut-item .prick { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; background: #e2e8f0; }
+  .ut-item.klar .prick { background: #16a34a; }
+  .ut-item .o { flex: 1; overflow-wrap: anywhere; }
+  .ut-item button { font: inherit; font-size: 0.8rem; padding: 0.25rem 0.55rem; border: 1.5px solid var(--color-border);
+    border-radius: 8px; background: var(--color-surface); cursor: pointer; }
+</style>
+
+<script>
+  const $ = (id: string) => document.getElementById(id)!;
+  let ord: any[] = [];
+  let i = 0;
+  let stream: MediaStream | null = null;
+  let rec: MediaRecorder | null = null;
+  let bitar: Blob[] = [];
+  let startTid = 0;
+  let filter = 'alla';
+
+  const MIMER = ['audio/webm;codecs=opus', 'audio/webm', 'audio/mp4'];
+  const mimeVal = () => MIMER.find(m => (window as any).MediaRecorder && MediaRecorder.isTypeSupported(m)) || '';
+
+  async function ladda() {
+    const res = await fetch('/api/admin/uttal?action=list');
+    const d = await res.json();
+    ord = d.words;
+    // Börja där det senast slutade: första ordet utan ljud, i utsläppsordning.
+    const forsta = ord.findIndex(w => !w.a);
+    i = forsta === -1 ? 0 : forsta;
+    visa();
+    ritaLista();
+  }
+
+  function framsteg() {
+    const klara = ord.filter(w => w.a).length;
+    $('framsteg').textContent = `${klara} av ${ord.length} ord inspelade (${Math.round(100 * klara / Math.max(1, ord.length))} %)`;
+  }
+
+  function visa() {
+    const w = ord[i];
+    if (!w) return;
+    framsteg();
+    $('raknare').textContent = `Ord ${i + 1} av ${ord.length}` + (w.a ? ' · redan inspelat' : '');
+    $('ordet').textContent = w.w;
+    $('notationen').innerHTML = w.n
+      ? `[${esc(w.n)}]<span class="kalla">${w.k === 'lexin' ? 'Lexin' : 'NST'}</span>`
+      : '<span style="color:var(--color-muted); font-size:0.85rem;">ingen notation, lita på din känsla</span>';
+    $('definitionen').textContent = w.d;
+    ($('lyssna') as HTMLButtonElement).disabled = !w.a;
+    $('statusrad').className = 'ut-status';
+    $('statusrad').textContent = 'Tryck för att spela in. Mellanslag funkar också.';
+  }
+
+  function esc(s: string) {
+    const d = document.createElement('div');
+    d.textContent = s;
+    return d.innerHTML;
+  }
+
+  async function mick(): Promise<MediaStream> {
+    if (stream) return stream;
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: false, noiseSuppression: false, autoGainControl: true },
+    });
+    return stream;
+  }
+
+  async function vaxlaInspelning() {
+    if (rec && rec.state === 'recording') { rec.stop(); return; }
+    try {
+      const s = await mick();
+      bitar = [];
+      rec = new MediaRecorder(s, mimeVal() ? { mimeType: mimeVal() } : undefined);
+      rec.ondataavailable = e => { if (e.data.size) bitar.push(e.data); };
+      rec.onstop = () => sparaTagning();
+      rec.start();
+      startTid = Date.now();
+      $('spela-in').classList.add('spelar');
+      $('statusrad').className = 'ut-status';
+      $('statusrad').textContent = 'Spelar in… tryck igen för att stoppa.';
+    } catch {
+      $('statusrad').className = 'ut-status fel';
+      $('statusrad').textContent = 'Kunde inte nå mikrofonen. Tillåt mikrofon i webbläsaren.';
+    }
+  }
+
+  async function sparaTagning() {
+    $('spela-in').classList.remove('spelar');
+    const durMs = Date.now() - startTid;
+    const blob = new Blob(bitar, { type: rec?.mimeType || mimeVal() || 'audio/webm' });
+    if (durMs < 250 || !blob.size) {
+      $('statusrad').className = 'ut-status fel';
+      $('statusrad').textContent = 'För kort, testa igen.';
+      return;
+    }
+    $('statusrad').textContent = 'Sparar…';
+    const w = ord[i];
+    const b64 = await new Promise<string>(res => {
+      const fr = new FileReader();
+      fr.onload = () => res(String(fr.result).split(',')[1]);
+      fr.readAsDataURL(blob);
+    });
+    const res = await fetch('/api/admin/uttal', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ id: w.id, mime: blob.type, data: b64, durMs }),
+    });
+    if (!res.ok) {
+      $('statusrad').className = 'ut-status fel';
+      $('statusrad').textContent = 'Kunde inte spara, testa igen.';
+      return;
+    }
+    w.a = true; w.ms = durMs;
+    ($('lyssna') as HTMLButtonElement).disabled = false;
+    $('statusrad').className = 'ut-status ok';
+    $('statusrad').textContent = 'Sparat ✓';
+    framsteg();
+    ritaLista();
+    if (($('auto') as HTMLInputElement).checked) {
+      setTimeout(() => { if (i < ord.length - 1) { i++; visa(); } }, 400);
+    }
+  }
+
+  function lyssna(id: number) {
+    new Audio(`/api/admin/uttal?action=audio&id=${id}&t=${Date.now()}`).play();
+  }
+
+  function ritaLista() {
+    const sok = ($('sok') as HTMLInputElement).value.trim().toLowerCase();
+    const urval = ord.filter(w =>
+      (filter === 'alla' || (filter === 'med') === !!w.a) &&
+      (!sok || w.w.toLowerCase().includes(sok)));
+    $('listan').innerHTML = urval.slice(0, 400).map(w => `
+      <div class="ut-item ${w.a ? 'klar' : ''}" data-id="${w.id}">
+        <span class="prick"></span><span class="o">${esc(w.w)}</span>
+        ${w.a ? '<button data-g="lyssna" type="button">▶</button>' : ''}
+        <button data-g="ga" type="button">Spela in</button>
+      </div>`).join('') +
+      (urval.length > 400 ? `<p style="color:var(--color-muted); font-size:0.85rem; padding:0.5rem 0;">…och ${urval.length - 400} till. Sök för att hitta ett visst ord.</p>` : '');
+    $('listan').querySelectorAll('.ut-item').forEach(el => {
+      const id = Number((el as HTMLElement).dataset.id);
+      el.querySelectorAll('button').forEach(b => (b as HTMLButtonElement).onclick = () => {
+        if ((b as HTMLElement).dataset.g === 'lyssna') { lyssna(id); return; }
+        i = ord.findIndex(w => w.id === id);
+        vaxlaVy('spela');
+        visa();
+      });
+    });
+  }
+
+  function vaxlaVy(vy: string) {
+    $('vy-spela').hidden = vy !== 'spela';
+    $('vy-lista').hidden = vy !== 'lista';
+    $('flik-spela').classList.toggle('aktiv', vy === 'spela');
+    $('flik-lista').classList.toggle('aktiv', vy === 'lista');
+  }
+
+  $('flik-spela').onclick = () => vaxlaVy('spela');
+  $('flik-lista').onclick = () => vaxlaVy('lista');
+  $('spela-in').onclick = vaxlaInspelning;
+  $('lyssna').onclick = () => lyssna(ord[i].id);
+  $('nasta').onclick = () => { if (i < ord.length - 1) { i++; visa(); } };
+  $('forra').onclick = () => { if (i > 0) { i--; visa(); } };
+  ($('sok') as HTMLInputElement).oninput = ritaLista;
+  document.querySelectorAll('.ut-fbtn').forEach(b => (b as HTMLButtonElement).onclick = () => {
+    filter = (b as HTMLElement).dataset.f!;
+    document.querySelectorAll('.ut-fbtn').forEach(x => x.classList.toggle('aktiv', x === b));
+    ritaLista();
+  });
+  document.addEventListener('keydown', e => {
+    if ((e.target as HTMLElement).tagName === 'INPUT') return;
+    if (e.code === 'Space') { e.preventDefault(); vaxlaInspelning(); }
+    if (e.code === 'ArrowRight') { if (i < ord.length - 1) { i++; visa(); } }
+    if (e.code === 'ArrowLeft') { if (i > 0) { i--; visa(); } }
+  });
+
+  ladda();
+</script>

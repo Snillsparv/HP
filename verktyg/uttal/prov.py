@@ -19,7 +19,7 @@ from pathlib import Path
 
 UT = Path('/tmp/claude-0/-home-user-HP/3c43ea54-e9ce-53f4-8b83-bbb79026c93d/scratchpad/el')
 MODELL = 'eleven_multilingual_v2'
-BARARE = 'Ordet är {ord}.'  # svensk kontext runt ordet
+BARARE = 'Nästa ord: <break time="0.5s" /> {ord}.'  # garanterad paus före ordet
 
 ROSTER = {
     'malin': 'zyfJspwEDo0sxPeFmtsn',
@@ -63,6 +63,14 @@ def tala_rakt(rost_id, ord_, mal):
     mal.write_bytes(anropa(f'text-to-speech/{rost_id}', kropp))
 
 
+def tala_sv(rost_id, ord_, mal):
+    """Ordet ensamt, men med språket låst till svenska via language_code.
+    Kräver turbo/flash-modellerna; multilingual_v2 saknar parametern."""
+    kropp = {'text': ord_, 'model_id': 'eleven_turbo_v2_5', 'language_code': 'sv',
+             'voice_settings': {'stability': 0.5, 'similarity_boost': 0.75, 'speed': 0.92}}
+    mal.write_bytes(anropa(f'text-to-speech/{rost_id}', kropp))
+
+
 def tala_barare(rost_id, ord_, mal):
     """Läser hela meningen och klipper ut just ordet med hjälp av alignment."""
     text = BARARE.format(ord=ord_)
@@ -74,17 +82,36 @@ def tala_barare(rost_id, ord_, mal):
     tmp.write_bytes(rå)
 
     a = svar['alignment']
-    tecken = a['characters']
     start = a['character_start_times_seconds']
-    slut = a['character_end_times_seconds']
     i = text.index(ord_)
-    j = i + len(ord_)
-    # Lite marginal så att inledande och avslutande konsonanter kommer med.
-    t0 = max(0.0, start[i] - 0.06)
-    t1 = min(slut[j - 1] + 0.12, slut[-1])
+    # Klipp i tystnaden före ordet i stället för vid tidsstämpeln: leta upp
+    # sista tysta luckan som slutar strax före ordets start.
+    det = subprocess.run(['ffmpeg', '-i', str(tmp), '-af',
+                          'silencedetect=noise=-32dB:d=0.06', '-f', 'null', '-'],
+                         capture_output=True, text=True).stderr
+    tysta = []
+    st = None
+    for rad in det.splitlines():
+        if 'silence_start:' in rad:
+            st = float(rad.split('silence_start:')[1].strip())
+        elif 'silence_end:' in rad and st is not None:
+            en = float(rad.split('silence_end:')[1].split('|')[0].strip())
+            tysta.append((st, en))
+            st = None
+    ordstart = start[i]
+    # Break-taggen ger en rejäl tystnad före ordet. Klipp vid dess slut med
+    # god marginal; faller tillbaka på tidsstämpeln minus en bred marginal.
+    t0 = max(0.0, ordstart - 0.25)
+    kandidater = [(a0, a1) for a0, a1 in tysta if a1 - a0 >= 0.15 and a0 <= ordstart + 0.05]
+    if kandidater:
+        a0, a1 = kandidater[-1]
+        t0 = max(0.0, min(a1 - 0.08, ordstart - 0.02))
+    # Behåll allt till slutet: ordet ligger sist i meningen, så bara den
+    # avslutande tystnaden trimmas bort.
     subprocess.run(['ffmpeg', '-y', '-loglevel', 'error', '-i', str(tmp),
-                    '-ss', f'{t0:.3f}', '-to', f'{t1:.3f}',
-                    '-af', 'afade=t=in:st=0:d=0.02,afade=t=out:st=%.3f:d=0.05' % max(0.0, t1 - t0 - 0.05),
+                    '-ss', f'{t0:.3f}',
+                    '-af', 'areverse,silenceremove=start_periods=1:start_threshold=-45dB:start_silence=0.15,areverse,'
+                           'afade=t=in:st=0:d=0.015,apad=pad_dur=0.08',
                     '-c:a', 'libmp3lame', '-b:a', '128k', '-ar', '44100', '-ac', '1', str(mal)],
                    check=True)
     tmp.unlink()
@@ -94,7 +121,7 @@ def bygg(rost_namn, metod):
     rost_id = ROSTER[rost_namn]
     katalog = UT / f'{rost_namn}-{metod}'
     katalog.mkdir(parents=True, exist_ok=True)
-    fn = tala_rakt if metod == 'rakt' else tala_barare
+    fn = {'rakt': tala_rakt, 'sv': tala_sv, 'barare': tala_barare}[metod]
 
     def en(ord_):
         mal = katalog / f'{ord_}.mp3'

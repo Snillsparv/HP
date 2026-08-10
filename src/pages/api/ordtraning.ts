@@ -4,7 +4,8 @@ import pool from '../../lib/db.js';
 import { highlightWord } from '../../lib/highlight.js';
 
 const ADMIN_EMAIL = 'snillsparv@gmail.com';
-const NEW_MIN = 0, NEW_MAX = 40;
+// Inget användarvänt tak för nya ord; 99999 är bara ett tekniskt skydd.
+const NEW_MIN = 0, NEW_MAX = 99999;
 const REVIEW_MIN = 5, REVIEW_MAX = 250;
 // Anki-lika lådor. Låda 0 = inlärning (förfaller samma dag, upprepas tills rätt).
 // Låda 1+ = repetition med växande intervall i dagar.

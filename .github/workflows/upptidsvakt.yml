@@ -70,17 +70,19 @@ jobs:
             --description "Sajten svarar inte" 2>/dev/null || true
           oppet=$(gh issue list --label driftstörning --state open --json number --jq 'length')
           if [ "$oppet" = "0" ]; then
+            brodtext=$(printf '%s\n' \
+              "Upptidsvakten fick inte svar från sajten vid två försök med 30 sekunders mellanrum ($(date -u '+%Y-%m-%d %H:%M UTC'))." \
+              "" \
+              "Kontrollera i tur och ordning:" \
+              "1. Railway: mår app-tjänsten bra? Prova Restart på senaste deployen." \
+              "2. Railway: mår Postgres bra? Kolla View logs." \
+              "3. Kom det något mejl från Railway om underhåll eller betalning?" \
+              "" \
+              "Ärendet stängs automatiskt när sajten svarar igen.")
             gh issue create \
               --title "🔴 hpakuten.se svarar inte" \
               --label driftstörning \
-              --body "Upptidsvakten fick inte svar från sajten vid två försök med 30 sekunders mellanrum ($(date -u '+%Y-%m-%d %H:%M UTC')).
-
-Kontrollera i tur och ordning:
-1. Railway: mår app-tjänsten bra? Prova Restart på senaste deployen.
-2. Railway: mår Postgres bra? Kolla View logs.
-3. Kom det något mejl från Railway om underhåll eller betalning?
-
-Ärendet stängs automatiskt när sajten svarar igen."
+              --body "$brodtext"
           else
             echo "ärende finns redan öppet, larmar inte igen"
           fi

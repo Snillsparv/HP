@@ -1,0 +1,97 @@
+# Upptidsvakt för hpakuten.se.
+#
+# Pingar sajten enligt schemat (GitHub kör cron med några minuters slack).
+# Vid fel öppnas ett ärende med etiketten "driftstörning", vilket gör att
+# GitHub mejlar ägaren. När sajten svarar igen kommenteras och stängs
+# ärendet automatiskt. Larmet kräver två misslyckade försök med en halv
+# minut emellan, så enstaka nätverkshickor inte väcker någon i onödan.
+#
+# Testa manuellt under fliken Actions: "Run workflow", där rutan
+# "testa larmet" tvingar fram ett fel så att hela larmkedjan kan provas.
+name: Upptidsvakt
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+    inputs:
+      testa_larm:
+        description: 'Testa larmet: låtsas att sajten är nere'
+        type: boolean
+        default: false
+
+permissions:
+  issues: write
+
+concurrency:
+  group: upptidsvakt
+  cancel-in-progress: false
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Kontrollera sajten
+        id: koll
+        run: |
+          kolla() {
+            # Kräver 200 och att sidan faktiskt innehåller riktigt innehåll.
+            kod=$(curl -sS -o /tmp/svar.html -w '%{http_code}' --max-time 20 "$1" || echo "000")
+            [ "$kod" = "200" ] && grep -q "$2" /tmp/svar.html
+          }
+          prova() {
+            if [ "${{ inputs.testa_larm }}" = "true" ]; then
+              echo "testläge: låtsas att sajten är nere"
+              return 1
+            fi
+            kolla "https://www.hpakuten.se/" "HPAkuten" && \
+            kolla "https://www.hpakuten.se/ord" "Ordträning"
+          }
+          if prova; then
+            echo "status=uppe" >> "$GITHUB_OUTPUT"
+          else
+            echo "första försöket misslyckades, väntar 30 s och provar igen"
+            sleep 30
+            if prova; then
+              echo "status=uppe" >> "$GITHUB_OUTPUT"
+            else
+              echo "status=nere" >> "$GITHUB_OUTPUT"
+            fi
+          fi
+
+      - name: Larma vid driftstörning
+        if: steps.koll.outputs.status == 'nere'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh label create driftstörning --color D93F0B \
+            --description "Sajten svarar inte" 2>/dev/null || true
+          oppet=$(gh issue list --label driftstörning --state open --json number --jq 'length')
+          if [ "$oppet" = "0" ]; then
+            gh issue create \
+              --title "🔴 hpakuten.se svarar inte" \
+              --label driftstörning \
+              --body "Upptidsvakten fick inte svar från sajten vid två försök med 30 sekunders mellanrum ($(date -u '+%Y-%m-%d %H:%M UTC')).
+
+Kontrollera i tur och ordning:
+1. Railway: mår app-tjänsten bra? Prova Restart på senaste deployen.
+2. Railway: mår Postgres bra? Kolla View logs.
+3. Kom det något mejl från Railway om underhåll eller betalning?
+
+Ärendet stängs automatiskt när sajten svarar igen."
+          else
+            echo "ärende finns redan öppet, larmar inte igen"
+          fi
+
+      - name: Friskförklara vid återhämtning
+        if: steps.koll.outputs.status == 'uppe'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          for nr in $(gh issue list --label driftstörning --state open --json number --jq '.[].number'); do
+            gh issue comment "$nr" --body "🟢 Sajten svarar igen ($(date -u '+%Y-%m-%d %H:%M UTC')). Stänger ärendet."
+            gh issue close "$nr"
+          done

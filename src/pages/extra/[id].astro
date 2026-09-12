@@ -1,0 +1,756 @@
+---
+// Generell provsida för extramaterialet: ett provpass från ett tidigare
+// högskoleprov, med timer, rättning och textförklaringar.
+import Base from '../../layouts/Base.astro';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import { hamtaPass, provtillfallen, antalFragor, antalForklarade, testId } from '../../lib/extraprov/register.js';
+
+const { id } = Astro.params;
+const pass = id ? hamtaPass(id) : undefined;
+if (!pass) {
+  return new Response('Provpasset finns inte', { status: 404 });
+}
+const tillfalle = provtillfallen.find(t => t.id === pass.tillfalle);
+const tillfalleName = tillfalle?.name ?? pass.tillfalle;
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const antal = antalFragor(pass);
+const forklarade = antalForklarade(pass);
+const titel = `${tillfalleName}: ${pass.name}`;
+---
+
+<Base title={`${titel} – HPAkuten`} description={`Gör ${pass.name.toLowerCase()} från högskoleprovet ${tillfalleName.toLowerCase()} på tid, med rättning och textförklaringar. ${antal} uppgifter, ${pass.timeMinutes} minuter.`}>
+  <div class="page-content">
+    <div class="container" style="max-width: 700px;">
+      <div id="prov-root"></div>
+    </div>
+  </div>
+
+  <script define:vars={{ isLoggedIn: !!user, pass, tillfalleName, testIdValue: testId(pass), forklarade }}>
+    window.__isLoggedIn = isLoggedIn;
+    window.__pass = pass;
+    window.__tillfalleName = tillfalleName;
+    window.__testId = testIdValue;
+    window.__forklarade = forklarade;
+  </script>
+
+  <script>
+    import { analyzeResults, getYrkeForScore } from '../../lib/analysis.js';
+    import { generateResultImage } from '../../lib/share-image.js';
+    import type { ExtraPass, ExtraDelprov, ExtraFraga } from '../../lib/extraprov/types.js';
+
+    const pass: ExtraPass = (window as any).__pass;
+    const tillfalleName: string = (window as any).__tillfalleName;
+    const TEST_ID: string = (window as any).__testId;
+    const forklarade: number = (window as any).__forklarade;
+    const subTests = pass.subTests;
+    const provNamn = `${tillfalleName}, ${pass.name.toLowerCase()}`;
+
+    const root = document.getElementById('prov-root')!;
+    type Q = ExtraFraga & { subTest: ExtraDelprov };
+    const allQuestions: Q[] = subTests.flatMap(st => st.questions.map(q => ({ ...q, subTest: st })));
+    const DEFAULT_TIME = pass.timeMinutes * 60;
+    const EXTENDED_TIME = pass.extendedMinutes * 60;
+    let totalTime = DEFAULT_TIME;
+    const answers: (number | null)[] = new Array(allQuestions.length).fill(null);
+    let current = 0;
+    let submitted = false;
+    let timerSeconds = totalTime;
+    let timerInterval: number | null = null;
+    let timerPaused = false;
+    let started = false;
+    // Övertidsläge: tiden har gått ut, resultatet är sparat på det som hanns med,
+    // men användaren gör klart resterande frågor utan tid (för träningens skull).
+    let overtime = false;
+    let resultSaved = false;
+    let timedAnswers: (number | null)[] = [];
+    let timedScore = 0;
+    let saveStatus: 'server' | 'anon' | 'error' | null = null;
+    let textOpen = true;
+
+    const PROGRESS_KEY = `hp-progress-${TEST_ID}`;
+
+    const urlParams = new URLSearchParams(window.location.search);
+    const isReview = urlParams.get('review') === '1';
+    async function loadReview() {
+      if (!isReview) return;
+      clearProgress();
+      const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
+      const saved = stored[TEST_ID];
+      if (saved?.answers) {
+        saved.answers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
+        submitted = true;
+        started = true;
+        resultSaved = true;
+        timerSeconds = totalTime - (saved.timeSeconds || 0);
+        return;
+      }
+      try {
+        const res = await fetch(`/api/test/results?testId=${encodeURIComponent(TEST_ID)}`);
+        const data = await res.json();
+        if (data.results?.length > 0) {
+          const best = data.results[0];
+          const serverAnswers = typeof best.answers === 'string' ? JSON.parse(best.answers) : best.answers;
+          if (serverAnswers?.length) {
+            serverAnswers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
+            submitted = true;
+            started = true;
+            resultSaved = true;
+            timerSeconds = totalTime - (best.time_seconds || 0);
+          }
+        }
+      } catch {}
+    }
+
+    function getSavedProgress() {
+      try {
+        const raw = localStorage.getItem(PROGRESS_KEY);
+        if (!raw) return null;
+        const data = JSON.parse(raw);
+        if (data?.answers?.length === allQuestions.length && data.started && !data.submitted) return data;
+      } catch {}
+      return null;
+    }
+
+    function saveProgress() {
+      if (started && !submitted && !overtime && timerSeconds > 0) {
+        const elapsed = totalTime - timerSeconds;
+        localStorage.setItem(PROGRESS_KEY, JSON.stringify({ answers: [...answers], current, timerSeconds, started, submitted, elapsed }));
+      }
+    }
+
+    function clearProgress() {
+      localStorage.removeItem(PROGRESS_KEY);
+    }
+
+    window.addEventListener('beforeunload', (e) => {
+      if (started && !submitted && !overtime && timerSeconds > 0) {
+        saveProgress();
+        e.preventDefault();
+        e.returnValue = '';
+      }
+    });
+
+    // KaTeX för formlerna
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script');
+    js.src = 'https://cdn.jsdelivr.net/npm/katex@0.16.21/dist/katex.min.js';
+    document.head.appendChild(js);
+
+    function renderTex() {
+      if (typeof (window as any).katex === 'undefined') { setTimeout(renderTex, 50); return; }
+      document.querySelectorAll('.tex').forEach(el => {
+        if (el.getAttribute('data-done')) return;
+        (window as any).katex.render(el.textContent || '', el, { throwOnError: false });
+        el.setAttribute('data-done', '1');
+      });
+    }
+
+    function fmt(s: number) { return `${Math.floor(s / 60)}:${(s % 60).toString().padStart(2, '0')}`; }
+
+    function countScore(ans: (number | null)[]) {
+      return allQuestions.reduce((sum, q, i) => sum + (ans[i] === q.correct ? 1 : 0), 0);
+    }
+
+    // Normering från passets egen tabell (gäller hela delen om 80 uppgifter,
+    // så råpoängen skalas upp).
+    function normera(score: number, total: number): number {
+      const skalad = Math.round(score * 80 / total);
+      let resultat = 0;
+      for (const [lagsta, norm] of pass.normering) {
+        if (skalad >= lagsta) resultat = norm;
+        else break;
+      }
+      return resultat;
+    }
+
+    function saveAreaHTML() {
+      if (saveStatus === 'server') return '<div class="tip-box success"><strong>Resultat sparat i ditt konto!</strong></div>';
+      if (saveStatus === 'error') return '<div class="tip-box warning"><strong>Kunde inte spara till kontot, men resultatet finns sparat lokalt.</strong></div>';
+      if (saveStatus === 'anon') return '<div class="tip-box success"><strong>Resultat sparat!</strong> <a href="/konto/registrera">Skapa ett gratis konto</a> för att spara dina resultat permanent.</div>';
+      return '';
+    }
+
+    async function persistResult(score: number, ans: (number | null)[], elapsed: number) {
+      const resultData = { testId: TEST_ID, score, total: allQuestions.length, answers: [...ans], timeSeconds: elapsed, date: new Date().toISOString() };
+      const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
+      stored[TEST_ID] = resultData;
+      localStorage.setItem('hp-results', JSON.stringify(stored));
+      if ((window as any).__isLoggedIn) {
+        try {
+          await fetch('/api/test/results', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ testId: TEST_ID, score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
+          });
+          saveStatus = 'server';
+        } catch {
+          saveStatus = 'error';
+        }
+      } else {
+        saveStatus = 'anon';
+      }
+      const saveArea = document.getElementById('save-area');
+      if (saveArea) saveArea.innerHTML = saveAreaHTML();
+    }
+
+    function renderTimeUp() {
+      const answered = timedAnswers.filter(a => a !== null).length;
+      const remaining = allQuestions.length - answered;
+      if (remaining === 0) { submitted = true; render(); return; }
+      root.innerHTML = `
+        <div style="text-align:center; padding:3rem 0;">
+          <div style="font-size:3rem; margin-bottom:0.5rem;">⏱</div>
+          <h2 style="margin:0 0 1rem;">Tiden är ute!</h2>
+          <p style="color:var(--color-muted); max-width:460px; margin:0 auto 0.6rem;">Provet har rättats på det du hann svara på: ${answered} av ${allQuestions.length} frågor. Resultatet är sparat.</p>
+          <p style="color:var(--color-muted); max-width:460px; margin:0 auto 2rem;">Vill du göra klart ${remaining === 1 ? 'den sista frågan' : `de ${remaining} frågor som är kvar`} i lugn och ro först, för träningens skull? Svaren efter tiden räknas inte in i resultatet, men rättas så att du kan lära dig av dem.</p>
+          <div style="display:flex; flex-direction:column; gap:0.8rem; align-items:center;">
+            <button class="btn btn-primary" id="btn-overtime" style="font-size:1.05rem; padding:0.9rem 2.5rem;">Gör klart resten (utan tid)</button>
+            <button class="btn btn-outline" id="btn-show-results" style="padding:0.7rem 2rem;">Visa rättningen direkt</button>
+          </div>
+        </div>
+      `;
+      document.getElementById('btn-overtime')?.addEventListener('click', () => {
+        overtime = true;
+        const firstUnanswered = answers.findIndex(a => a === null);
+        if (firstUnanswered !== -1) current = firstUnanswered;
+        render();
+      });
+      document.getElementById('btn-show-results')?.addEventListener('click', () => { submitted = true; render(); });
+    }
+
+    function startTimer() {
+      timerInterval = setInterval(() => {
+        if (!timerPaused) {
+          timerSeconds--;
+          const el = document.getElementById('timer-val');
+          if (el) el.textContent = fmt(timerSeconds);
+          if (timerSeconds <= 0) {
+            clearInterval(timerInterval!);
+            timerSeconds = 0;
+            clearProgress();
+            timedAnswers = [...answers];
+            timedScore = countScore(timedAnswers);
+            resultSaved = true;
+            persistResult(timedScore, timedAnswers, totalTime);
+            renderTimeUp();
+          }
+        }
+      }, 1000) as unknown as number;
+    }
+
+    function renderStart() {
+      const isKvant = pass.kind === 'kvant';
+      const delar = subTests.map(st => st.shortName).join(' + ');
+      const forklaringsText = forklarade === allQuestions.length
+        ? 'Det här passet är extramaterial utanför stegen på Träna-sidan. Det finns inga videor, men efter rättningen får du en textförklaring till varje uppgift.'
+        : forklarade > 0
+          ? `Det här passet är extramaterial utanför stegen på Träna-sidan. Det finns inga videor, men ${forklarade} av ${allQuestions.length} uppgifter har textförklaring. Resten har bara facit än så länge.`
+          : 'Det här passet är extramaterial utanför stegen på Träna-sidan. Det finns inga videor än, bara facit. Textförklaringar kommer.';
+      root.innerHTML = `
+        <div style="text-align:center; padding: 3rem 0;">
+          <p style="margin:0 0 0.4rem; font-size:0.8rem; font-weight:700; letter-spacing:0.08em; text-transform:uppercase; color:var(--color-muted);">Extramaterial · ${tillfalleName}</p>
+          <h1 style="font-size:1.8rem; margin:0 0 1.5rem;">${pass.name}</h1>
+          <img src="${isKvant ? '/kvant.webp' : '/verb.webp'}" alt="${isKvant ? 'Kvantitativt prov' : 'Verbalt prov'}" width="280" height="280" loading="lazy" style="width:280px; height:280px; margin-bottom:1.5rem; border-radius:var(--radius);" data-fadein />
+          <div style="display:flex; justify-content:center; gap:3rem; margin-bottom: 2.5rem;">
+            <div>
+              <div style="font-size:2.8rem; font-weight:800; color:var(--color-primary);">${allQuestions.length}</div>
+              <div style="color:var(--color-muted); font-size:0.85rem;">uppgifter</div>
+            </div>
+            <div>
+              <div style="font-size:2.8rem; font-weight:800; color:var(--color-primary);" id="time-display">${pass.timeMinutes}:00</div>
+              <div style="color:var(--color-muted); font-size:0.85rem;">minuter</div>
+            </div>
+          </div>
+          <p style="margin:-1.5rem 0 2rem; color:var(--color-muted); font-size:0.9rem;">${delar}</p>
+          <div style="text-align:left; max-width:440px; margin:0 auto 2rem; color:var(--color-muted); font-size:0.88rem; line-height:1.7;">
+            <p style="margin-bottom:0.6rem;">Se till att du inte kommer att bli störd de närmaste ${pass.timeMinutes} minuterna. Sätt din telefon på stör ej, precis som på provet.${isKvant ? ' Se till att du har <strong>papper</strong>, <strong>penna</strong> och <strong>linjal</strong> redo.' : ''}</p>
+            <p style="margin-bottom:0;">${isKvant ? 'Jag rekommenderar att du gör provet på datorn för att se diagrammen bättre, men att göra det på mobilen fungerar också.' : 'Jag rekommenderar att du gör provet på datorn för att se texterna bättre, men att göra det på mobilen fungerar också.'}</p>
+          </div>
+          <div class="tip-box" style="max-width:440px; margin:0 auto 2rem; font-size:0.88rem; text-align:left;">${forklaringsText}</div>
+          <div style="max-width:440px; margin:0 auto 1.5rem; text-align:left;">
+            <label style="display:flex; align-items:center; gap:0.6rem; cursor:pointer; font-size:0.88rem; color:var(--color-muted);">
+              <input type="checkbox" id="extended-time" style="width:18px; height:18px;" />
+              <span>Förlängd provtid (${pass.extendedMinutes} min), för dig med rätt till extra tid</span>
+            </label>
+          </div>
+          ${!isKvant ? '<div class="tip-box warning" style="max-width:440px; margin:0 auto 2rem; font-size:0.88rem; text-align:left;">ELF-delen (engelsk läsförståelse) ingår inte eftersom de engelska texterna är upphovsrättsskyddade och inte publiceras av UHR. Passet har därför 30 uppgifter i stället för 40.</div>' : ''}
+          ${!(window as any).__isLoggedIn ? '<div style="max-width:440px; margin:0 auto 1.5rem; padding:1rem; background:#eff6ff; border:1px solid #bfdbfe; border-radius:var(--radius); font-size:0.85rem; text-align:left; color:#1e40af;"><strong>Tips:</strong> <a href="#" onclick="event.preventDefault(); window.openSignupModal();" style="color:#1e40af; text-decoration:underline;">Skapa ett konto</a> för att spara dina resultat och se din utveckling. Det är helt frivilligt och kostar inget. Du kan också fortsätta utan konto!</div>' : ''}
+          ${getSavedProgress() ? `
+            <div style="display:flex; flex-direction:column; gap:0.8rem; align-items:center;">
+              <button class="btn btn-primary" id="btn-resume" style="font-size:1.2rem; padding:1rem 4rem;">Fortsätt där du var</button>
+              <button class="btn btn-outline" id="btn-restart" style="font-size:0.95rem; padding:0.7rem 2rem;">Börja om från början</button>
+            </div>
+          ` : `
+            <button class="btn btn-primary" id="btn-start" style="font-size:1.2rem; padding:1rem 4rem;">Starta provet</button>
+          `}
+          <p style="margin-top:1.5rem;"><a href="/extra" style="font-size:0.88rem; color:var(--color-muted);">← Alla extraprov</a></p>
+        </div>
+      `;
+      document.getElementById('extended-time')?.addEventListener('change', (e) => {
+        const checked = (e.target as HTMLInputElement).checked;
+        const td = document.getElementById('time-display');
+        if (td) td.textContent = checked ? `${pass.extendedMinutes}:00` : `${pass.timeMinutes}:00`;
+      });
+      const starta = () => {
+        clearProgress();
+        const ext = document.getElementById('extended-time') as HTMLInputElement | null;
+        if (ext?.checked) totalTime = EXTENDED_TIME;
+        timerSeconds = totalTime;
+        started = true;
+        startTimer();
+        render();
+      };
+      document.getElementById('btn-start')?.addEventListener('click', starta);
+      document.getElementById('btn-restart')?.addEventListener('click', starta);
+      document.getElementById('btn-resume')?.addEventListener('click', () => {
+        const prog = getSavedProgress();
+        if (prog) {
+          prog.answers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
+          current = prog.current || 0;
+          timerSeconds = prog.timerSeconds || totalTime;
+        }
+        started = true;
+        startTimer();
+        render();
+      });
+    }
+
+    function questionBody(q: Q, st: ExtraDelprov): string {
+      if (st.type === 'kva' && q.q1) {
+        return `<div class="pq-question"><span class="pq-num">${q.num}.</span><span class="pq-text">
+            ${q.text ? q.text + '<br><br>' : ''}
+            <div class="kva-pair">
+              <div class="kva-row"><span class="kva-label"><i>Kvantitet I:</i></span><span>${q.q1}</span></div>
+              <div class="kva-row"><span class="kva-label"><i>Kvantitet II:</i></span><span>${q.q2}</span></div>
+            </div>
+          </span></div>`;
+      }
+      if (st.type === 'nog' && q.s1) {
+        return `<div class="pq-question"><span class="pq-num">${q.num}.</span><span class="pq-text">${q.text}</span></div>
+          <div class="nog-statements">
+            <div class="nog-stmt"><span class="nog-stmt-num">(1)</span><span>${q.s1}</span></div>
+            <div class="nog-stmt"><span class="nog-stmt-num">(2)</span><span>${q.s2}</span></div>
+          </div>
+          <div class="nog-header"><b>Tillräcklig information för lösningen erhålls</b></div>`;
+      }
+      return `<div class="pq-question"><span class="pq-num">${q.num}.</span><span class="pq-text">${q.text}</span></div>`;
+    }
+
+    function lasTextHTML(q: Q, st: ExtraDelprov): string {
+      if (st.type !== 'las' || q.textIndex === undefined || !st.texts) return '';
+      const t = st.texts[q.textIndex];
+      if (!t) return '';
+      return `<div class="las-box ${textOpen ? '' : 'las-box--closed'}">
+          <button class="las-toggle" id="las-toggle" type="button"><span class="las-title">${t.title}</span><span class="las-toggle-hint">${textOpen ? 'Dölj texten' : 'Visa texten'}</span></button>
+          <div class="las-body" id="las-body">${t.html}</div>
+        </div>`;
+    }
+
+    function render() {
+      if (!started) { renderStart(); return; }
+      if (submitted) { renderResults(); return; }
+      const q = allQuestions[current];
+      const st = q.subTest;
+      const labels = ['A', 'B', 'C', 'D', 'E'];
+
+      let diagramHTML = '';
+      if (st.type === 'dtk' && q.diagram) {
+        diagramHTML = `<div class="dtk-diagram"><img src="${q.diagram}" alt="${q.diagramAlt || ''}" class="dtk-diagram-img ${q.rotate ? 'dtk-rotated' : ''}" loading="lazy" data-fadein style="cursor:zoom-in;" /></div>`;
+      }
+
+      const locked = overtime && timedAnswers[current] !== null;
+      root.innerHTML = `
+        <div class="prov-top-bar">
+          <span class="prov-section-tag">${st.shortName}</span>
+          ${overtime
+            ? '<span class="prov-overtime-tag">Övertid · resultatet sparat</span>'
+            : `<span class="prov-timer-bar">
+            <span id="timer-val">${fmt(timerSeconds)}</span>
+            <button class="btn-timer-toggle" id="btn-pause">${timerPaused ? '▶' : '⏸'}</button>
+          </span>`}
+        </div>
+        <div class="pq-progress">Uppgift ${current + 1} av ${allQuestions.length}</div>
+        ${diagramHTML}
+        ${lasTextHTML(q, st)}
+        <div class="pq-card">
+          ${questionBody(q, st)}
+          <div class="pq-options">
+            ${q.options.map((opt, i) => `
+              <label class="pq-opt ${answers[current] === i ? 'pq-opt--sel' : ''} ${locked ? 'pq-opt--locked' : ''}">
+                <input type="radio" name="q${current}" value="${i}" ${answers[current] === i ? 'checked' : ''} ${locked ? 'disabled' : ''} />
+                <span class="pq-letter">${labels[i]}</span>
+                <span class="pq-opt-text">${opt}</span>
+              </label>
+            `).join('')}
+          </div>
+          ${locked ? '<div class="pq-locked-note">🔒 Besvarad inom provtiden. Svaret är låst och ingår i ditt sparade resultat.</div>' : ''}
+        </div>
+        <div class="pq-nav">
+          <div class="pq-nav-main">
+            <button class="btn btn-outline btn-sm" id="btn-prev" ${current === 0 ? 'disabled' : ''}>Föregående</button>
+            <button class="btn btn-primary btn-sm" id="btn-next">Nästa</button>
+          </div>
+          <div style="display:flex; gap:0.6rem; align-items:center;">
+            <button class="btn btn-sm btn-overview-link" id="btn-overview">Översikt</button>
+            ${answers.filter(a => a === null).length === 0
+              ? '<button class="btn btn-sm btn-outline" id="btn-submit" style="color:var(--color-success); border-color:var(--color-success);">Rätta provet</button>'
+              : `<button class="btn btn-sm btn-outline" id="btn-submit" style="opacity:0.5;">Rätta (${answers.filter(a => a !== null).length}/${allQuestions.length})</button>`}
+          </div>
+        </div>
+        <div class="pq-dots">${allQuestions.map((_, i) => `<span class="pq-dot ${i === current ? 'pq-dot--cur' : ''} ${answers[i] !== null ? 'pq-dot--ans' : ''}" data-i="${i}">${i + 1}</span>`).join('')}</div>
+      `;
+      bindEvents();
+    }
+
+    function bindEvents() {
+      root.querySelectorAll('input[type="radio"]').forEach(el => {
+        el.addEventListener('change', (e) => { answers[current] = Number((e.target as HTMLInputElement).value); render(); });
+      });
+      document.getElementById('btn-prev')?.addEventListener('click', () => { current--; render(); window.scrollTo({ top: 0 }); });
+      document.getElementById('btn-next')?.addEventListener('click', () => { current = (current + 1) % allQuestions.length; render(); window.scrollTo({ top: 0 }); });
+      document.getElementById('btn-submit')?.addEventListener('click', () => {
+        const unanswered = answers.filter(a => a === null).length;
+        let msg = 'Vill du rätta provet?';
+        if (unanswered > 0) msg = `Du har ${unanswered} obesvarade frågor. Vill du rätta ändå?`;
+        if (confirm(msg)) { submitted = true; clearProgress(); if (timerInterval) clearInterval(timerInterval); render(); }
+      });
+      document.getElementById('btn-overview')?.addEventListener('click', renderOverview);
+      document.getElementById('btn-pause')?.addEventListener('click', () => { timerPaused = !timerPaused; render(); });
+      document.getElementById('las-toggle')?.addEventListener('click', () => {
+        textOpen = !textOpen;
+        document.querySelector('.las-box')?.classList.toggle('las-box--closed', !textOpen);
+        const hint = document.querySelector('.las-toggle-hint');
+        if (hint) hint.textContent = textOpen ? 'Dölj texten' : 'Visa texten';
+      });
+      root.querySelectorAll('.pq-dot').forEach(el => {
+        el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
+      });
+      root.querySelectorAll('.dtk-diagram-img').forEach(img => {
+        img.addEventListener('click', () => {
+          const src = (img as HTMLImageElement).src;
+          const isRotated = img.classList.contains('dtk-rotated');
+          const overlay = document.createElement('div');
+          overlay.className = 'dtk-zoom-overlay';
+          overlay.innerHTML = `<div class="dtk-zoom-inner"><img src="${src}" class="${isRotated ? 'dtk-zoom-rotated' : ''}" /></div>`;
+          document.body.appendChild(overlay);
+          let touchMoved = false;
+          overlay.addEventListener('touchstart', () => { touchMoved = false; });
+          overlay.addEventListener('touchmove', () => { touchMoved = true; });
+          overlay.addEventListener('click', () => { if (!touchMoved) overlay.remove(); });
+        });
+      });
+      root.querySelectorAll('img[data-fadein]').forEach(img => {
+        const el = img as HTMLImageElement;
+        if (el.complete && el.naturalHeight > 0) el.classList.add('loaded');
+        else el.addEventListener('load', () => el.classList.add('loaded'));
+      });
+      renderTex();
+    }
+
+    function renderOverview() {
+      const labels = ['A', 'B', 'C', 'D', 'E'];
+      const answered = answers.filter(a => a !== null).length;
+      let html = `
+        <div class="prov-top-bar">
+          <span>Översikt</span>
+          ${overtime
+            ? '<span class="prov-overtime-tag">Övertid · resultatet sparat</span>'
+            : `<span class="prov-timer-bar"><span id="timer-val">${fmt(timerSeconds)}</span><button class="btn-timer-toggle" id="btn-pause">${timerPaused ? '▶' : '⏸'}</button></span>`}
+        </div>
+        <p style="text-align:center;color:var(--color-muted);">${answered} av ${allQuestions.length} besvarade</p>
+      `;
+      for (const st of subTests) {
+        const qs = allQuestions.filter(q => q.subTest.id === st.id);
+        const startIdx = allQuestions.indexOf(qs[0]);
+        html += `<h3 style="margin:1.5rem 0 0.5rem; font-size:0.95rem;">${st.shortName}</h3><div class="pq-overview">`;
+        qs.forEach((q, i) => {
+          const gi = startIdx + i;
+          html += `<button class="pq-ov-btn ${answers[gi] !== null ? 'pq-ov-btn--ans' : ''}" data-i="${gi}"><span class="pq-ov-num">${q.num}</span><span class="pq-ov-val">${answers[gi] !== null ? labels[answers[gi]!] : '–'}</span></button>`;
+        });
+        html += `</div>`;
+      }
+      html += `<div class="pq-nav" style="margin-top:1.5rem;">
+        <button class="btn btn-outline btn-sm" id="btn-back">Tillbaka</button>
+        <button class="btn btn-primary btn-sm" id="btn-submit">Rätta provet</button>
+      </div>`;
+      root.innerHTML = html;
+      root.querySelectorAll('.pq-ov-btn').forEach(el => {
+        el.addEventListener('click', () => { current = Number(el.getAttribute('data-i')); render(); });
+      });
+      document.getElementById('btn-back')?.addEventListener('click', () => render());
+      document.getElementById('btn-submit')?.addEventListener('click', () => {
+        const unanswered = answers.filter(a => a === null).length;
+        let msg = 'Vill du rätta provet?';
+        if (unanswered > 0) msg = `Du har ${unanswered} obesvarade frågor. Vill du rätta ändå?`;
+        if (confirm(msg)) { submitted = true; clearProgress(); if (timerInterval) clearInterval(timerInterval); render(); }
+      });
+      document.getElementById('btn-pause')?.addEventListener('click', () => { timerPaused = !timerPaused; renderOverview(); });
+    }
+
+    function resultDetail(q: Q, st: ExtraDelprov, gi: number, labels: string[]): string {
+      let fraga = q.text || '';
+      if (st.type === 'kva' && q.q1) {
+        fraga += `<div class="kva-pair"><div class="kva-row"><span class="kva-label"><i>Kvantitet I:</i></span><span>${q.q1}</span></div><div class="kva-row"><span class="kva-label"><i>Kvantitet II:</i></span><span>${q.q2}</span></div></div>`;
+      }
+      if (st.type === 'nog' && q.s1) {
+        fraga += `<div class="nog-statements"><div class="nog-stmt"><span class="nog-stmt-num">(1)</span><span>${q.s1}</span></div><div class="nog-stmt"><span class="nog-stmt-num">(2)</span><span>${q.s2}</span></div></div>`;
+      }
+      const text = st.type === 'las' && q.textIndex !== undefined && st.texts?.[q.textIndex]
+        ? `<p class="pq-res-lasref">Till texten <i>${st.texts[q.textIndex].title}</i></p>` : '';
+      const diagram = st.type === 'dtk' && q.diagram
+        ? `<p class="pq-res-lasref"><a href="${q.diagram}" target="_blank" rel="noopener">Öppna diagrammet i ny flik</a></p>` : '';
+      const forklaring = q.explanation
+        ? `<div class="pq-res-expl"><p class="pq-res-expl-label">Förklaring</p>${q.explanation}</div>`
+        : '<div class="pq-res-expl pq-res-expl--saknas">Textförklaring till den här uppgiften kommer.</div>';
+      return `<div class="pq-res-question">${text}${fraga}</div>
+        <div class="pq-res-options">${q.options.map((opt, oi) => `<div class="pq-res-opt ${oi === q.correct ? 'pq-res-opt--correct' : ''} ${oi === answers[gi] && oi !== q.correct ? 'pq-res-opt--wrong' : ''}">${labels[oi]}. ${opt}</div>`).join('')}</div>
+        ${diagram}${forklaring}`;
+    }
+
+    async function renderResults() {
+      const labels = ['A', 'B', 'C', 'D', 'E'];
+      const elapsed = totalTime - timerSeconds;
+
+      let resultsHTML = '';
+      let totalScore = 0;
+      for (const st of subTests) {
+        const qs = allQuestions.filter(q => q.subTest.id === st.id);
+        const startIdx = allQuestions.indexOf(qs[0]);
+        let score = 0;
+        qs.forEach((q, i) => { if (answers[startIdx + i] === q.correct) score++; });
+        totalScore += score;
+        resultsHTML += `
+          <h3 style="margin:1.5rem 0 0.5rem;">${st.shortName}: ${score}/${qs.length}</h3>
+          <div class="pq-results">${qs.map((q, i) => {
+            const gi = startIdx + i;
+            const ok = answers[gi] === q.correct;
+            return `<div class="pq-res-wrap">
+              <div class="pq-res ${ok ? 'pq-res--ok' : 'pq-res--no'}" data-toggle="res-${q.num}" style="cursor:pointer;">
+                <span class="pq-res-icon">${ok ? '✓' : '✗'}</span>
+                <span class="pq-res-num">${q.num}.</span>
+                <span>Ditt svar: <b>${answers[gi] !== null ? labels[answers[gi]!] : '–'}</b></span>
+                ${!ok ? `<span class="pq-res-right">Rätt: <b>${labels[q.correct]}</b></span>` : ''}
+                <span class="pq-res-chevron">▾</span>
+              </div>
+              <div class="pq-res-detail" id="res-${q.num}" style="display:none;">${resultDetail(q, st, gi, labels)}</div>
+            </div>`;
+          }).join('')}</div>`;
+      }
+
+      const officialScore = overtime ? timedScore : totalScore;
+      const normered = normera(officialScore, allQuestions.length);
+      const { summaryHTML: analysisHTML } = analyzeResults(allQuestions, answers, normered);
+      const answeredInTime = timedAnswers.filter(a => a !== null).length;
+      const forklaringsTips = forklarade === allQuestions.length
+        ? '<strong>Klicka på en uppgift nedan</strong> för att se rätt svar och en textförklaring till hur man löser den.'
+        : forklarade > 0
+          ? `<strong>Klicka på en uppgift nedan</strong> för att se rätt svar. ${forklarade} av ${allQuestions.length} uppgifter har textförklaring, resten kommer.`
+          : '<strong>Klicka på en uppgift nedan</strong> för att se rätt svar. Textförklaringar till det här passet kommer.';
+
+      root.innerHTML = `
+        <div class="pq-result-head">
+          <h2>Resultat</h2>
+          <div class="pq-normered">${normered.toFixed(1)}</div>
+          <p style="color:var(--color-muted); font-size:0.9rem;">normerad poäng</p>
+          <div class="pq-score" style="font-size:1.5rem; margin-top:0.5rem;">${officialScore}/${allQuestions.length}</div>
+          <p style="color:var(--color-muted)">rätt svar${overtime ? ' inom provtiden' : ''} · tid: ${fmt(elapsed)}</p>
+        </div>
+        ${overtime ? `<div class="tip-box warning" style="margin:1.5rem 0; font-size:0.92rem;">
+          <strong>Efter tiden:</strong> Ditt sparade resultat räknar de ${answeredInTime} frågor du besvarade inom provtiden (${timedScore}/${allQuestions.length} rätt). Med svaren du gjorde klart efteråt fick du ${totalScore}/${allQuestions.length} rätt. Rättningen nedan visar alla dina svar.
+        </div>` : ''}
+        ${analysisHTML}
+        <div class="tip-box success" style="text-align:center; margin:1.5rem 0; font-size:1rem;">${forklaringsTips}</div>
+        ${resultsHTML}
+        <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
+        <div class="pq-share" style="text-align:center; margin:1.5rem 0;">
+          <div id="share-preview" style="margin-bottom:1rem;"></div>
+          <div style="display:flex; justify-content:center; gap:0.6rem; flex-wrap:wrap;">
+            <button class="btn btn-primary btn-sm" id="btn-share-img" style="display:inline-flex; align-items:center; gap:0.4rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 12v8a2 2 0 002 2h12a2 2 0 002-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></svg>
+              Dela
+            </button>
+            <button class="btn btn-outline btn-sm" id="btn-download" style="display:inline-flex; align-items:center; gap:0.4rem;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Ladda ner
+            </button>
+          </div>
+        </div>
+        <div class="pq-nav" style="margin-top:1rem;">
+          <button class="btn btn-outline btn-sm" id="btn-retry">Gör om provet</button>
+          <a href="/extra" class="btn btn-primary btn-sm">Fler extraprov</a>
+        </div>
+      `;
+
+      if (!resultSaved) {
+        resultSaved = true;
+        await persistResult(totalScore, answers, elapsed);
+      }
+      document.getElementById('save-area')!.innerHTML = saveAreaHTML();
+
+      root.querySelectorAll('[data-toggle]').forEach(el => {
+        el.addEventListener('click', () => {
+          const targetId = el.getAttribute('data-toggle')!;
+          const detail = document.getElementById(targetId);
+          if (detail) {
+            const open = detail.style.display !== 'none';
+            detail.style.display = open ? 'none' : 'block';
+            el.querySelector('.pq-res-chevron')!.textContent = open ? '▾' : '▴';
+            if (!open) renderTex();
+          }
+        });
+      });
+      renderTex();
+
+      document.getElementById('btn-retry')?.addEventListener('click', () => {
+        answers.fill(null); current = 0; submitted = false; timerSeconds = totalTime; timerPaused = false; started = false;
+        overtime = false; resultSaved = false; timedAnswers = []; timedScore = 0; saveStatus = null;
+        render();
+      });
+
+      const shareAnswers = overtime ? timedAnswers : answers;
+      const stScores: { name: string; correct: number; total: number }[] = [];
+      for (const st of subTests) {
+        const qs = allQuestions.filter(q => q.subTest.id === st.id);
+        const startIdx = allQuestions.indexOf(qs[0]);
+        let sc = 0;
+        qs.forEach((q, i) => { if (shareAnswers[startIdx + i] === q.correct) sc++; });
+        stScores.push({ name: st.shortName, correct: sc, total: qs.length });
+      }
+      generateResultImage(provNamn, normered, officialScore, allQuestions.length, stScores, getYrkeForScore(normered)).then(dataUrl => {
+        const preview = document.getElementById('share-preview')!;
+        preview.innerHTML = `<img src="${dataUrl}" id="share-preview-img" style="max-width:300px; width:100%; border-radius:var(--radius); box-shadow:var(--shadow); cursor:pointer;" title="Klicka för att förstora" />`;
+        document.getElementById('share-preview-img')?.addEventListener('click', () => {
+          const overlay = document.createElement('div');
+          overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.85);display:flex;align-items:center;justify-content:center;z-index:9999;cursor:pointer;padding:1rem;';
+          overlay.innerHTML = `<img src="${dataUrl}" style="max-height:90vh;max-width:90vw;border-radius:8px;" />`;
+          overlay.addEventListener('click', () => overlay.remove());
+          document.body.appendChild(overlay);
+        });
+        document.getElementById('btn-share-img')?.addEventListener('click', async () => {
+          try {
+            const res2 = await fetch(dataUrl);
+            const blob = await res2.blob();
+            const file = new File([blob], 'hp-resultat.png', { type: 'image/png' });
+            if (navigator.canShare?.({ files: [file] })) {
+              await navigator.share({ files: [file], title: 'Mitt HP-resultat' });
+            } else {
+              await navigator.share({ text: 'Jag tränade på HPAkuten! www.hpakuten.se' });
+            }
+          } catch {}
+        });
+        document.getElementById('btn-download')?.addEventListener('click', () => {
+          const a = document.createElement('a');
+          a.href = dataUrl;
+          a.download = 'hp-resultat.png';
+          a.click();
+        });
+      });
+    }
+
+    loadReview().then(() => render());
+  </script>
+</Base>
+
+<style is:global>
+  .prov-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0.6rem 1rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); }
+  .prov-section-tag { font-weight: 700; font-size: 0.85rem; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.06em; }
+  .prov-timer-bar { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .btn-timer-toggle { background: none; border: none; font-size: 1rem; cursor: pointer; padding: 0.2rem; color: var(--color-muted); }
+  .prov-overtime-tag { font-weight: 700; font-size: 0.82rem; color: #b45309; background: #fef3c7; padding: 0.25rem 0.7rem; border-radius: 999px; }
+  .pq-opt--locked { cursor: default; opacity: 0.75; }
+  .pq-opt--locked:hover { background: none; }
+  .pq-opt--locked.pq-opt--sel:hover { background: #eef2ff; }
+  .pq-locked-note { margin-top: 1rem; font-size: 0.82rem; color: var(--color-muted); background: #f8fafc; border: 1px dashed var(--color-border); border-radius: var(--radius); padding: 0.5rem 0.8rem; }
+  .btn-timer-toggle:hover { color: var(--color-text); }
+
+  .pq-progress { text-align: center; font-size: 0.8rem; color: var(--color-muted); margin-bottom: 1rem; text-transform: uppercase; letter-spacing: 0.06em; }
+  .pq-card { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 2rem 2rem 1.5rem; box-shadow: var(--shadow); margin-bottom: 2rem; }
+  .pq-question { margin-bottom: 1.8rem; font-size: 1.05rem; line-height: 1.7; }
+  .pq-num { font-weight: 700; margin-right: 0.5rem; }
+  .pq-options { display: flex; flex-direction: column; gap: 0; margin-left: 1.2rem; }
+  .pq-opt { display: flex; align-items: center; gap: 0.8rem; padding: 0.65rem 1rem; cursor: pointer; border-radius: var(--radius); transition: background 0.12s; border: 2px solid transparent; }
+  .pq-opt:hover { background: #f5f7ff; }
+  .pq-opt--sel { background: #eef2ff; border-color: var(--color-primary); }
+  .pq-opt input { display: none; }
+  .pq-letter { width: 30px; height: 30px; border-radius: 50%; background: #f1f5f9; border: 1.5px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem; flex-shrink: 0; }
+  .pq-opt--sel .pq-letter { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .pq-opt-text { font-size: 1.05rem; line-height: 1.5; }
+  .pq-nav { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 0.8rem; }
+  .pq-nav-main { display: flex; gap: 0.8rem; }
+  .btn-overview-link { background: none; border: none; color: var(--color-muted); text-decoration: underline; font-size: 0.85rem; cursor: pointer; padding: 0.4rem 0.6rem; }
+  .btn-overview-link:hover { color: var(--color-primary); }
+  .pq-dots { display: flex; justify-content: center; gap: 0.25rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .pq-dot { width: 28px; height: 28px; border-radius: 50%; border: 1.5px solid var(--color-border); display: flex; align-items: center; justify-content: center; font-size: 0.65rem; font-weight: 600; cursor: pointer; background: var(--color-surface); }
+  .pq-dot:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .pq-dot--cur { border-color: var(--color-primary); color: var(--color-primary); box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
+  .pq-dot--ans { background: var(--color-primary); color: #fff; border-color: var(--color-primary); }
+  .pq-overview { display: grid; grid-template-columns: repeat(6, 1fr); gap: 0.5rem; max-width: 400px; margin: 0 auto; }
+  .pq-ov-btn { display: flex; flex-direction: column; align-items: center; gap: 0.1rem; padding: 0.5rem; border: 1.5px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); cursor: pointer; font-family: var(--font-sans); }
+  .pq-ov-btn:hover { border-color: var(--color-primary); }
+  .pq-ov-btn--ans { border-color: var(--color-primary); background: #eef2ff; }
+  .pq-ov-num { font-weight: 700; font-size: 0.8rem; }
+  .pq-ov-val { color: var(--color-muted); font-size: 0.7rem; }
+  .pq-result-head { text-align: center; margin-bottom: 2rem; }
+  .pq-result-head h2 { margin-top: 0; }
+  .pq-normered { font-size: 4rem; font-weight: 800; color: var(--color-primary); line-height: 1; }
+  .pq-score { font-size: 3rem; font-weight: 800; color: var(--color-primary); line-height: 1; }
+  .pq-results { display: flex; flex-direction: column; gap: 0.4rem; }
+  .pq-res { display: flex; align-items: center; gap: 0.6rem; padding: 0.55rem 1rem; border-radius: var(--radius); font-size: 0.95rem; }
+  .pq-res--ok { background: #ecfdf5; }
+  .pq-res--no { background: #fef2f2; }
+  .pq-res-icon { font-weight: 700; font-size: 1.1rem; }
+  .pq-res--ok .pq-res-icon { color: var(--color-success); }
+  .pq-res--no .pq-res-icon { color: #ef4444; }
+  .pq-res-num { font-weight: 600; min-width: 2rem; }
+  .pq-res-right { margin-left: auto; color: var(--color-success); }
+  .pq-res-chevron { margin-left: auto; color: var(--color-primary); font-size: 1.2rem; flex-shrink: 0; padding: 0 0.3rem; }
+  .pq-res-wrap { margin-bottom: 0.3rem; }
+  .pq-res-detail { padding: 1rem 1rem 1rem 2.5rem; background: #fafbfc; border: 1px solid var(--color-border); border-radius: 0 0 var(--radius) var(--radius); margin-top: -1px; }
+  .pq-res-question { font-size: 0.95rem; line-height: 1.6; margin-bottom: 0.8rem; }
+  .pq-res-lasref { font-size: 0.82rem; color: var(--color-muted); margin: 0 0 0.6rem; }
+  .pq-res-options { display: flex; flex-direction: column; gap: 0.3rem; }
+  .pq-res-opt { padding: 0.4rem 0.8rem; border-radius: var(--radius); font-size: 0.9rem; }
+  .pq-res-opt--correct { background: #ecfdf5; color: #065f46; font-weight: 600; }
+  .pq-res-opt--wrong { background: #fef2f2; color: #991b1b; text-decoration: line-through; }
+  .pq-res-expl { margin-top: 1rem; padding: 0.9rem 1.1rem; background: #fff; border: 1px solid var(--color-border); border-left: 4px solid var(--color-primary); border-radius: var(--radius); font-size: 0.93rem; line-height: 1.65; }
+  .pq-res-expl p { margin: 0 0 0.6rem; }
+  .pq-res-expl p:last-child { margin-bottom: 0; }
+  .pq-res-expl ul, .pq-res-expl ol { margin: 0.2rem 0 0.6rem 1.2rem; padding: 0; }
+  .pq-res-expl li { margin-bottom: 0.25rem; }
+  .pq-res-expl-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-primary); margin-bottom: 0.4rem !important; }
+  .pq-res-expl--saknas { color: var(--color-muted); border-left-color: var(--color-border); font-style: italic; }
+  .tex { font-size: 1.05em; }
+  .btn-sm { padding: 0.5rem 1.2rem; font-size: 0.9rem; }
+  .kva-pair { margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
+  .kva-row { display: flex; align-items: baseline; gap: 1rem; }
+  .kva-label { min-width: 90px; flex-shrink: 0; font-size: 0.95rem; }
+  .nog-statements { margin: 1rem 0 1.2rem 1.5rem; display: flex; flex-direction: column; gap: 0.6rem; }
+  .nog-stmt { display: flex; gap: 0.6rem; font-size: 1rem; line-height: 1.6; }
+  .nog-stmt-num { font-weight: 600; flex-shrink: 0; min-width: 1.8rem; }
+  .nog-header { margin: 1.2rem 0 0.8rem 1.5rem; padding-top: 1rem; border-top: 1px solid var(--color-border); font-size: 0.95rem; }
+  .dtk-diagram { margin-bottom: 1.5rem; text-align: center; min-height: 300px; display: flex; align-items: center; justify-content: center; }
+  .dtk-diagram-img { max-width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius); background: #fff; cursor: zoom-in; }
+  .dtk-rotated { transform: rotate(90deg); transform-origin: center center; margin: -10% 0; }
+  .dtk-zoom-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; cursor: pointer; }
+  .dtk-zoom-inner { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 1rem; }
+  .dtk-zoom-inner img { max-width: 95vw; max-height: 95vh; background: #fff; border-radius: var(--radius); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
+  .dtk-zoom-inner img.dtk-zoom-rotated { transform: rotate(90deg); max-width: 95vh; max-height: 95vw; }
+
+  /* LÄS-texten visas som text direkt på sidan */
+  .las-box { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); margin-bottom: 1.2rem; box-shadow: var(--shadow); }
+  .las-toggle { display: flex; justify-content: space-between; align-items: center; gap: 1rem; width: 100%; padding: 0.8rem 1.2rem; background: none; border: none; cursor: pointer; font-family: var(--font-sans); text-align: left; }
+  .las-title { font-weight: 700; font-size: 1.05rem; color: var(--color-text); }
+  .las-toggle-hint { font-size: 0.82rem; color: var(--color-primary); white-space: nowrap; }
+  .las-body { padding: 0 1.4rem 1.2rem; max-height: 62vh; overflow-y: auto; font-family: Georgia, 'Times New Roman', serif; font-size: 1.02rem; line-height: 1.65; border-top: 1px solid var(--color-border); padding-top: 1rem; }
+  .las-body p { margin: 0 0 0.85rem; }
+  .las-body h4 { margin: 1.2rem 0 0.5rem; font-size: 0.9rem; letter-spacing: 0.08em; font-family: var(--font-sans); }
+  .las-body p.forf { text-align: right; font-style: italic; color: var(--color-muted); }
+  .las-body p.dikt { margin-left: 1.5rem; }
+  .las-box--closed .las-body { display: none; }
+
+  @media (max-width: 768px) { .dtk-rotated { max-width: 70%; margin: -5% auto; } }
+  @media (max-width: 480px) { .pq-card { padding: 1.2rem; } .pq-options { margin-left: 0; } .nog-statements, .nog-header { margin-left: 0.5rem; } .kva-label { min-width: 75px; } .las-body { max-height: 50vh; font-size: 0.98rem; padding-left: 1rem; padding-right: 1rem; } }
+</style>

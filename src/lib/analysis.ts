@@ -76,6 +76,7 @@ function categoryLabel(cat: string): string {
     sannolikhet: 'Sannolikhet',
     funktioner: 'Funktioner & grafer',
     aritmetik: 'Aritmetik',
+    statistik: 'Statistik',
     enheter: 'Enheter',
     logik: 'Logiskt resonemang',
     diagram: 'Diagram',

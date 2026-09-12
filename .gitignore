@@ -3,3 +3,6 @@ dist
 .astro
 data.db
 .env
+
+__pycache__/
+*.pyc

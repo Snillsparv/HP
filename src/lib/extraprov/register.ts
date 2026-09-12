@@ -1,0 +1,70 @@
+// Register över extramaterialet: alla importerade provpass och deras
+// textförklaringar. Nya pass läggs till genom att lägga en datafil i data/
+// (och förklaringar i forklaringar/), ingen annan kod behöver ändras.
+import type { ExtraPass, Provtillfalle, ExtraFraga } from './types.js';
+
+export const provtillfallen: Provtillfalle[] = [
+  { id: 'ht2025', name: 'Hösten 2025', date: '2025-10-19', source: 'https://www.studera.nu/hogskoleprov/fpn/tidigare-prov/' },
+];
+
+const dataModuler = import.meta.glob<{ pass: ExtraPass }>('./data/*.ts', { eager: true });
+const forklaringsModuler = import.meta.glob<{ forklaringar: Record<number, string> }>('./forklaringar/*.ts', { eager: true });
+
+function forklaringarFor(id: string): Record<number, string> {
+  for (const [vag, mod] of Object.entries(forklaringsModuler)) {
+    if (vag.endsWith(`/${id}.ts`)) return mod.forklaringar;
+  }
+  return {};
+}
+
+/** Alla pass med förklaringarna inlagda på frågorna. */
+export const allaPass: ExtraPass[] = Object.values(dataModuler)
+  .map(mod => {
+    const p = mod.pass;
+    const fk = forklaringarFor(p.id);
+    return {
+      ...p,
+      subTests: p.subTests.map(st => ({
+        ...st,
+        questions: st.questions.map((q): ExtraFraga => (fk[q.num] ? { ...q, explanation: fk[q.num] } : q)),
+      })),
+    };
+  })
+  .sort((a, b) => a.tillfalle.localeCompare(b.tillfalle) || a.passNr - b.passNr);
+
+export function hamtaPass(id: string): ExtraPass | undefined {
+  return allaPass.find(p => p.id === id);
+}
+
+export function antalFragor(p: ExtraPass): number {
+  return p.subTests.reduce((n, st) => n + st.questions.length, 0);
+}
+
+export function antalForklarade(p: ExtraPass): number {
+  return p.subTests.reduce((n, st) => n + st.questions.filter(q => q.explanation).length, 0);
+}
+
+/** test_id som resultatet sparas under. */
+export function testId(p: ExtraPass): string {
+  return `extra-${p.id}`;
+}
+
+/** Provtillfällena nyast först, med sina pass i ordning. */
+export function tillfallenMedPass(): { tillfalle: Provtillfalle; pass: ExtraPass[] }[] {
+  return [...provtillfallen]
+    .sort((a, b) => b.date.localeCompare(a.date))
+    .map(t => ({ tillfalle: t, pass: allaPass.filter(p => p.tillfalle === t.id) }))
+    .filter(t => t.pass.length > 0);
+}
+
+/** Normerad poäng från passets egen tabell. Tabellen gäller hela delen om 80
+ * uppgifter, så råpoängen skalas upp precis som för HT 2021-proven. */
+export function normeradPoang(p: ExtraPass, score: number, total: number): number {
+  const skalad = Math.round(score * 80 / total);
+  let resultat = 0;
+  for (const [lagsta, norm] of p.normering) {
+    if (skalad >= lagsta) resultat = norm;
+    else break;
+  }
+  return resultat;
+}

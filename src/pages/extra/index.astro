@@ -1,0 +1,107 @@
+---
+// Extramaterial: fler provpass från tidigare högskoleprov, sorterade per
+// provtillfälle med det senaste först. Ligger utanför stegen på Träna-sidan.
+import Base from '../../layouts/Base.astro';
+import { tillfallenMedPass, antalFragor, antalForklarade, testId } from '../../lib/extraprov/register.js';
+
+const grupper = tillfallenMedPass();
+const totalt = grupper.reduce((n, g) => n + g.pass.length, 0);
+---
+
+<Base title="Fler prov att träna på – HPAkuten" description="Extramaterial: gör fler provpass från tidigare högskoleprov på tid, med rättning och textförklaringar. Sorterade per provtillfälle.">
+  <div class="page-content">
+    <div class="container" style="max-width: 800px;">
+      <h1>Fler prov att träna på</h1>
+      <p class="page-intro">Klar med stegen på <a href="/trana">Träna-sidan</a> och vill träna mer? Här finns fler provpass från tidigare högskoleprov, nyaste först.</p>
+
+      <div class="tip-box" style="margin-bottom:1.6rem; font-size:0.92rem;">
+        <strong>Bra att veta:</strong> proven här är extramaterial. Till skillnad från proven i stegen finns det inga videogenomgångar, utan textförklaringar till uppgifterna. Alla pass är inte förklarade än, det står vid varje pass vad som finns. Du gör passen på tid precis som de riktiga, och resultaten sparas på din profil.
+      </div>
+
+      {grupper.map(({ tillfalle, pass }) => (
+        <section class="tillfalle">
+          <div class="tillfalle-head">
+            <h2>{tillfalle.name}</h2>
+            <span class="tillfalle-datum">Högskoleprovet {tillfalle.date}</span>
+          </div>
+          <div class="pass-grid">
+            {pass.map(p => {
+              const antal = antalFragor(p);
+              const forklarade = antalForklarade(p);
+              const isKvant = p.kind === 'kvant';
+              return (
+                <a href={`/extra/${p.id}`} class={`pass-card ${isKvant ? 'pass-card--kvant' : 'pass-card--verbal'}`} data-test-id={testId(p)}>
+                  <div class="pass-card-top">
+                    <span class={`pass-kind ${isKvant ? 'pass-kind--kvant' : 'pass-kind--verbal'}`}>{isKvant ? 'Kvantitativt' : 'Verbalt'}</span>
+                    <span class="pass-nr">Provpass {p.passNr}</span>
+                  </div>
+                  <div class="pass-stats">
+                    <span><strong>{antal}</strong> uppgifter</span>
+                    <span><strong>{p.timeMinutes}</strong> min</span>
+                    <span>{p.subTests.map(st => st.shortName).join(' + ')}</span>
+                  </div>
+                  <div class={`pass-expl ${forklarade === antal ? 'pass-expl--full' : forklarade > 0 ? 'pass-expl--part' : 'pass-expl--none'}`}>
+                    {forklarade === antal ? 'Textförklaringar till alla uppgifter' : forklarade > 0 ? `Textförklaringar till ${forklarade} av ${antal} uppgifter` : 'Facit, förklaringar kommer'}
+                  </div>
+                  <div class="pass-result" data-result></div>
+                  <span class={`btn btn-primary btn-sm ${isKvant ? 'pass-btn--kvant' : 'pass-btn--verbal'}`}>Starta passet</span>
+                </a>
+              );
+            })}
+          </div>
+        </section>
+      ))}
+
+      {totalt === 0 && <p style="color:var(--color-muted);">Inga extraprov är inlagda ännu.</p>}
+
+      <p class="kallor">
+        Uppgifterna kommer från de högskoleprov som Universitets- och högskolerådet (UHR) har publicerat på <a href="https://www.studera.nu/hogskoleprov/fpn/tidigare-prov/" target="_blank" rel="noopener">studera.nu</a>. ELF-delen (engelsk läsförståelse) ingår inte, eftersom de engelska texterna är upphovsrättsskyddade och inte publiceras. Normeringen bygger på den officiella normeringstabellen för respektive provtillfälle. Textförklaringarna är HPAkutens egna.
+      </p>
+    </div>
+  </div>
+
+  <script>
+    // Visa bästa sparade resultat (finns lokalt även utan konto).
+    try {
+      const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
+      document.querySelectorAll<HTMLElement>('.pass-card').forEach(card => {
+        const id = card.getAttribute('data-test-id') || '';
+        const r = stored[id];
+        const el = card.querySelector('[data-result]');
+        if (r && el) {
+          el.textContent = `Ditt resultat: ${r.score}/${r.total} rätt`;
+          const btn = card.querySelector('.btn');
+          if (btn) btn.textContent = 'Gör om passet';
+        }
+      });
+    } catch {}
+  </script>
+</Base>
+
+<style>
+  .tillfalle { margin-top: 2rem; }
+  .tillfalle-head { display: flex; align-items: baseline; gap: 1rem; flex-wrap: wrap; margin-bottom: 0.8rem; }
+  .tillfalle-head h2 { margin: 0; font-size: 1.35rem; }
+  .tillfalle-datum { color: var(--color-muted); font-size: 0.88rem; }
+  .pass-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1rem; }
+  .pass-card { display: flex; flex-direction: column; gap: 0.6rem; padding: 1.2rem 1.3rem; border: 2px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); text-decoration: none; color: inherit; transition: box-shadow 0.15s, transform 0.15s; }
+  .pass-card:hover { text-decoration: none; box-shadow: 0 8px 24px rgba(0,0,0,0.1); transform: translateY(-2px); }
+  .pass-card--kvant { background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-color: #ea580c; }
+  .pass-card--verbal { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-color: #2563eb; }
+  .pass-card-top { display: flex; justify-content: space-between; align-items: center; gap: 0.6rem; }
+  .pass-kind { font-size: 0.72rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase; padding: 0.2rem 0.6rem; border-radius: 999px; color: #fff; }
+  .pass-kind--kvant { background: #ea580c; }
+  .pass-kind--verbal { background: #2563eb; }
+  .pass-nr { font-weight: 700; font-size: 1.05rem; }
+  .pass-stats { display: flex; gap: 0.9rem; flex-wrap: wrap; font-size: 0.85rem; color: var(--color-muted); }
+  .pass-expl { font-size: 0.82rem; font-weight: 600; }
+  .pass-expl--full { color: #047857; }
+  .pass-expl--part { color: #b45309; }
+  .pass-expl--none { color: var(--color-muted); }
+  .pass-result { font-size: 0.82rem; color: var(--color-muted); min-height: 1em; }
+  .pass-btn--kvant { background: #ea580c; }
+  .pass-btn--verbal { background: #2563eb; }
+  .pass-card .btn { align-self: flex-start; margin-top: 0.2rem; }
+  .kallor { margin-top: 2.5rem; font-size: 0.82rem; color: var(--color-muted); line-height: 1.6; }
+  @media (max-width: 560px) { .pass-grid { grid-template-columns: 1fr; } }
+</style>

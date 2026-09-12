@@ -7,6 +7,7 @@ import { subTests as kvant1Tests } from '../../lib/questions-ht2021.js';
 import { subTests as kvant2Tests } from '../../lib/questions-kvant2-ht2021.js';
 import { verbalSubTests as verbal1Tests } from '../../lib/questions-verbal-ht2021.js';
 import { verbalSubTests2 as verbal2Tests } from '../../lib/questions-verbal2-ht2021.js';
+import { allaPass, provtillfallen, testId as extraTestId, normeradPoang } from '../../lib/extraprov/register.js';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 
@@ -77,6 +78,39 @@ const testUrls: Record<string, string> = {
   'kvant2-ht2021': '/prov/kvant2-ht2021',
   'verbal2-ht2021': '/prov/verbal2-ht2021',
 };
+
+// Extramaterialet: resultat på pass från tidigare prov, utanför stegen.
+interface ExtraResultat { id: string; name: string; tillfalle: string; kind: 'kvant' | 'verbal'; normered: number; score: number; total: number; time: number | null; delprov: string }
+const extraResultat: ExtraResultat[] = [];
+for (const p of allaPass) {
+  const r = resultMap.get(extraTestId(p)) as any;
+  if (!r) continue;
+  const rawAnswers = r.answers;
+  const savedAnswers: (number | null)[] = Array.isArray(rawAnswers) ? rawAnswers : (typeof rawAnswers === 'string' ? JSON.parse(rawAnswers) : []);
+  let qi = 0;
+  const delar: string[] = [];
+  for (const st of p.subTests) {
+    let correct = 0;
+    for (const q of st.questions) {
+      if (qi < savedAnswers.length && Number(savedAnswers[qi]) === q.correct) correct++;
+      qi++;
+    }
+    delar.push(`${st.shortName} ${correct}/${st.questions.length}`);
+  }
+  extraResultat.push({
+    id: p.id,
+    name: p.name,
+    tillfalle: provtillfallen.find(t => t.id === p.tillfalle)?.name ?? p.tillfalle,
+    kind: p.kind,
+    normered: normeradPoang(p, r.score, r.total),
+    score: r.score,
+    total: r.total,
+    time: r.time_seconds || null,
+    delprov: delar.join(' · '),
+  });
+}
+extraResultat.sort((a, b) => b.id.localeCompare(a.id));
+const harStegprov = testOrder.some(id => resultMap.has(id));
 ---
 
 <Base title="Min profil – HPAkuten">
@@ -106,7 +140,7 @@ const testUrls: Record<string, string> = {
 
       <h2 style="margin-top: 2.5rem;">Mina resultat</h2>
 
-      {results.length === 0 ? (
+      {!harStegprov ? (
         <p style="color: var(--color-muted);">Du har inte gjort några prov ännu. <a href="/trana">Börja träna!</a></p>
       ) : (
         <Fragment>
@@ -149,6 +183,25 @@ const testUrls: Record<string, string> = {
               </div>
             </div>
           )}
+        </Fragment>
+      )}
+
+      {extraResultat.length > 0 && (
+        <Fragment>
+          <h2 style="margin-top: 2.5rem;">Extramaterial</h2>
+          <p style="color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1rem;">Dina bästa resultat på <a href="/extra">fler prov</a> från tidigare högskoleprov.</p>
+          <div class="results-grid">
+            {extraResultat.map(r => (
+              <a href={`/extra/${r.id}?review=1`} class={`result-card ${r.kind === 'kvant' ? 'result-card--kvant' : 'result-card--verbal'}`} style="text-decoration:none; color:inherit;">
+                <div class="result-card-label">{r.tillfalle} · pass {r.name.replace(/^Provpass /, '').replace(/ \(.*\)$/, '')}</div>
+                <div class="result-card-norm">{r.normered.toFixed(1)}</div>
+                <div class="result-card-raw">{r.score}/{r.total} rätt</div>
+                <div class="result-card-time">{r.delprov}</div>
+                {r.time && <div class="result-card-time">Tid: {fmt(r.time)}</div>}
+                <div class="result-card-link">Se rättning</div>
+              </a>
+            ))}
+          </div>
         </Fragment>
       )}
 

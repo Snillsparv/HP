@@ -11,14 +11,12 @@
 
 body { background: transparent; }
 
+/* Ottos mönster som kaklas över hela sidan */
 .svampbob-hav {
   position: fixed; inset: 0; z-index: -2; pointer-events: none;
-  background: linear-gradient(180deg, #a5e1ff 0%, #5cbdf0 40%, #2a8fd0 100%);
+  background: #4fc3e8 url('/svampbob/bakgrund.webp') center top / 1000px auto repeat;
 }
-.svampbob-hav::after {
-  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 90px;
-  background: linear-gradient(180deg, rgba(255, 234, 150, 0) 0%, rgba(240, 210, 120, 0.85) 100%);
-}
+@media (max-width: 600px) { .svampbob-hav { background-size: 640px auto; } }
 
 /* Bubblor som stiger */
 .svampbob-bubblor { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
@@ -69,8 +67,26 @@ body { background: transparent; }
 
 /* Sidans färger */
 .hero--minimal { background: transparent !important; }
-.site-header { background: rgba(255, 246, 170, 0.94) !important; border-bottom-color: var(--sb-gulmork) !important; }
-.nav-login { background: var(--sb-rod) !important; }
+.hero--minimal .hero-content {
+  background: rgba(255, 252, 225, 0.86); border: 3px solid var(--sb-gulmork); border-radius: 28px;
+  padding: 1.6rem 2rem 2rem; box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+  backdrop-filter: blur(5px); -webkit-backdrop-filter: blur(5px);
+}
+main > .section { background: rgba(255, 255, 255, 0.9); }
+main > .section + .section { border-top: 3px solid var(--sb-gulmork); }
+
+/* Svamptoppen som listen högst upp */
+.site-header {
+  background: #ffd400 url('/svampbob/topp.webp') center / auto 100% repeat-x !important;
+  border-bottom: 3px solid var(--sb-brun) !important;
+}
+.site-header a, .site-logo, .nav-toggle {
+  color: var(--sb-brun) !important;
+  text-shadow: 0 0 6px #fff, 0 0 12px #fff, 0 0 18px #fff;
+}
+.site-nav a.active, .site-nav a:hover { color: var(--sb-rod) !important; }
+.nav-login { background: var(--sb-rod) !important; color: #fff !important; text-shadow: none !important; }
+.site-nav.open { background: rgba(255, 246, 170, 0.97); }
 .site-logo span { color: var(--sb-brun) !important; }
 .hero--minimal h1 { background: linear-gradient(135deg, var(--sb-brun) 0%, var(--sb-gulmork) 60%, var(--sb-rod) 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; }
 .hero--minimal .hero-tag { border-color: rgba(122, 74, 30, 0.5) !important; color: var(--sb-brun) !important; background: rgba(255, 212, 0, 0.55) !important; box-shadow: 0 0 12px rgba(255, 212, 0, 0.6) !important; }

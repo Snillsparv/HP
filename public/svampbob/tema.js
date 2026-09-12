@@ -124,10 +124,10 @@
     setTimeout(bort, inn + stanna + ut + 2000);
   }
 
-  // Första vågen: svampar från alla håll på en gång, med skratt.
+  // Första vågen: skrattet drar igång direkt och svampar kommer från alla håll på en gång.
   function forstaVagen() {
-    for (let i = 0; i < 5; i++) setTimeout(() => spawna(i === 0), 300 + i * 260);
-    setTimeout(() => skrattaNu(true), 1200);
+    skrattaNu(true);
+    for (let i = 0; i < 6; i++) setTimeout(() => spawna(false), i * 160);
   }
 
   // Sedan en jämn ström så länge fliken syns.
@@ -136,5 +136,6 @@
     setTimeout(strom, slump(1600, 3600));
   }
 
-  window.addEventListener('load', () => { forstaVagen(); setTimeout(strom, 4000); });
+  forstaVagen();
+  setTimeout(strom, 3500);
 })();

@@ -224,6 +224,13 @@ def ligatur(c, sp, alla, i):
     w = (c['bbox'][2] - c['bbox'][0]) / sp['size']
     if w < 0.45:
         return None
+    # I vissa häften är ligaturen redan rätt avkodad: den breda glyfen följs
+    # av bokstaven (i, l, j eller f) som ett tecken utan bredd. Då ska inget
+    # läggas till.
+    if i + 1 < len(alla):
+        n = alla[i + 1][1]
+        if n['c'] in 'iljf' and n['bbox'][2] - n['bbox'][0] < 0.05 * sp['size']:
+            return None
     if w < 0.545:
         kandidater = ['fi', 'fl', 'fj']
     elif w < 0.7:

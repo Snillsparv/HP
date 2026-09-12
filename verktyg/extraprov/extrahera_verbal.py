@@ -233,9 +233,68 @@ def sid_dict(sida):
     return d
 
 
+def dela_spalter(b):
+    """Ett block som MuPDF låtit sträcka sig över båda spalterna (text i
+    vänster och höger spalt på samma höjd, t.ex. två frågor sida vid sida)
+    delas i ett block per spalt, spann för spann."""
+    if not (b['bbox'][0] < SPALTGRANS < b['bbox'][2]) or len(b['lines']) < 2:
+        return [b]
+    spans = [sp for l in b['lines'] for sp in l['spans'] if sp['text'].strip()]
+    # Bara om inget spann korsar spaltmellanrummet: rubriker och MEK-meningar
+    # som går över hela sidbredden ska inte delas.
+    if any(sp['bbox'][0] < SPALTGRANS < sp['bbox'][2] for sp in spans):
+        return [b]
+    if not (any(sp['bbox'][0] < SPALTGRANS for sp in spans) and any(sp['bbox'][0] >= SPALTGRANS for sp in spans)):
+        return [b]
+    delar = []
+    for vanster in (True, False):
+        lines = []
+        for l in b['lines']:
+            spans = [sp for sp in l['spans'] if (sp['bbox'][0] < SPALTGRANS) == vanster]
+            if spans:
+                lines.append({**l, 'spans': spans})
+        if lines:
+            alla = [sp for l in lines for sp in l['spans']]
+            bbox = (min(sp['bbox'][0] for sp in alla), min(sp['bbox'][1] for sp in alla),
+                    max(sp['bbox'][2] for sp in alla), max(sp['bbox'][3] for sp in alla))
+            delar.append({**b, 'lines': lines, 'bbox': bbox})
+    return delar
+
+
+DELARE = re.compile(r'^\s*([A-E]|\d{1,2}\.)(\s+\S|\s*$)')
+
+
+def dela_fragor(b):
+    """Ett Calibri-block där flera alternativ eller frågor hamnat ihop (tät
+    radmatning i äldre häften) delas vid varje rad som börjar med en
+    alternativbokstav eller ett frågenummer."""
+    font, _, _ = typsnitt(b)
+    if not font.startswith('Calibri') or len(b['lines']) < 2:
+        return [b]
+    delar = []
+    for l in b['lines']:
+        t = ''.join(sp['text'] for sp in l['spans'])
+        if delar and DELARE.match(t):
+            delar.append([l])
+        elif delar:
+            delar[-1].append(l)
+        else:
+            delar = [[l]]
+    if len(delar) < 2:
+        return [b]
+    ut = []
+    for lines in delar:
+        alla = [sp for l in lines for sp in l['spans']]
+        bbox = (min(sp['bbox'][0] for sp in alla), min(sp['bbox'][1] for sp in alla),
+                max(sp['bbox'][2] for sp in alla), max(sp['bbox'][3] for sp in alla))
+        ut.append({**b, 'lines': lines, 'bbox': bbox})
+    return ut
+
+
 def sid_block(sida):
     """Textblock på sidan i läsordning: vänster spalt uppifrån och ner, sedan höger."""
-    block = [b for b in sid_dict(sida)['blocks'] if 'lines' in b and block_text(b).strip()]
+    block = [d for b in sid_dict(sida)['blocks'] if 'lines' in b
+             for s in dela_spalter(b) for d in dela_fragor(s) if block_text(d).strip()]
     for b in block:
         b['spalt'] = 0 if b['bbox'][0] < SPALTGRANS else 1
     # Block på samma rad (bokstav och alternativtext i äldre häften) ordnas
@@ -278,6 +337,14 @@ def rensa_rader(rader):
         if spans:
             ut.append({**l, 'spans': spans})
     return ut
+
+
+def foga_html(a, b):
+    """Fogar ihop två textstycken med avstavning i skarven ("verk-" + "liga")."""
+    a = a.rstrip()
+    if a.endswith('-') and b[:1].islower():
+        return a[:-1] + b
+    return (a + ' ' + b).strip()
 
 
 def tolka_fragor(block):
@@ -329,6 +396,12 @@ def tolka_fragor(block):
             continue
         if aktuell is not None and not aktuell['alt']:
             aktuell['runs'] = fog(aktuell['runs'], runs_text(block_runs(rader))) + block_runs(rader)
+        elif aktuell is not None:
+            # Fortsättningsrad till det senaste alternativet som hamnat i ett
+            # eget block (indragen rad i äldre häften): fogas på, med hänsyn
+            # till avstavning.
+            sista = max(aktuell['alt'])
+            aktuell['alt'][sista] = foga_html(aktuell['alt'][sista], runs_html(block_runs(rader), fet_ok=False))
     if aktuell:
         fragor.append(aktuell)
     ut = []

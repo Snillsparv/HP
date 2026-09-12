@@ -68,18 +68,64 @@ def fog(runs, nasta_text):
     return runs
 
 
+def rad_geo(spans):
+    """Läget (x, baslinje) för första synliga tecknet och (x, baslinje) för
+    sista synliga tecknet i en rad, eller None om raden saknar text."""
+    forsta = next((sp['_forsta'] for sp in spans if sp.get('_forsta')), None)
+    sista = next((sp['_sista'] for sp in reversed(spans) if sp.get('_sista')), None)
+    return forsta, sista
+
+
+def ordna_rader(lines):
+    """Raderna i ett block som (första, sista, spann), utan tomma rader. I
+    äldre häften är en rad ofta uppdelad i flera textobjekt som dessutom kan
+    ligga i fel ordning, så objekt på samma baslinje sorteras från vänster
+    till höger."""
+    rader = []
+    for l in lines:
+        spans = [sp for sp in l['spans'] if sp['text']]
+        if not spans or not ''.join(sp['text'] for sp in spans).strip():
+            continue
+        forsta, sista = rad_geo(spans)
+        rader.append((forsta, sista, spans))
+    ut = []
+    grupp = []
+    for r in rader:
+        if grupp and r[0] and grupp[-1][0] and abs(r[0][1] - grupp[-1][0][1]) < 1.5:
+            grupp.append(r)
+        else:
+            ut.extend(sorted(grupp, key=lambda g: g[0][0] if g[0] else 0))
+            grupp = [r]
+    ut.extend(sorted(grupp, key=lambda g: g[0][0] if g[0] else 0))
+    return ut
+
+
 def block_runs(lines):
     """Slår ihop raderna i ett block till en lista av (text, fet, kursiv)
-    med korrekt hantering av avstavningar vid radslut."""
+    med korrekt hantering av avstavningar vid radslut. Textobjekt som ligger
+    på samma baslinje fogas ihop utan mellanslag om de sitter ihop (ett ord
+    som delats i två objekt) och annars med ett mellanslag."""
     runs = []
-    for line in lines:
-        spans = [sp for sp in line['spans'] if sp['text']]
-        if not spans:
-            continue
+    forra_sista = None
+    for forsta, sista, spans in ordna_rader(lines):
+        while runs and not runs[-1][0].strip():
+            runs.pop()
         if runs:
-            fog(runs, spans[0]['text'])
+            if forra_sista and forsta and abs(forsta[1] - forra_sista[1]) < 1.5:
+                t, f, k = runs[-1]
+                t = t.rstrip()
+                if t.endswith(MJUKT):
+                    t = t[:-1] + '-'
+                runs[-1] = (t, f, k)
+                spans = [{**spans[0], 'text': spans[0]['text'].lstrip()}] + spans[1:]
+                if forsta[0] - forra_sista[0] >= 1.0:
+                    runs.append((' ', f, k))
+            else:
+                fog(runs, spans[0]['text'])
         for sp in spans:
             runs.append((sp['text'], bool(sp['flags'] & 16), bool(sp['flags'] & 2)))
+        if sista:
+            forra_sista = sista
     return runs
 
 
@@ -135,14 +181,77 @@ def ar_dikt(block):
     return all(not r.endswith(' ') and not r.endswith(MJUKT) and len(r) < 60 for r in rader)
 
 
+TUNNA_MELLANSLAG = (' ', ' ', ' ', ' ')
+
+
+def sid_dict(sida):
+    """Som sida.get_text('dict') men texten byggs om tecken för tecken ur
+    rawdict. Äldre häften (t.o.m. 2023) har fel teckenkod på en del glyfer:
+    ett mjukt bindestreck med ett mellanslags bredd är ett mellanslag, ett
+    med ett bindestrecks bredd mitt på raden är ett synligt bindestreck och
+    ett sist på raden en avstavning (behålls som MJUKT). Tunna mellanslag
+    blir vanliga. Varje spann får läget för sitt första och sista synliga
+    tecken, som block_runs använder för att foga ihop uppdelade rader."""
+    d = sida.get_text('rawdict')
+    for b in d['blocks']:
+        for l in b.get('lines', []):
+            spans = l['spans']
+            # Alla tecken på raden i följd, så att ett mellanslag kan bedömas
+            # utifrån de synliga tecknen på båda sidor även över spanngränser.
+            alla = [(si, c) for si, sp in enumerate(spans) for c in sp['chars']]
+            texter = []
+            for i, (si, c) in enumerate(alla):
+                sp = spans[si]
+                t = c['c']
+                if t in TUNNA_MELLANSLAG:
+                    t = ' '
+                elif t == MJUKT:
+                    bredd = c['bbox'][2] - c['bbox'][0]
+                    if bredd < 0.5:
+                        t = ''
+                    elif bredd < 0.27 * sp['size']:
+                        t = ' '
+                    elif i != len(alla) - 1:
+                        t = '-'
+                texter.append(t)
+            # Ett mellanslag vars grannar sitter ihop är felplacerat (kerning
+            # i äldre häften lägger mellanslaget på fel ställe) och tas bort.
+            for i, t in enumerate(texter):
+                if t != ' ':
+                    continue
+                fore = next((alla[j][1] for j in range(i - 1, -1, -1) if texter[j].strip()), None)
+                efter = next((alla[j][1] for j in range(i + 1, len(alla)) if texter[j].strip()), None)
+                if fore and efter and efter['bbox'][0] - fore['bbox'][2] < 0.12 * spans[alla[i][0]]['size']:
+                    texter[i] = ''
+            for si, sp in enumerate(spans):
+                chars = sp.pop('chars')
+                egna = [(t, c) for t, (sj, c) in zip(texter, alla) if sj == si]
+                sp['text'] = ''.join(t for t, _ in egna)
+                synliga = [c for t, c in egna if t.strip()]
+                sp['_forsta'] = (synliga[0]['bbox'][0], synliga[0]['bbox'][3]) if synliga else None
+                sp['_sista'] = (synliga[-1]['bbox'][2], synliga[-1]['bbox'][3]) if synliga else None
+    return d
+
+
 def sid_block(sida):
     """Textblock på sidan i läsordning: vänster spalt uppifrån och ner, sedan höger."""
-    block = [b for b in sida.get_text('dict')['blocks'] if 'lines' in b and block_text(b).strip()]
+    block = [b for b in sid_dict(sida)['blocks'] if 'lines' in b and block_text(b).strip()]
     for b in block:
         b['spalt'] = 0 if b['bbox'][0] < SPALTGRANS else 1
     # Block på samma rad (bokstav och alternativtext i äldre häften) ordnas
-    # från vänster till höger, därför avrundas y grovt.
-    return sorted(block, key=lambda b: (b['spalt'], round(b['bbox'][1] / 4), b['bbox'][0]))
+    # från vänster till höger: block vars överkant ligger inom 3 punkter
+    # från varandra räknas som samma rad.
+    block.sort(key=lambda b: (b['spalt'], b['bbox'][1]))
+    ut = []
+    rad = []
+    for b in block:
+        if rad and rad[-1]['spalt'] == b['spalt'] and b['bbox'][1] - rad[0]['bbox'][1] < 3:
+            rad.append(b)
+        else:
+            ut.extend(sorted(rad, key=lambda r: r['bbox'][0]))
+            rad = [b]
+    ut.extend(sorted(rad, key=lambda r: r['bbox'][0]))
+    return ut
 
 
 def ar_skrap(block):

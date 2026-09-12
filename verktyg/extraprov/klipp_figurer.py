@@ -34,11 +34,12 @@ def main():
         sida = d[int(delar[0]) - 1]
         if delar[1] in ('hel', 'liggande'):
             # Klipp bort sidhuvudet ("DTK") och sidnumret. Liggande innehåll
-            # roteras 90 grader medurs så att det blir läsbart.
+            # roteras 90 grader medurs så att det blir läsbart, utom när sidan
+            # redan har en rotation i PDF:en (då roterar pymupdf den själv).
             r = sida.rect
             klipp = pymupdf.Rect(r.x0 + 20, r.y0 + 45, r.x1 - 20, r.y1 - 40)
             m = pymupdf.Matrix(SKALA, SKALA)
-            if delar[1] == 'liggande':
+            if delar[1] == 'liggande' and sida.rotation == 0:
                 m = m.prerotate(90)
             pix = sida.get_pixmap(matrix=m, clip=klipp)
             spara(pix, ut / f'{namn}.webp', 2000)
@@ -49,7 +50,7 @@ def main():
             m = float(delar[2]) if len(delar) > 2 and delar[2] else 10
             klipp = pymupdf.Rect(x0 - m, y0 - m, x1 + m, y1 + m)
             matris = pymupdf.Matrix(SKALA, SKALA)
-            if len(delar) > 3 and delar[3] == 'liggande':
+            if len(delar) > 3 and delar[3] == 'liggande' and sida.rotation == 0:
                 matris = matris.prerotate(90)
             pix = sida.get_pixmap(matrix=matris, clip=klipp)
             spara(pix, ut / f'{namn}.webp', 1000)

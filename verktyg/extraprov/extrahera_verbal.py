@@ -27,6 +27,10 @@ import pymupdf
 
 MJUKT = '­'
 SPALTGRANS = 300  # x-koordinat som skiljer vänster och höger spalt
+# Typsnitt för frågor och svarsalternativ: Calibri fr.o.m. 2019, Gill Sans
+# (GillAltOneMT) i äldre häften. Löptexten i LÄS är satt i ett annat typsnitt
+# (Cambria respektive Adobe Garamond).
+FRAGEFONT = ('Calibri', 'GillAltOneMT')
 FRAGA = re.compile(r'^(\d{1,2})\.\s*$')
 ALTERNATIV = re.compile(r'^([A-E])\s*$')
 SIDNUMMER = re.compile(r'^– \d+ –$')
@@ -184,6 +188,74 @@ def ar_dikt(block):
 TUNNA_MELLANSLAG = (' ', ' ', ' ', ' ')
 
 
+# Sidfot i äldre häften: "– 3 –" ev. följt av "Fortsätt på nästa sida »".
+SIDFOT = re.compile(r'^\s*(– \d+ –)?\s*(fortsätt på nästa sida\s*»?)?\s*$', re.I)
+VOKALER = 'aeiouyåäö'
+_ordlista = None
+
+
+def ordlista():
+    """Svenska ord ur allt tidigare importerat material i repot, för att
+    avgöra vilken ligatur ett felkodat f-tecken är (fi, fl eller fj)."""
+    global _ordlista
+    if _ordlista is None:
+        rot = Path(__file__).resolve().parents[2]
+        _ordlista = {'fiende', 'fiender', 'fientlig', 'fiol', 'fiasko', 'fjärde', 'fjäril', 'fjäll',
+                     'fjol', 'fjun', 'fjord', 'fjärran', 'fjäder', 'fjättra', 'fjärma', 'fjäska',
+                     'identifiera', 'identifierar', 'identifierade', 'identifierat', 'identifiering',
+                     'modifiera', 'modifierar', 'modifierad', 'kvalificerad', 'ratificera'}
+        for fil in rot.glob('src/**/*.ts'):
+            try:
+                t = fil.read_text(encoding='utf-8')
+            except Exception:
+                continue
+            t = re.sub(r'<[^>]+>', ' ', t)
+            _ordlista.update(w.lower() for w in re.findall(r'[A-Za-zÅÄÖåäöÉéÜü]{2,}', t))
+    return _ordlista
+
+
+def ligatur(c, sp, alla, i):
+    """Äldre häften (2018 och tidigare) har ligaturerna fi, fl, fj, ff, ffi
+    och ffl kodade som ett ensamt 'f'. Glyfen är dock bredare än ett f, så
+    bredden avslöjar ligaturen; fi/fl/fj skiljs åt med ordlistan och i sista
+    hand med nästa bokstav (vokal efter fl, konsonant efter fi)."""
+    if c['c'] != 'f':
+        return None
+    w = (c['bbox'][2] - c['bbox'][0]) / sp['size']
+    if w < 0.45:
+        return None
+    if w < 0.545:
+        kandidater = ['fi', 'fl', 'fj']
+    elif w < 0.7:
+        kandidater = ['ff']
+    else:
+        kandidater = ['ffi', 'ffl']
+    fore, efter = '', ''
+    for j in range(i - 1, -1, -1):
+        ch = alla[j][1]['c']
+        if not ch.isalpha():
+            break
+        fore = ch + fore
+    for j in range(i + 1, len(alla)):
+        ch = alla[j][1]['c']
+        if not ch.isalpha():
+            break
+        efter += ch
+    if len(kandidater) == 1:
+        return kandidater[0]
+    ord_ = ordlista()
+    for k in kandidater:
+        if (fore + k + efter).lower() in ord_:
+            return k
+    for k in kandidater:
+        if any((k + efter).lower().startswith(o) for o in ('figur', 'film', 'fina', 'fler', 'flyt', 'flod', 'flyg', 'flera', 'fjär')):
+            return k
+    vokal = bool(efter) and efter[0].lower() in VOKALER
+    if kandidater[0] == 'fi':
+        return 'fl' if vokal else 'fi'
+    return 'ffl' if vokal else 'ffi'
+
+
 def sid_dict(sida):
     """Som sida.get_text('dict') men texten byggs om tecken för tecken ur
     rawdict. Äldre häften (t.o.m. 2023) har fel teckenkod på en del glyfer:
@@ -203,7 +275,10 @@ def sid_dict(sida):
             for i, (si, c) in enumerate(alla):
                 sp = spans[si]
                 t = c['c']
-                if t in TUNNA_MELLANSLAG:
+                lig = ligatur(c, sp, alla, i)
+                if lig:
+                    t = lig
+                elif t in TUNNA_MELLANSLAG:
                     t = ' '
                 elif t == MJUKT:
                     bredd = c['bbox'][2] - c['bbox'][0]
@@ -269,7 +344,7 @@ def dela_fragor(b):
     radmatning i äldre häften) delas vid varje rad som börjar med en
     alternativbokstav eller ett frågenummer."""
     font, _, _ = typsnitt(b)
-    if not font.startswith('Calibri') or len(b['lines']) < 2:
+    if not font.startswith(FRAGEFONT) or len(b['lines']) < 2:
         return [b]
     delar = []
     for l in b['lines']:
@@ -291,10 +366,16 @@ def dela_fragor(b):
     return ut
 
 
+def utan_sidfot(b):
+    """Tar bort sidfotsrader ("– 3 – Fortsätt på nästa sida »") ur ett block."""
+    lines = [l for l in b['lines'] if not SIDFOT.match(''.join(sp['text'] for sp in l['spans']))]
+    return {**b, 'lines': lines}
+
+
 def sid_block(sida):
     """Textblock på sidan i läsordning: vänster spalt uppifrån och ner, sedan höger."""
     block = [d for b in sid_dict(sida)['blocks'] if 'lines' in b
-             for s in dela_spalter(b) for d in dela_fragor(s) if block_text(d).strip()]
+             for s in dela_spalter(utan_sidfot(b)) for d in dela_fragor(s) if block_text(d).strip()]
     for b in block:
         b['spalt'] = 0 if b['bbox'][0] < SPALTGRANS else 1
     # Block på samma rad (bokstav och alternativtext i äldre häften) ordnas
@@ -419,11 +500,13 @@ def sidtyp(sida):
     # men kommer inte alltid först i textordningen, så titta på blockens läge.
     huvud = '\n'.join(block_text(b).strip() for b in sida.get_text('dict')['blocks'] if 'lines' in b and b['bbox'][3] < 50)
     huvud += '\n' + '\n'.join(t.splitlines()[:4])
-    if 'Ordförståelse' in huvud or re.search(r'^ORD\b', huvud, re.M):
+    # Äldre häften skriver sidhuvudet med gemener ("delprov ord – ordförståelse").
+    huvud = huvud.lower()
+    if 'ordförståelse' in huvud or re.search(r'^(delprov )?ord\b', huvud, re.M):
         return 'ord'
-    if 'läsförståelse' in huvud or re.search(r'^LÄS\b', huvud, re.M):
+    if 'läsförståelse' in huvud or re.search(r'^(delprov )?läs\b', huvud, re.M):
         return 'las'
-    if 'Meningskomplettering' in huvud or re.search(r'^MEK\b', huvud, re.M):
+    if 'meningskomplettering' in huvud or re.search(r'^(delprov )?mek\b', huvud, re.M):
         return 'mek'
     return None
 
@@ -433,7 +516,7 @@ def sidtyp(sida):
 def ar_lastext(block):
     """Löptexten är satt i ett annat typsnitt än frågorna (Cambria mot Calibri)."""
     font, size, _ = typsnitt(block)
-    return not font.startswith('Calibri') or size >= 18
+    return not font.startswith(FRAGEFONT) or size >= 18
 
 
 def text_item(block, spaltstart):

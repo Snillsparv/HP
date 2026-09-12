@@ -18,6 +18,7 @@ export const provtillfallen: Provtillfalle[] = [
   { id: 'ht2020', name: 'Hösten 2020', date: '2020-10-25', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-hosten-2020/' },
   { id: 'ht2019', name: 'Hösten 2019', date: '2019-10-20', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-hosten-2019/' },
   { id: 'vt2019', name: 'Våren 2019', date: '2019-04-06', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2019/' },
+  { id: 'ht2018', name: 'Hösten 2018', date: '2018-10-21', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-hosten-2018/' },
 ];
 
 const dataModuler = import.meta.glob<{ pass: ExtraPass }>('./data/*.ts', { eager: true });

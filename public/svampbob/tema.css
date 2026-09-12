@@ -1,0 +1,93 @@
+/* Svamp-Bob-temat för startsidan (laddas bara när temat är aktivt). */
+:root {
+  --color-primary: #0b7fc2;
+  --color-primary-dark: #0a6aa3;
+  --color-accent: #ffd400;
+  --sb-gul: #ffd400;
+  --sb-gulmork: #e0a800;
+  --sb-brun: #7a4a1e;
+  --sb-rod: #d62828;
+}
+
+body { background: transparent; }
+
+.svampbob-hav {
+  position: fixed; inset: 0; z-index: -2; pointer-events: none;
+  background: linear-gradient(180deg, #a5e1ff 0%, #5cbdf0 40%, #2a8fd0 100%);
+}
+.svampbob-hav::after {
+  content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 90px;
+  background: linear-gradient(180deg, rgba(255, 234, 150, 0) 0%, rgba(240, 210, 120, 0.85) 100%);
+}
+
+/* Bubblor som stiger */
+.svampbob-bubblor { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.svampbob-bubblor span {
+  position: absolute; bottom: -80px; left: calc(var(--i) * 6.4% + 1%);
+  width: calc(14px + (var(--i) * 7px) % 30px); height: calc(14px + (var(--i) * 7px) % 30px);
+  border-radius: 50%; border: 2px solid rgba(255, 255, 255, 0.75);
+  background: radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.05) 60%);
+  animation: svampbob-stig 11s linear infinite;
+  animation-delay: calc(var(--i) * -0.9s);
+  animation-duration: calc(8s + (var(--i) * 1.3s) % 6s);
+}
+@keyframes svampbob-stig {
+  0% { transform: translate(0, 0); opacity: 0; }
+  10% { opacity: 0.9; }
+  50% { transform: translate(18px, -55vh); }
+  100% { transform: translate(-12px, -115vh); opacity: 0; }
+}
+
+/* Svamparna som flyger in */
+#svampbob-lager { position: fixed; inset: 0; z-index: 9000; pointer-events: none; overflow: hidden; }
+#svampbob-lager img {
+  position: absolute; left: 0; top: 0; will-change: transform;
+  filter: drop-shadow(0 6px 10px rgba(0, 0, 0, 0.25));
+}
+.svampbob-wobbla { animation: svampbob-wobbla 0.7s ease-in-out infinite alternate; }
+@keyframes svampbob-wobbla {
+  from { rotate: -7deg; scale: 1; }
+  to { rotate: 7deg; scale: 1.06; }
+}
+.svampbob-skrattar { animation: svampbob-skratt 0.28s ease-in-out infinite alternate; }
+@keyframes svampbob-skratt {
+  from { rotate: -4deg; scale: 1; }
+  to { rotate: 4deg; scale: 1.1; }
+}
+.hero-peek-img.svampbob-skrattar { transform: translateY(0); }
+
+/* Ljudknappen */
+#svampbob-ljud {
+  position: fixed; right: 16px; bottom: 16px; z-index: 9500;
+  width: 52px; height: 52px; border-radius: 50%; border: 3px solid var(--sb-brun);
+  background: var(--sb-gul); font-size: 1.4rem; cursor: pointer;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+}
+#svampbob-ljud:hover { background: #ffe14d; }
+#svampbob-ljud.svampbob-pulsa { animation: svampbob-pulsa 1s ease-in-out infinite; }
+@keyframes svampbob-pulsa { 50% { scale: 1.15; box-shadow: 0 0 0 10px rgba(255, 212, 0, 0.35); } }
+
+/* Sidans färger */
+.hero--minimal { background: transparent !important; }
+.site-header { background: rgba(255, 246, 170, 0.94) !important; border-bottom-color: var(--sb-gulmork) !important; }
+.nav-login { background: var(--sb-rod) !important; }
+.site-logo span { color: var(--sb-brun) !important; }
+.hero--minimal h1 { background: linear-gradient(135deg, var(--sb-brun) 0%, var(--sb-gulmork) 60%, var(--sb-rod) 100%) !important; -webkit-background-clip: text !important; background-clip: text !important; }
+.hero--minimal .hero-tag { border-color: rgba(122, 74, 30, 0.5) !important; color: var(--sb-brun) !important; background: rgba(255, 212, 0, 0.55) !important; box-shadow: 0 0 12px rgba(255, 212, 0, 0.6) !important; }
+.hero .subtitle { color: #123b5c !important; }
+.hero-stat .number, .countdown-inline { color: var(--sb-brun) !important; }
+.hero-stat .label { color: #123b5c !important; }
+.btn-primary { background: var(--sb-gul) !important; border-color: var(--sb-brun) !important; color: var(--sb-brun) !important; font-weight: 800; }
+.btn-primary:hover { background: #ffe14d !important; }
+.section-title { color: var(--sb-brun); }
+.nyhet-banner { background: #fff8c2 !important; border-color: var(--sb-gulmork) !important; }
+.nyhet-banner-tag { background: var(--sb-rod) !important; }
+.nyhet-banner-cta { color: var(--sb-brun) !important; }
+.hero-peek-img { width: 320px; }
+
+@media (prefers-reduced-motion: reduce) {
+  .svampbob-bubblor span, .svampbob-wobbla, .svampbob-skrattar { animation: none; }
+}
+@media (max-width: 600px) {
+  #svampbob-ljud { width: 46px; height: 46px; right: 12px; bottom: 12px; }
+}

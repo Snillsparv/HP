@@ -1,5 +1,6 @@
 import type { APIRoute } from 'astro';
 import { findUserByEmail, verifyPassword, createSession, getSessionFromCookies, migrateGuestToUser } from '../../../lib/auth.js';
+import { arSvampBob } from '../../../lib/svampbob.js';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -24,8 +25,9 @@ export const POST: APIRoute = async ({ request }) => {
     const token = await createSession(user.id);
 
     // Sidor som kräver inloggning kan skicka med vart användaren ska efteråt.
+    // Svamp-Bob-kontot landar alltid på startsidan, där temat väntar.
     const redirect = form.get('redirect')?.toString() || '/trana';
-    const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/trana';
+    const safeRedirect = arSvampBob(user) ? '/' : redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/trana';
 
     return new Response(null, {
       status: 302,

@@ -2,9 +2,12 @@
 import Base from '../layouts/Base.astro';
 import { getSessionFromCookies } from '../lib/auth.js';
 import { extraStatistik, formatAntal } from '../lib/extraprov/register.js';
+import { visaSvampBob } from '../lib/svampbob.js';
+import SvampBob from '../components/SvampBob.astro';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const isBB = user?.email?.includes('jessica.ahrling');
+const svampbob = !isBB && visaSvampBob(user, Astro.url);
 const extra = extraStatistik();
 ---
 
@@ -153,16 +156,21 @@ const extra = extraStatistik();
   </script>
 </Base>
 ) : (
-<Base title="HPAkuten – Förbered dig snabbt och gratis inför Högskoleprovet" description="Träna gratis på högskoleprovet med Jonas von Essen, 2.0 tolv gånger i rad. Strategier, övningsprov och videogenomgångar som höjer ditt HP-resultat snabbt.">
+<Base title={svampbob ? 'Svamp-Bob-Akuten – Är du redo, Otto?' : 'HPAkuten – Förbered dig snabbt och gratis inför Högskoleprovet'} description="Träna gratis på högskoleprovet med Jonas von Essen, 2.0 tolv gånger i rad. Strategier, övningsprov och videogenomgångar som höjer ditt HP-resultat snabbt.">
+  {svampbob && <SvampBob />}
   <div class="hero hero--minimal">
     <div class="hero-content">
       <div class="hero-peek-wrapper">
-        <img src="/jonas_hp.webp" alt="Jonas von Essen" class="hero-peek-img" id="hero-img" data-fadein />
+        {svampbob
+          ? <img src="/svampbob/frame1.webp" alt="Svamp-Bob" class="hero-peek-img" id="hero-img" data-fadein />
+          : <img src="/jonas_hp.webp" alt="Jonas von Essen" class="hero-peek-img" id="hero-img" data-fadein />}
       </div>
-      <span class="hero-tag">Från Sveriges mest framgångsrika HP-skrivare</span>
-      <h1 id="hero-title">Nå ditt drömresultat på&nbsp;HP</h1>
+      <span class="hero-tag">{svampbob ? 'Från Bikini Bottoms mest framgångsrika HP-skrivare 🧽' : 'Från Sveriges mest framgångsrika HP-skrivare'}</span>
+      <h1 id="hero-title">{svampbob ? 'Är du redo, Otto? Jag är redo!' : 'Nå ditt drömresultat på HP'}</h1>
       <p class="subtitle">
-        Strategier och minnestekniker från Jonas von Essen, tvåfaldig världsmästare i minne med 2.0 på HP tolv gånger i rad.
+        {svampbob
+          ? 'Strategier och minnestekniker från Jonas von Essen, tvåfaldig världsmästare i minne, 2.0 på HP tolv gånger i rad och hedersmedborgare i Bikini Bottom. Krabburgare ingår tyvärr inte.'
+          : 'Strategier och minnestekniker från Jonas von Essen, tvåfaldig världsmästare i minne med 2.0 på HP tolv gånger i rad.'}
       </p>
 
       <div class="hero-stats">

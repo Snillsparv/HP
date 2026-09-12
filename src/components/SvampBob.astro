@@ -1,0 +1,16 @@
+---
+// Svamp-Bob-temat på startsidan: hav och bubblor i bakgrunden, svampar som
+// flyger in från alla håll och skrattar, och en ljudknapp. Stil och skript
+// ligger som vanliga filer i public/svampbob/ så att de bara laddas på den
+// här sidan och inte hamnar i den vanliga startsidans paket.
+const V = '4';
+---
+<link rel="stylesheet" href={`/svampbob/tema.css?v=${V}`} />
+<div class="svampbob-hav" aria-hidden="true"></div>
+<div class="svampbob-bubblor" aria-hidden="true">
+  {Array.from({ length: 16 }).map((_, i) => <span style={`--i:${i}`}></span>)}
+</div>
+<div id="svampbob-lager" aria-hidden="true"></div>
+<button id="svampbob-ljud" type="button" title="Skratt av/på" aria-label="Skratt av eller på">🔊</button>
+<audio id="svampbob-skratt" src="/svampbob/skratt.mp3" preload="auto"></audio>
+<script is:inline src={`/svampbob/tema.js?v=${V}`} defer></script>

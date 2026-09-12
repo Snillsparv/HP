@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { findUserByGoogleId, findUserByEmail, createGoogleUser, createSession, getSessionFromCookies, migrateGuestToUser, upgradeGuestToGoogleUser } from '../../../../lib/auth.js';
 import pool from '../../../../lib/db.js';
 import { checkNewUser } from '../../../../lib/alerts.js';
+import { arSvampBob } from '../../../../lib/svampbob.js';
 
 const GOOGLE_CLIENT_ID = import.meta.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = import.meta.env.GOOGLE_CLIENT_SECRET || '';
@@ -63,7 +64,7 @@ export const GET: APIRoute = async ({ request }) => {
 
     // state bär målsidan från /api/auth/google?next=... genom OAuth-flödet.
     const state = url.searchParams.get('state') || '';
-    const target = state.startsWith('/') && !state.startsWith('//') ? state : '/forum';
+    const target = arSvampBob(user) ? '/' : state.startsWith('/') && !state.startsWith('//') ? state : '/forum';
 
     return new Response(null, {
       status: 302,

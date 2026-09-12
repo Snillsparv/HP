@@ -43,10 +43,15 @@ def main():
             pix = sida.get_pixmap(matrix=m, clip=klipp)
             spara(pix, ut / f'{namn}.webp', 2000)
         else:
+            # namn=sida:x0,y0,x1,y1[:marginal[:liggande]] – en figur på en
+            # liggande sida roteras på samma sätt som hela sidan.
             x0, y0, x1, y1 = [float(v) for v in delar[1].split(',')]
-            m = float(delar[2]) if len(delar) > 2 else 10
+            m = float(delar[2]) if len(delar) > 2 and delar[2] else 10
             klipp = pymupdf.Rect(x0 - m, y0 - m, x1 + m, y1 + m)
-            pix = sida.get_pixmap(matrix=pymupdf.Matrix(SKALA, SKALA), clip=klipp)
+            matris = pymupdf.Matrix(SKALA, SKALA)
+            if len(delar) > 3 and delar[3] == 'liggande':
+                matris = matris.prerotate(90)
+            pix = sida.get_pixmap(matrix=matris, clip=klipp)
             spara(pix, ut / f'{namn}.webp', 1000)
 
 

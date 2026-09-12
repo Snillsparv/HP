@@ -9,6 +9,7 @@
   if (!lager || !knapp || !skratt) return;
 
   const reducera = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const latt = lager.getAttribute('data-latt') === '1';   // lugna varianten på övriga sidor
   let ljudPa = localStorage.getItem('svampbob-ljud') !== 'av';
   let ljudBlockerat = false;
   let senasteSkratt = 0;
@@ -52,9 +53,16 @@
       ljud.addEventListener('ended', stopp);
       setTimeout(stopp, 12000);
     }).catch(() => {
-      // Webbläsaren kräver ett klick innan ljud får spelas.
+      // Webbläsaren kräver ett klick innan ljud får spelas: visa en pratbubbla
+      // och skratta vid första tryck var som helst på sidan.
       ljudBlockerat = true; ritaKnapp();
-      const vackt = () => { skrattaNu(true); };
+      if (!document.getElementById('svampbob-hint')) {
+        const hint = document.createElement('div');
+        hint.id = 'svampbob-hint';
+        hint.textContent = 'Tryck var som helst så skrattar jag! 🧽';
+        document.body.appendChild(hint);
+      }
+      const vackt = () => { document.getElementById('svampbob-hint')?.remove(); skrattaNu(true); };
       ['pointerdown', 'keydown', 'touchstart'].forEach(ev => document.addEventListener(ev, vackt, { once: true, passive: true }));
     });
   }
@@ -136,6 +144,16 @@
     setTimeout(strom, slump(1600, 3600));
   }
 
-  forstaVagen();
-  setTimeout(strom, 3500);
+  // Lugna varianten: en enstaka svamp då och då, och skratt bara via knappen.
+  function lugnStrom() {
+    if (!document.hidden && antalSvampar < 2) spawna(false);
+    setTimeout(lugnStrom, slump(12000, 25000));
+  }
+
+  if (latt) {
+    setTimeout(lugnStrom, slump(2000, 6000));
+  } else {
+    forstaVagen();
+    setTimeout(strom, 3500);
+  }
 })();

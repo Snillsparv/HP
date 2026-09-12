@@ -17,6 +17,19 @@ body { background: transparent; }
   background: #4fc3e8 url('/svampbob/bakgrund.webp') center top / 1000px auto repeat;
 }
 @media (max-width: 600px) { .svampbob-hav { background-size: 640px auto; } }
+/* Lugna varianten på övriga sidor: mönstret tonas ned så att allt går att läsa */
+.svampbob-hav.svampbob-latt::after { content: ''; position: absolute; inset: 0; background: rgba(255, 255, 255, 0.8); }
+
+/* Pratbubbla när webbläsaren kräver ett klick innan ljud får spelas */
+#svampbob-hint {
+  position: fixed; right: 80px; bottom: 22px; z-index: 9500; max-width: 230px;
+  background: #fff; color: var(--sb-brun); border: 3px solid var(--sb-brun); border-radius: 16px;
+  padding: 0.5rem 0.8rem; font-weight: 700; font-size: 0.9rem; line-height: 1.3;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25); pointer-events: none;
+}
+#svampbob-hint::after {
+  content: ''; position: absolute; right: -14px; bottom: 14px; border: 7px solid transparent; border-left-color: var(--sb-brun);
+}
 
 /* Bubblor som stiger */
 .svampbob-bubblor { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }

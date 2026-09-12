@@ -2,12 +2,16 @@
 import Base from '../layouts/Base.astro';
 import { getSessionFromCookies } from '../lib/auth.js';
 import { extraStatistik, formatAntal } from '../lib/extraprov/register.js';
-import { visaSvampBob } from '../lib/svampbob.js';
+import { visaSvampBob, svampbobKaka } from '../lib/svampbob.js';
 import SvampBob from '../components/SvampBob.astro';
 
-const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const cookieHeader = Astro.request.headers.get('cookie');
+const user = await getSessionFromCookies(cookieHeader);
 const isBB = user?.email?.includes('jessica.ahrling');
-const svampbob = !isBB && visaSvampBob(user, Astro.url);
+const svampbob = !isBB && visaSvampBob(user, Astro.url, cookieHeader);
+// ?svampbob=bikinibottom slår på förhandsgranskningen på alla sidor i två timmar, ?svampbob=av stänger av.
+const kaka = svampbobKaka(Astro.url);
+if (kaka) Astro.response.headers.append('Set-Cookie', kaka);
 const extra = extraStatistik();
 ---
 
@@ -165,11 +169,11 @@ const extra = extraStatistik();
           ? <img src="/svampbob/frame1.webp" alt="Svamp-Bob" class="hero-peek-img" id="hero-img" data-fadein />
           : <img src="/jonas_hp.webp" alt="Jonas von Essen" class="hero-peek-img" id="hero-img" data-fadein />}
       </div>
-      <span class="hero-tag">{svampbob ? 'Från Bikini Bottoms mest framgångsrika HP-skrivare 🧽' : 'Från Sveriges mest framgångsrika HP-skrivare'}</span>
+      <span class="hero-tag">{svampbob ? 'Från Bikinibottens mest framgångsrika HP-skrivare 🧽' : 'Från Sveriges mest framgångsrika HP-skrivare'}</span>
       <h1 id="hero-title">{svampbob ? 'Är du redo, Otto? Jag är redo!' : 'Nå ditt drömresultat på HP'}</h1>
       <p class="subtitle">
         {svampbob
-          ? 'Strategier och minnestekniker från Jonas von Essen, tvåfaldig världsmästare i minne, 2.0 på HP tolv gånger i rad och hedersmedborgare i Bikini Bottom. Krabburgare ingår tyvärr inte.'
+          ? 'Strategier och minnestekniker från Jonas von Essen, tvåfaldig världsmästare i minne, 2.0 på HP tolv gånger i rad och hedersmedborgare i Bikinibotten. Krabburgare ingår tyvärr inte.'
           : 'Strategier och minnestekniker från Jonas von Essen, tvåfaldig världsmästare i minne med 2.0 på HP tolv gånger i rad.'}
       </p>
 

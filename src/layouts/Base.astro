@@ -1,5 +1,7 @@
 ---
 import { getSessionFromCookies } from '../lib/auth.js';
+import { visaSvampBob } from '../lib/svampbob.js';
+import SvampBob from '../components/SvampBob.astro';
 
 interface Props {
   title: string;
@@ -24,8 +26,11 @@ const {
 } = Astro.props;
 const currentPath = Astro.url.pathname;
 const canonicalUrl = new URL(currentPath, 'https://www.hpakuten.se').href;
-const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const cookieHeader = Astro.request.headers.get('cookie');
+const user = await getSessionFromCookies(cookieHeader);
 const isBB = user?.email?.includes('jessica.ahrling') ?? false;
+// Svamp-Bob-temat i lugn variant på alla sidor utom startsidan, som har sin egen fulla version.
+const svampbobLatt = !isBB && currentPath !== '/' && visaSvampBob(user, Astro.url, cookieHeader);
 ---
 
 <!DOCTYPE html>
@@ -78,6 +83,7 @@ const isBB = user?.email?.includes('jessica.ahrling') ?? false;
   <script>window.plausible=window.plausible||function(){(plausible.q=plausible.q||[]).push(arguments)},plausible.init=plausible.init||function(i){plausible.o=i||{}};plausible.init()</script>
 </head>
 <body>
+  {svampbobLatt && <SvampBob latt />}
   <header class="site-header">
     <div class="container container--wide">
       <a href="/" class="site-logo">{isBB ? 'BB' : 'HP'}<span>Akuten</span></a>

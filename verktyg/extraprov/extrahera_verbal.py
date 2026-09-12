@@ -140,7 +140,9 @@ def sid_block(sida):
     block = [b for b in sida.get_text('dict')['blocks'] if 'lines' in b and block_text(b).strip()]
     for b in block:
         b['spalt'] = 0 if b['bbox'][0] < SPALTGRANS else 1
-    return sorted(block, key=lambda b: (b['spalt'], b['bbox'][1]))
+    # Block på samma rad (bokstav och alternativtext i äldre häften) ordnas
+    # från vänster till höger, därför avrundas y grovt.
+    return sorted(block, key=lambda b: (b['spalt'], round(b['bbox'][1] / 4), b['bbox'][0]))
 
 
 def ar_skrap(block):
@@ -154,27 +156,67 @@ def ar_skrap(block):
 
 # ---------- frågor ----------
 
+FRAGA_INLINE = re.compile(r'^(\d{1,2})\.\s+(\S.*)$', re.S)
+ALTERNATIV_INLINE = re.compile(r'^([A-E])\s+(\S.*)$', re.S)
+
+
+def rensa_rader(rader):
+    """Tar bort tomma rader och tomma spann i början av ett block (äldre
+    provhäften har ofta ett ensamt mellanslag som första rad)."""
+    ut = []
+    for l in rader:
+        spans = [sp for sp in l['spans'] if sp['text'].strip() or ut]
+        if spans:
+            ut.append({**l, 'spans': spans})
+    return ut
+
+
 def tolka_fragor(block):
     """Frågor ur en lista block i läsordning. Ett frågeblock börjar med ett
-    fett nummer ("21.\t"), alternativblock med en bokstav ("A\t")."""
+    fett nummer ("21.\t"), alternativblock med en bokstav ("A\t"). I äldre
+    häften (t.o.m. 2023) står numret ihop med frågetexten ("13. Vad anges...")
+    och bokstaven i ett eget block följt av alternativtexten i nästa block."""
     fragor = []
     aktuell = None
+    vantar = None  # bokstav vars alternativtext kommer i nästa block
     for b in block:
         if ar_skrap(b):
             continue
-        rader = b['lines']
-        forsta = rader[0]['spans'][0]['text'] if rader and rader[0]['spans'] else ''
+        rader = rensa_rader(b['lines'])
+        if not rader:
+            continue
+        forsta_span = rader[0]['spans'][0]
+        forsta = forsta_span['text']
         m = FRAGA.match(forsta)
-        if m and (rader[0]['spans'][0]['flags'] & 16):
+        mi = FRAGA_INLINE.match(forsta) if not m else None
+        if (m or mi) and (forsta_span['flags'] & 16):
             if aktuell:
                 fragor.append(aktuell)
-            resten = [{'spans': rader[0]['spans'][1:]}] + rader[1:]
-            aktuell = {'num': int(m.group(1)), 'runs': block_runs(resten), 'alt': {}}
+            if m:
+                resten = [{'spans': rader[0]['spans'][1:]}] + rader[1:]
+                num = int(m.group(1))
+            else:
+                resten = [{'spans': [{**forsta_span, 'text': mi.group(2)}] + rader[0]['spans'][1:]}] + rader[1:]
+                num = int(mi.group(1))
+            aktuell = {'num': num, 'runs': block_runs(resten), 'alt': {}}
+            vantar = None
             continue
         a = ALTERNATIV.match(forsta)
-        if a and aktuell is not None:
-            resten = [{'spans': rader[0]['spans'][1:]}] + rader[1:]
-            aktuell['alt'][a.group(1)] = runs_html(block_runs(resten), fet_ok=False)
+        ai = ALTERNATIV_INLINE.match(forsta) if not a else None
+        if (a or ai) and aktuell is not None:
+            if a:
+                resten = [{'spans': rader[0]['spans'][1:]}] + rader[1:]
+                bokstav = a.group(1)
+            else:
+                resten = [{'spans': [{**forsta_span, 'text': ai.group(2)}] + rader[0]['spans'][1:]}] + rader[1:]
+                bokstav = ai.group(1)
+            text = runs_html(block_runs(resten), fet_ok=False)
+            aktuell['alt'][bokstav] = text
+            vantar = bokstav if not text else None
+            continue
+        if aktuell is not None and vantar is not None:
+            aktuell['alt'][vantar] = runs_html(block_runs(rader), fet_ok=False)
+            vantar = None
             continue
         if aktuell is not None and not aktuell['alt']:
             aktuell['runs'] = fog(aktuell['runs'], runs_text(block_runs(rader))) + block_runs(rader)
@@ -191,7 +233,10 @@ def tolka_fragor(block):
 
 def sidtyp(sida):
     t = sida.get_text()
-    huvud = '\n'.join(t.splitlines()[:4])
+    # Sidhuvudet ("ORD – Ordförståelse", "LÄS", "MEK") står högst upp på sidan
+    # men kommer inte alltid först i textordningen, så titta på blockens läge.
+    huvud = '\n'.join(block_text(b).strip() for b in sida.get_text('dict')['blocks'] if 'lines' in b and b['bbox'][3] < 50)
+    huvud += '\n' + '\n'.join(t.splitlines()[:4])
     if 'Ordförståelse' in huvud or re.search(r'^ORD\b', huvud, re.M):
         return 'ord'
     if 'läsförståelse' in huvud or re.search(r'^LÄS\b', huvud, re.M):
@@ -286,7 +331,12 @@ def las_las(sidor):
 def las_facit(facit_pdf, kolumn):
     """Facit för en kolumn (0-3) i UHR:s facit-PDF. Sidhuvudet talar om vilka
     kolumner som är verbala och kvantitativa; rad 31-40 finns bara för de
-    kvantitativa passen, så där är listan kortare."""
+    kvantitativa passen, så där är listan kortare. Om kolumnen i stället är
+    en sträng med bokstäver ("EEBDB...") används den direkt som facit för
+    uppgift 1, 2, 3 ... (för äldre facit-PDF:er vars text inte går att tolka)."""
+    if isinstance(kolumn, str) and not kolumn.isdigit():
+        return {i + 1: b for i, b in enumerate(kolumn.strip().upper())}
+    kolumn = int(kolumn)
     t = pymupdf.open(facit_pdf)[0].get_text()
     slag = re.findall(r'(?m)^\s*(Verbal|Kvantitativ) del', t)
     kvant_kolumner = [i for i, s in enumerate(slag) if s == 'Kvantitativ']
@@ -326,10 +376,13 @@ def las_normering(norm_pdf):
 def main():
     pdf, facit_pdf, kolumn, norm_pdf, ut = sys.argv[1:6]
     d = pymupdf.open(pdf)
-    facit = las_facit(facit_pdf, int(kolumn))
+    facit = las_facit(facit_pdf, kolumn)
     ord_sidor, las_sidor, mek_sidor = [], [], []
+    typ = None
     for s in d:
-        typ = sidtyp(s)
+        # Sidor utan sidhuvud (fortsättningssidor i äldre häften) hör till
+        # samma del som sidan före.
+        typ = sidtyp(s) or typ
         if typ == 'ord': ord_sidor.append(s)
         elif typ == 'las': las_sidor.append(s)
         elif typ == 'mek': mek_sidor.append(s)

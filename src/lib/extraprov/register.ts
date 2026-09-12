@@ -8,6 +8,7 @@ export const provtillfallen: Provtillfalle[] = [
   { id: 'vt2025', name: 'Våren 2025', date: '2025-04-05', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2025/' },
   { id: 'ht2024', name: 'Hösten 2024', date: '2024-10-20', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-hosten-2024/' },
   { id: 'vt2024', name: 'Våren 2024', date: '2024-04-13', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2024/' },
+  { id: 'ht2023', name: 'Hösten 2023', date: '2023-10-22', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-hosten-2023/' },
 ];
 
 const dataModuler = import.meta.glob<{ pass: ExtraPass }>('./data/*.ts', { eager: true });

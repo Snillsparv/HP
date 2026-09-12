@@ -7,7 +7,7 @@
 // sig självt, bara en enstaka svamp då och då).
 interface Props { latt?: boolean }
 const { latt = false } = Astro.props;
-const V = '6';
+const V = '7';
 ---
 <link rel="stylesheet" href={`/svampbob/tema.css?v=${V}`} />
 <div class:list={['svampbob-hav', { 'svampbob-latt': latt }]} aria-hidden="true"></div>

@@ -88,14 +88,27 @@ body { background: transparent; }
 main > .section { background: rgba(255, 255, 255, 0.9); }
 main > .section + .section { border-top: 3px solid var(--sb-gulmork); }
 
-/* Svamptoppen som listen högst upp */
+/* Listen högst upp: Svamp-Bobs gula kropp med mörkare gula hål (ovaler) */
 .site-header {
-  background: #ffd400 url('/svampbob/topp.webp') center / auto 100% repeat-x !important;
+  background-color: #f7df3a !important;
+  background-image:
+    radial-gradient(ellipse 15px 10px at 28px 14px, #cdb62a 96%, transparent 100%),
+    radial-gradient(ellipse 9px 6px at 96px 44px, #d5bf2f 96%, transparent 100%),
+    radial-gradient(ellipse 12px 8px at 160px 26px, #cdb62a 96%, transparent 100%),
+    radial-gradient(ellipse 18px 11px at 70px 52px, #d0b92c 96%, transparent 100%),
+    radial-gradient(ellipse 7px 5px at 205px 12px, #d8c334 96%, transparent 100%),
+    radial-gradient(ellipse 13px 9px at 250px 40px, #cdb62a 96%, transparent 100%),
+    radial-gradient(ellipse 10px 7px at 130px 6px, #d5bf2f 96%, transparent 100%),
+    radial-gradient(ellipse 16px 10px at 330px 18px, #cdb62a 96%, transparent 100%),
+    radial-gradient(ellipse 8px 6px at 300px 56px, #d8c334 96%, transparent 100%),
+    radial-gradient(ellipse 11px 8px at 390px 44px, #d0b92c 96%, transparent 100%) !important;
+  background-size: 260px 64px, 260px 64px, 260px 64px, 340px 64px, 340px 64px, 340px 64px, 420px 64px, 420px 64px, 420px 64px, 420px 64px !important;
+  background-repeat: repeat !important;
   border-bottom: 3px solid var(--sb-brun) !important;
 }
 .site-header a, .site-logo, .nav-toggle {
   color: var(--sb-brun) !important;
-  text-shadow: 0 0 6px #fff, 0 0 12px #fff, 0 0 18px #fff;
+  text-shadow: 0 0 5px rgba(255, 255, 255, 0.7);
 }
 .site-nav a.active, .site-nav a:hover { color: var(--sb-rod) !important; }
 .nav-login { background: var(--sb-rod) !important; color: #fff !important; text-shadow: none !important; }

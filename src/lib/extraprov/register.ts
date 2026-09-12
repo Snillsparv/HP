@@ -23,6 +23,7 @@ export const provtillfallen: Provtillfalle[] = [
   { id: 'ht2017', name: 'Hösten 2017', date: '2017-10-21', source: 'https://www.studera.nu/hogskoleprov/fpn/facit-och-provfragor-hosten-2017/' },
   { id: 'vt2017', name: 'Våren 2017', date: '2017-04-01', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-varen-2017/' },
   { id: 'ht2016', name: 'Hösten 2016', date: '2016-10-29', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-hosten-2016/' },
+  { id: 'ht2015', name: 'Hösten 2015', date: '2015-10-24', source: 'https://www.studera.nu/hogskoleprov/fpn/facit-provfragor-och-normering-hosten-2015/' },
 ];
 
 const dataModuler = import.meta.glob<{ pass: ExtraPass }>('./data/*.ts', { eager: true });

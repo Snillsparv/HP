@@ -83,7 +83,8 @@ const isBB = user?.email?.includes('jessica.ahrling') ?? false;
       <a href="/" class="site-logo">{isBB ? 'BB' : 'HP'}<span>Akuten</span></a>
       <button class="nav-toggle" aria-label="Meny" id="nav-toggle">☰</button>
       <nav class="site-nav" id="site-nav">
-        <a href="/trana" class:list={['nav-cta', { active: currentPath.startsWith('/trana') || currentPath.startsWith('/prov') || currentPath.startsWith('/delprov') || currentPath.startsWith('/extra') }]}>{isBB ? 'Förbereda' : 'Träna'}</a>
+        <a href="/trana" class:list={['nav-cta', { active: currentPath.startsWith('/trana') || currentPath.startsWith('/prov') || currentPath.startsWith('/delprov') }]}>{isBB ? 'Förbereda' : 'Träna'}</a>
+        <a href="/extra" class:list={[{ active: currentPath.startsWith('/extra') }]}>Fler prov</a>
         <a href="/ord" class:list={[{ active: currentPath === '/ord' }]}>Ordträning</a>
         <a href="/ovningsuppgifter" class:list={[{ active: currentPath.startsWith('/ovningsuppgifter') }]}>{isBB ? 'Blöjrepetition' : 'Matterepetition'}</a>
         <a href="/forum" class:list={[{ active: currentPath.startsWith('/forum') }]}>{isBB ? 'Mammaforumet' : 'Forum'}</a>
@@ -104,7 +105,7 @@ const isBB = user?.email?.includes('jessica.ahrling') ?? false;
 
   <footer class="site-footer">
     <div class="container">
-      <div class="footer-contact">
+      <div class="footer-contact" id="kontakt">
         <h3>Hör av dig!</h3>
         <p>{isBB ? 'Allt på den här sidan är helt gratis, men jag skulle bli jätteglad om du som ett litet tack skrev och berättade om du gillar innehållet och hur det gick på förlossningen! :)' : 'Allt på den här sidan är helt gratis, men jag skulle bli jätteglad om du som ett litet tack skrev och berättade om du gillar innehållet och hur det gick på provet! :)'}</p>
         <form class="contact-form" action="/api/contact" method="POST">

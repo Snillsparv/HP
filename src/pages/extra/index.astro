@@ -14,8 +14,11 @@ const totalt = grupper.reduce((n, g) => n + g.pass.length, 0);
       <h1>Fler prov att träna på</h1>
       <p class="page-intro">Klar med stegen på <a href="/trana">Träna-sidan</a> och vill träna mer? Här finns fler provpass från tidigare högskoleprov, nyaste först.</p>
 
-      <div class="tip-box" style="margin-bottom:1.6rem; font-size:0.92rem;">
-        <strong>Bra att veta:</strong> proven här är extramaterial. Till skillnad från proven i stegen finns det inga videogenomgångar, utan textförklaringar till uppgifterna. Alla pass är inte förklarade än, det står vid varje pass vad som finns. Du gör passen på tid precis som de riktiga, och resultaten sparas på din profil.
+      <div class="tip-box" style="margin-bottom:1rem; font-size:0.92rem;">
+        <strong>Bra att veta:</strong> proven här är extramaterial utanför stegen. Du gör passen på tid precis som de riktiga, rättar dem och får en textförklaring till varje uppgift. Resultaten sparas på din profil.
+      </div>
+      <div class="tip-box warning" style="margin-bottom:1.6rem; font-size:0.92rem;">
+        Förklaringarna till proven här är till skillnad från mina videoförklaringar inte skrivna av mig utan av AI-modellen Fable 5.1. Den är mycket kompetent och det jag tittat på ser bra ut men om du upptäcker något märkligt får du jättegärna höra av dig via <a href="#kontakt">kontaktformuläret</a>. 🙂 Vilket alternativ som är rätt är hämtat från det riktiga facit, så det kan du alltid lita på.
       </div>
 
       {grupper.map(({ tillfalle, pass }) => (
@@ -55,7 +58,7 @@ const totalt = grupper.reduce((n, g) => n + g.pass.length, 0);
       {totalt === 0 && <p style="color:var(--color-muted);">Inga extraprov är inlagda ännu.</p>}
 
       <p class="kallor">
-        Uppgifterna kommer från de högskoleprov som Universitets- och högskolerådet (UHR) har publicerat på <a href="https://www.studera.nu/hogskoleprov/fpn/tidigare-prov/" target="_blank" rel="noopener">studera.nu</a>. ELF-delen (engelsk läsförståelse) ingår inte, eftersom de engelska texterna är upphovsrättsskyddade och inte publiceras. Normeringen bygger på den officiella normeringstabellen för respektive provtillfälle. Textförklaringarna är HPAkutens egna.
+        Uppgifterna kommer från de högskoleprov som Universitets- och högskolerådet (UHR) har publicerat på <a href="https://www.studera.nu/hogskoleprov/fpn/tidigare-prov/" target="_blank" rel="noopener">studera.nu</a>. ELF-delen (engelsk läsförståelse) ingår inte, eftersom de engelska texterna är upphovsrättsskyddade och inte publiceras. Normeringen bygger på den officiella normeringstabellen för respektive provtillfälle.
       </p>
     </div>
   </div>

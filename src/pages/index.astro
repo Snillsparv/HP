@@ -185,6 +185,11 @@ const isBB = user?.email?.includes('jessica.ahrling');
   <!-- Intro -->
   <section class="section" id="guide">
     <div class="container">
+      <a href="/extra" class="nyhet-banner">
+        <span class="nyhet-banner-tag">Nyhet</span>
+        <span><strong>Nu kan du öva på fler prov!</strong> Under <strong>Fler prov</strong> hittar du provpass från tidigare högskoleprov, med rättning och textförklaringar till varje uppgift.</span>
+        <span class="nyhet-banner-cta">Till proven →</span>
+      </a>
       <h2 id="countdown-title" class="section-title">Bara <span id="cd-inline" class="countdown-inline" style="cursor:default;">--</span> kvar och du är helt oförberedd?</h2>
       <p id="countdown-subtitle" class="section-subtitle" style="max-width: 700px; margin-left: auto; margin-right: auto;">
         Lugn, följ stegen nedan och du kommer att vara betydligt mer redo än du är just nu!
@@ -451,3 +456,14 @@ const isBB = user?.email?.includes('jessica.ahrling');
   </script>
 </Base>
 )}
+
+<style>
+  .nyhet-banner { display: flex; align-items: center; gap: 0.8rem; max-width: 800px; margin: 0 auto 2rem; padding: 0.85rem 1.1rem;
+    background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; color: inherit; text-decoration: none;
+    font-size: 0.95rem; line-height: 1.4; text-align: left; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
+  .nyhet-banner:hover { border-color: #2563eb; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12); text-decoration: none; }
+  .nyhet-banner-tag { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+    background: #2563eb; color: #fff; padding: 0.25rem 0.6rem; border-radius: 999px; }
+  .nyhet-banner-cta { flex-shrink: 0; margin-left: auto; color: #2563eb; font-weight: 700; white-space: nowrap; }
+  @media (max-width: 600px) { .nyhet-banner { flex-wrap: wrap; } .nyhet-banner-cta { margin-left: 0; } }
+</style>

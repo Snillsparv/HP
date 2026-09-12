@@ -4,7 +4,8 @@
 import type { ExtraPass, Provtillfalle, ExtraFraga } from './types.js';
 
 export const provtillfallen: Provtillfalle[] = [
-  { id: 'ht2025', name: 'Hösten 2025', date: '2025-10-19', source: 'https://www.studera.nu/hogskoleprov/fpn/tidigare-prov/' },
+  { id: 'ht2025', name: 'Hösten 2025', date: '2025-10-19', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-facit-och-normering-hosten-2025/' },
+  { id: 'vt2025', name: 'Våren 2025', date: '2025-04-05', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2025/' },
 ];
 
 const dataModuler = import.meta.glob<{ pass: ExtraPass }>('./data/*.ts', { eager: true });

@@ -284,18 +284,22 @@ def las_las(sidor):
 # ---------- facit och normering ----------
 
 def las_facit(facit_pdf, kolumn):
+    """Facit för en kolumn (0-3) i UHR:s facit-PDF. Sidhuvudet talar om vilka
+    kolumner som är verbala och kvantitativa; rad 31-40 finns bara för de
+    kvantitativa passen, så där är listan kortare."""
     t = pymupdf.open(facit_pdf)[0].get_text()
+    slag = re.findall(r'(?m)^\s*(Verbal|Kvantitativ) del', t)
+    kvant_kolumner = [i for i, s in enumerate(slag) if s == 'Kvantitativ']
     par = re.findall(r'(?m)^\s*(\d{1,2})\s+([A-E])\s*$', t)
     per_nr = {}
     for nr, bokstav in par:
         per_nr.setdefault(int(nr), []).append(bokstav)
     ut = {}
     for nr, lista in per_nr.items():
-        # Rad 31-40 finns bara för de kvantitativa passen (kolumn 0 och 2).
-        if len(lista) == 4:
+        if len(lista) == len(slag):
             ut[nr] = lista[kolumn]
-        elif len(lista) == 2 and kolumn in (0, 2):
-            ut[nr] = lista[0 if kolumn == 0 else 1]
+        elif len(lista) == len(kvant_kolumner) and kolumn in kvant_kolumner:
+            ut[nr] = lista[kvant_kolumner.index(kolumn)]
     return ut
 
 

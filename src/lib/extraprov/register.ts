@@ -14,6 +14,7 @@ export const provtillfallen: Provtillfalle[] = [
   { id: 'vt2022maj', name: 'Våren 2022 (7 maj)', date: '2022-05-07', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2022-7-maj/' },
   { id: 'vt2022mars', name: 'Våren 2022 (12 mars)', date: '2022-03-12', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2022-12-mars/' },
   { id: 'vt2021maj', name: 'Våren 2021 (8 maj)', date: '2021-05-08', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2021-8-maj/' },
+  { id: 'vt2021mars', name: 'Våren 2021 (13 mars)', date: '2021-03-13', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2021-13-mars/' },
 ];
 
 const dataModuler = import.meta.glob<{ pass: ExtraPass }>('./data/*.ts', { eager: true });

@@ -1,0 +1,84 @@
+// Högskoleprovet 29 oktober 2016, provpass 3 (kvantitativt).
+// Uppgifterna är hämtade från UHR:s publicerade prov på studera.nu.
+import { tex, figur, KVA_ALTERNATIV, NOG_ALTERNATIV } from '../types.js';
+import type { ExtraPass } from '../types.js';
+
+const B = '/extraprov/ht2016/';
+
+const DTK1 = 'Bilinnehav bland kvinnor och män i Sverige: ett linjediagram och två stapeldiagram. Linjediagrammet visar utvecklingen 1972 till 2004 av antalet privata personbilar som ägdes av kvinnor respektive män, med index 100 för 1972. Kvinnornas kurva stiger från 100 (1972) till cirka 145 (1976), 140 (1980), 160 (1984), 200 (1988), 210 (1992), 205 (1996), 235 (2000) och 245 (2004). Männens kurva ligger nästan stilla: cirka 100 (1972), 115 (1976), 105 (1980), 100 (1984), 110 (1988), 110 (1992), 105 (1996), 110 (2000) och 110 (2004). Det första stapeldiagrammet visar hur de 1 113 527 bilar som ägdes av kvinnor 2004 fördelade sig procentuellt på de tio vanligaste bilmärkena samt övriga: Volvo 17, VW 11,5, Ford 9, Toyota 7, Saab 6,5, Opel 6, Renault 5,5, Nissan 4, Audi 4, Peugeot 3,5 och övriga 24. Det andra visar motsvarande för de 2 201 019 bilar som ägdes av män: Volvo 25,5, Saab 9,5, VW 8,5, Ford 7,5, Audi 5,5, Toyota 5, Opel 5, Mercedes Benz 3,5, BMW 3, Renault 3 och övriga 22.';
+const DTK2 = 'Skadade vid fysisk aktivitet: tabell över det skattade antalet män och kvinnor som skadade sig vid fysisk aktivitet, i genomsnitt per år 2005 till 2007, andelen av de skadade som vårdades i slutenvård i procent (män respektive kvinnor) samt det skattade antalet vårddygn sammanlagt för män och kvinnor. Kolumner: skadade män, skadade kvinnor, andel slutenvårdade män, andel slutenvårdade kvinnor, vårddygn. Gå och promenera: 17 200, 26 800, 14, 15, 48 000. Cykla: 17 000, 11 000, 15, 15, 18 000. Sport och idrott: 73 000, 39 000, 7, 8, 24 000. Därav fotboll: 24 000, 10 000, 5, 5, 4 200. Ishockey: 8 900, 300, 9, 13, 1 500. Ridsport: 500, 8 700, 25, 18, 8 000. Utförsåkning: 6 200, 3 200, 11, 8, 3 500. Innebandy: 5 300, 2 100, 4, 4, 900. Motorsport: 6 000, 300, 14, 12, 3 000. Handboll: 2 500, 2 700, 2, 3, 400. Gymnastik: 1 700, 2 000, 8, 5, 500. Löpning: 1 400, 1 200, 2, 2, 100. Lek: 36 000, 26 000, 9, 9, 15 000. Gör det själv: 23 000, 4 000, 8, 10, 11 000. Trädgårdsarbete: 3 500, 2 500, 10, 8, 3 500. Jaga, fiska, plocka bär m.m.: 2 500, 1 000, 10, 9, 100. Totalt: 172 200 män, 110 300 kvinnor, 121 500 vårddygn.';
+const DTK3 = 'Elproduktion i Europa: karta över EU:s 15 medlemsländer 2001 där varje land har en cirkel vars area anger den totala elproduktionen i terawattimmar (skala med cirklar för 10, 50, 100, 200, 300, 400 och 500 TWh) och där cirkeln är delad i kärnkraft (ljus sektor, andel i procent angiven) och övriga energikällor (mörk sektor). Ungefärliga värden: Frankrike cirka 550 TWh, kärnkraft 77,5 procent. Tyskland cirka 580 TWh, 31,2 procent. Storbritannien cirka 380 TWh, 23,2 procent. Italien cirka 280 TWh, ingen kärnkraft. Spanien cirka 240 TWh, 28,8 procent. Sverige cirka 160 TWh, 43,9 procent. Nederländerna cirka 90 TWh, 4,3 procent. Belgien cirka 80 TWh, 57,7 procent. Finland cirka 75 TWh, 30,6 procent. Österrike cirka 62 TWh, ingen kärnkraft. Grekland cirka 53 TWh, ingen kärnkraft. Portugal cirka 46 TWh, ingen kärnkraft. Danmark cirka 38 TWh, ingen kärnkraft. Irland cirka 25 TWh, ingen kärnkraft. Luxemburg cirka 1 TWh, ingen kärnkraft.';
+const DTK4 = 'Fast och mobil telekommunikation i Sverige: två ytdiagram över det totala antalet trafikminuter 2001 till 2012, miljoner minuter. Det övre visar fasta telefonitjänster uppdelat på övrigt (nederst), till utlandet, till mobiltelefon, internet och nationell trafik (överst). Totalt cirka 57 000 (2001), 51 500 (2002), 49 500 (2003), 46 500 (2004), 41 000 (2005), 35 500 (2006), 31 000 (2007), 27 000 (2008), 23 500 (2009), 20 500 (2010), 18 500 (2011) och 15 500 (2012). År 2001 var övrigt cirka 1 500, till utlandet 1 800, till mobiltelefon 2 700, internet 18 000 och nationell trafik 33 000. År 2012 var övrigt cirka 400, till utlandet 600, till mobiltelefon 4 000, internet nästan 0 och nationell trafik 10 500. Internettrafiken minskade stadigt från 2001 och var nästan borta 2010, medan minuterna till mobiltelefon var ungefär oförändrade eller något fler. Det nedre visar mobiltelefoni uppdelat på till utlandet (nederst, cirka 200 till 700), till fast telefon och till mobiltelefon (överst). Totalt cirka 5 500 (2001), 6 500 (2002), 7 000 (2003), 7 500 (2004), 10 000 (2005), 12 500 (2006), 15 500 (2007), 18 000 (2008), 20 000 (2009), 22 000 (2010), 23 500 (2011) och 24 000 (2012). Samtal till fast telefon var cirka 2 500 (2001), 2 700 (2004), 3 000 (2006), 4 000 (2008), 5 000 (2010), 5 800 (2011) och 6 000 (2012).';
+
+export const pass: ExtraPass = {
+  id: 'ht2016-3',
+  tillfalle: 'ht2016',
+  passNr: 3,
+  kind: 'kvant',
+  name: 'Provpass 3 (kvantitativt)',
+  timeMinutes: 55,
+  extendedMinutes: 80,
+  normering: [[0, 0.0], [22, 0.1], [25, 0.2], [27, 0.3], [29, 0.4], [31, 0.5], [34, 0.6], [37, 0.7], [40, 0.8], [43, 0.9], [46, 1.0], [49, 1.1], [52, 1.2], [55, 1.3], [58, 1.4], [61, 1.5], [64, 1.6], [66, 1.7], [69, 1.8], [71, 1.9], [73, 2.0]],
+  subTests: [
+    {
+      id: 'xyz', name: 'XYZ – Matematisk problemlösning', shortName: 'XYZ', type: 'xyz',
+      questions: [
+        { num: 1, text: `<b>Vilket svarsalternativ motsvarar uttrycket ${tex('3xy^2 + 2x^2y')}?</b>`, options: [tex('xy(3y + 2x)'), tex('5x^3y^3'), tex('x(3y^2 + 2x^2)'), tex('5xy(y + x)')], correct: 0, category: 'algebra' },
+        { num: 2, text: 'För fyrhörningen ABCD gäller att summan av vinkeln A och vinkeln C är 210°. <b>Vilket av följande alternativ är med säkerhet korrekt?</b>', options: ['Vinkeln A är större än 90°.', 'Vinkeln B och vinkeln D är lika stora.', 'Summan av vinkeln B och vinkeln D är 150°.', 'Fyrhörningen ABCD är en rektangel.'], correct: 2, category: 'geometri' },
+        { num: 3, text: `<b>Vilket av svarsförslagen är en punkt som ligger mellan de båda linjerna ${tex('y = x + 3')} och ${tex('y = x - 3')}?</b>`, options: ['(0, 0)', '(4, 0)', '(0, −4)', '(4, −4)'], correct: 0, category: 'funktioner' },
+        { num: 4, text: `<b>Vad är ${tex('x - y')} då ${tex('11x - 11y = 42')}?</b>`, options: [tex('-\\frac{42}{11}'), tex('-\\frac{11}{42}'), tex('\\frac{11}{42}'), tex('\\frac{42}{11}')], correct: 3, category: 'algebra' },
+        { num: 5, text: 'Målarna A och B ska måla ett plank. A och B målar var och en med sin egen konstanta hastighet. Om A målar planket ensam tar det sex timmar, och om B målar planket ensam tar det fyra timmar. A börjar måla och arbetar i två timmar. <b>Om B tar över där A slutat, hur länge måste då B arbeta innan hela planket är målat?</b>', options: ['80 minuter', '120 minuter', '160 minuter', '200 minuter'], correct: 2, category: 'aritmetik' },
+        { num: 6, text: `<b>Vilket svarsalternativ är lika med ${tex('\\frac{3}{5}')}?</b>`, options: [tex('\\frac{1}{2} + \\frac{1}{6}'), tex('\\frac{1}{2} + \\frac{1}{10}'), tex('\\frac{1}{3} + \\frac{1}{15}'), tex('\\frac{1}{4} + \\frac{1}{6}')], correct: 1, category: 'aritmetik' },
+        { num: 7, text: `${tex('4 = \\frac{3}{12} - 5x')}<br><b>Vad är <i>x</i>?</b>`, options: [tex('-\\frac{3}{4}'), tex('-\\frac{3}{5}'), tex('-\\frac{4}{5}'), tex('-\\frac{7}{20}')], correct: 0, category: 'algebra' },
+        { num: 8, text: 'I en grupp på 10 personer är medelåldern 18 år. Två personer lämnar gruppen, vilket gör att medelåldern sjunker till 10 år. En av personerna som lämnar gruppen är 80 år. <b>Hur gammal är den andra personen som lämnar gruppen?</b>', options: ['14 år', '16 år', '18 år', '20 år'], correct: 3, category: 'statistik' },
+        { num: 9, text: `<b>Vad är ${tex('6 - 5 \\cdot (8 - 3) - \\left(\\frac{12}{4} - 2\\right)')}?</b>`, options: ['−24', '−20', '0', '4'], correct: 1, category: 'aritmetik' },
+        { num: 10, text: `ABCD är en rektangel. FE är parallell med AB. Arean av FECD är 1/9 av arean av ABCD. <b>Vad är <i>x</i>?</b>${figur(B + 'p3-xyz10.webp', 'En stående rektangel ABCD med A nere till vänster, B nere till höger, C uppe till höger och D uppe till vänster. En vågrät linje FE delar rektangeln, med F på AD och E på BC. Avståndet från E till C är 3 cm och avståndet från B till E är x.', 300)}`, options: ['6 cm', '9 cm', '12 cm', '24 cm'], correct: 3, category: 'geometri' },
+        { num: 11, text: `<b>Vad är ${tex('\\left(2\\sqrt{2}\\right)^2')}?</b>`, options: ['2', '4', '8', '16'], correct: 2, category: 'aritmetik' },
+        { num: 12, text: `${figur(B + 'p3-xyz12.webp', 'Grafen till y(x), en parabel som öppnar sig uppåt i ett koordinatsystem med skalstreck för 1 på båda axlarna. Parabeln skär x-axeln i x = −2 och x = 2 och har sin lägsta punkt under origo.', 300)}${tex('y(x) = ax^2 - \\frac{3}{2}')}<br><b>Vad är konstanten <i>a</i>?</b>`, options: [tex('\\frac{1}{3}'), tex('\\frac{3}{8}'), tex('\\frac{1}{2}'), tex('\\frac{3}{2}')], correct: 1, category: 'funktioner' },
+      ],
+    },
+    {
+      id: 'kva', name: 'KVA – Kvantitativa jämförelser', shortName: 'KVA', type: 'kva',
+      questions: [
+        { num: 13, text: tex('-7(x + 1) = -8x'), q1: '<i>x</i>', q2: '0', options: KVA_ALTERNATIV, correct: 0, category: 'algebra' },
+        { num: 14, text: '', q1: tex('12^2'), q2: tex('\\frac{9^2}{3^2} \\cdot 4'), options: KVA_ALTERNATIV, correct: 0, category: 'aritmetik' },
+        { num: 15, text: figur(B + 'p3-kva15.webp', 'En triangel med en lång sida nedtill. Vinkeln vid det högra nedre hörnet är 97° och vinkeln x är markerad vid det övre hörnet.', 360), q1: '<i>x</i>', q2: '83°', options: KVA_ALTERNATIV, correct: 1, category: 'geometri' },
+        { num: 16, text: 'Medelvärdet av <i>x</i>, <i>y</i> och <i>z</i> är <i>w</i>/3.<br>Medelvärdet av <i>y</i>, <i>z</i> och <i>w</i> är <i>x</i>/3.', q1: '<i>y</i>', q2: '<i>z</i>', options: KVA_ALTERNATIV, correct: 3, category: 'algebra' },
+        { num: 17, text: '', q1: tex('9 \\cdot 8 - 7 \\cdot 4'), q2: tex('(9 \\cdot 2 - 7) \\cdot 4'), options: KVA_ALTERNATIV, correct: 2, category: 'aritmetik' },
+        { num: 18, text: '', q1: tex('2 \\cdot \\left(1 + \\frac{1}{2} + \\frac{1}{4} + \\frac{1}{8} + \\frac{1}{16} + \\frac{1}{32} + \\frac{1}{64}\\right)'), q2: tex('2^2'), options: KVA_ALTERNATIV, correct: 1, category: 'aritmetik' },
+        { num: 19, text: `${tex('x \\neq 0')}<br>${tex('x - y = y - x')}`, q1: tex('\\frac{2x + y}{3x}'), q2: tex('\\frac{2y + x}{3y}'), options: KVA_ALTERNATIV, correct: 2, category: 'algebra' },
+        { num: 20, text: '', q1: 'Längsta sidan på en rektangel med arean 40 cm<sup>2</sup>', q2: 'Längsta sidan på en triangel med arean 20 cm<sup>2</sup>', options: KVA_ALTERNATIV, correct: 3, category: 'geometri' },
+        { num: 21, text: `Linjerna ${tex('y = 2x - 10')} och ${tex('y = -\\frac{x}{3} + 11')} skär varandra i punkten P = (<i>a</i>, <i>b</i>).`, q1: '<i>a</i>', q2: '<i>b</i>', options: KVA_ALTERNATIV, correct: 0, category: 'funktioner' },
+        { num: 22, text: 'Talet 53<sub>tio</sub> kan skrivas som 203<sub>fem</sub> med basen fem och 110101<sub>två</sub> med basen två.', q1: '210<sub>fem</sub>', q2: '110111<sub>två</sub>', options: KVA_ALTERNATIV, correct: 2, category: 'aritmetik' },
+      ],
+    },
+    {
+      id: 'nog', name: 'NOG – Kvantitativa resonemang', shortName: 'NOG', type: 'nog',
+      questions: [
+        { num: 23, text: 'I ett rakt cykelställ står fyra enfärgade cyklar. Cyklarna har olika färg och tillhör olika personer. Ellas cykel står längst till höger. <b>Vilken färg har Ellas cykel?</b>', s1: 'Den röda cykeln står bredvid den gröna cykeln. Den vita cykeln står bredvid den röda cykeln.', s2: 'Den blå cykeln står närmast till vänster om den vita cykeln.', options: NOG_ALTERNATIV, correct: 2, category: 'logik' },
+        { num: 24, text: 'På en låg- och mellanstadieskola finns det flickor och pojkar. Flickorna är 39 fler än pojkarna. <b>Hur många elever finns det på skolan?</b>', s1: 'Det finns 53 fler elever på lågstadiet än på mellanstadiet.', s2: 'På lågstadiet finns det lika många pojkar som på mellanstadiet.', options: NOG_ALTERNATIV, correct: 4, category: 'aritmetik' },
+        { num: 25, text: `<b>Är ${tex('xy < 25')}?</b>`, s1: tex('y^2 = 400'), s2: tex('0{,}5 < x < 1'), options: NOG_ALTERNATIV, correct: 2, category: 'algebra' },
+        { num: 26, text: `<b>Vilken area har rektangeln ABCD?</b>${figur(B + 'p3-nog26.webp', 'Rektangeln ABCD med A nere till vänster, B nere till höger, C uppe till höger och D uppe till vänster, samt diagonalen AC.', 260)}`, s1: 'Diagonalen AC är 10 cm.', s2: 'Längden av sidan BC är tre fjärdedelar av längden av sidan AB.', options: NOG_ALTERNATIV, correct: 2, category: 'geometri' },
+        { num: 27, text: `${tex('x > 0')}<br><b>Vilket värde har <i>x</i>?</b>`, s1: tex('3x - 7 = 5'), s2: tex('x^2 + x = 5x'), options: NOG_ALTERNATIV, correct: 3, category: 'algebra' },
+        { num: 28, text: 'Signe har en sexsidig bilderbok med bilder på sex olika djur. Boken har en framsida, en baksida och två uppslag. Det är en bild på ett djur på varje sida i boken. På bokens framsida är det en hund. <b>På vilken sida är katten?</b>', s1: 'Katten är på samma uppslag som räven. Fåret är närmare framsidan än vad katten är.', s2: 'Fåret är på samma uppslag som geten. Katten är närmare baksidan än vad geten är. Både räven och älgen är längre bak i boken än vad katten är.', options: NOG_ALTERNATIV, correct: 1, category: 'logik' },
+      ],
+    },
+    {
+      id: 'dtk', name: 'DTK – Diagram, tabeller och kartor', shortName: 'DTK', type: 'dtk',
+      questions: [
+        { num: 29, text: '<b>Hur stor andel av personbilarna 2004 ägdes av kvinnor?</b>', options: ['1/5', '1/4', '1/3', '1/2'], correct: 2, diagram: B + 'p3-dtk1.webp', diagramAlt: DTK1, category: 'diagram' },
+        { num: 30, text: '<b>Vilka bilmärken hörde 2004 till de tio vanligaste bland bilar ägda av kvinnor men inte bland bilar ägda av män?</b>', options: ['Opel och Renault', 'Opel och Nissan', 'Renault och Peugeot', 'Nissan och Peugeot'], correct: 3, diagram: B + 'p3-dtk1.webp', diagramAlt: DTK1, category: 'diagram' },
+        { num: 31, text: '<b>Hur många personbilar ägdes av kvinnor 1972?</b>', options: ['450 000', '650 000', '1 000 000', '2 200 000'], correct: 0, diagram: B + 'p3-dtk1.webp', diagramAlt: DTK1, category: 'diagram' },
+        { num: 32, text: 'Studera andelarna slutenvårdade kvinnor. <b>Hur vanligt var det med slutenvård för den aktivitet där andelen var som störst jämfört med aktiviteten där andelen var som minst?</b>', options: ['6 gånger så vanligt', '9 gånger så vanligt', '12 gånger så vanligt', '15 gånger så vanligt'], correct: 1, diagram: B + 'p3-dtk2.webp', diagramAlt: DTK2, category: 'tabell' },
+        { num: 33, text: '<b>Hur stort var antalet vårddygn per skadad vid aktiviteten gå och promenera?</b>', options: ['0,9', '1,1', '2,7', '7,5'], correct: 1, diagram: B + 'p3-dtk2.webp', diagramAlt: DTK2, category: 'tabell' },
+        { num: 34, text: 'Studera antalet skadade och andelen slutenvårdade på grund av gör det själv-aktiviteter. <b>Hur många slutenvårdades per år för dessa skador?</b>', options: ['1 100', '1 800', '2 200', '4 800'], correct: 2, diagram: B + 'p3-dtk2.webp', diagramAlt: DTK2, category: 'tabell' },
+        { num: 35, text: '<b>Hur stor andel av männen som skadades vid sport och idrott skadades i samband med fotboll?</b>', options: ['1/7', '1/5', '1/4', '1/3'], correct: 3, diagram: B + 'p3-dtk2.webp', diagramAlt: DTK2, category: 'tabell' },
+        { num: 36, text: '<b>Vilket land hade en elproduktion som översteg 100 TWh och uteslutande kom från andra energikällor än kärnkraft?</b>', options: ['Grekland', 'Italien', 'Nederländerna', 'Österrike'], correct: 1, diagram: B + 'p3-dtk3.webp', diagramAlt: DTK3, category: 'karta' },
+        { num: 37, text: '<b>Hur mycket större var elproduktionen i Storbritannien än i Sverige?</b>', options: ['50 TWh', '100 TWh', '200 TWh', '350 TWh'], correct: 2, diagram: B + 'p3-dtk3.webp', diagramAlt: DTK3, category: 'karta' },
+        { num: 38, text: '<b>Hur många av de redovisade länderna hade en elproduktion som endast kom från övriga energikällor?</b>', options: ['4', '5', '7', '8'], correct: 2, diagram: B + 'p3-dtk3.webp', diagramAlt: DTK3, category: 'karta' },
+        { num: 39, text: '<b>Vilken typ av fast telefonitjänst var den enda där antalet trafikminuter inte hade minskat 2012 jämfört med 2001?</b>', options: ['Nationell trafik', 'Internet', 'Till mobiltelefon', 'Övrigt'], correct: 2, diagram: B + 'p3-dtk4.webp', diagramAlt: DTK4, category: 'diagram' },
+        { num: 40, text: '<b>Hur stor andel av trafikminuterna från mobiltelefoner 2011 utgjordes av samtal till fast telefon?</b>', options: ['En femtedel', 'En fjärdedel', 'En tredjedel', 'Två femtedelar'], correct: 1, diagram: B + 'p3-dtk4.webp', diagramAlt: DTK4, category: 'diagram' },
+      ],
+    },
+  ],
+};

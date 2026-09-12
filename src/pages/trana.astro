@@ -1,8 +1,10 @@
 ---
 import Base from '../layouts/Base.astro';
 import { getSessionFromCookies } from '../lib/auth.js';
+import { extraStatistik, formatAntal } from '../lib/extraprov/register.js';
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const serverStep = user?.train_step || 1;
+const extra = extraStatistik();
 ---
 
 <Base title="Träna på Högskoleprovet – HPAkuten" description="Träna gratis på riktiga HP-uppgifter med timer och rättning. Steg-för-steg-plan med videogenomgångar för högskoleprovet HT 2021.">
@@ -183,7 +185,7 @@ const serverStep = user?.train_step || 1;
 
       <a href="/extra" class="extra-banner">
         <span class="extra-banner-tag">Extramaterial</span>
-        <span><strong>Vill du träna mer?</strong> Fler provpass från tidigare högskoleprov, med rättning och textförklaringar. Utanför stegen, för dig som har tid över.</span>
+        <span><strong>Vill du träna mer?</strong> {formatAntal(extra.fragor)} uppgifter från {extra.tillfallen} tidigare högskoleprov, med rättning och textförklaringar. Utanför stegen, för dig som har tid över.</span>
         <span class="extra-banner-cta">Fler prov →</span>
       </a>
     </div>

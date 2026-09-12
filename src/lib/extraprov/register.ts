@@ -74,6 +74,22 @@ export function testId(p: ExtraPass): string {
   return `extra-${p.id}`;
 }
 
+/** Hur mycket det finns att träna på: antal provtillfällen, pass och uppgifter. */
+export function extraStatistik(): { tillfallen: number; pass: number; fragor: number } {
+  const grupper = tillfallenMedPass();
+  const pass = grupper.flatMap(g => g.pass);
+  return {
+    tillfallen: grupper.length,
+    pass: pass.length,
+    fragor: pass.reduce((n, p) => n + antalFragor(p), 0),
+  };
+}
+
+/** Tal med tusentalsavgränsare på svenska, t.ex. 3 640. */
+export function formatAntal(n: number): string {
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+}
+
 /** Provtillfällena nyast först, med sina pass i ordning. */
 export function tillfallenMedPass(): { tillfalle: Provtillfalle; pass: ExtraPass[] }[] {
   return [...provtillfallen]

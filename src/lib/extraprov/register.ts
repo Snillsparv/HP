@@ -21,6 +21,7 @@ export const provtillfallen: Provtillfalle[] = [
   { id: 'ht2018', name: 'Hösten 2018', date: '2018-10-21', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-hosten-2018/' },
   { id: 'vt2018', name: 'Våren 2018', date: '2018-04-14', source: 'https://www.studera.nu/hogskoleprov/fpn/facit-och-provfragor-varen-2018/' },
   { id: 'ht2017', name: 'Hösten 2017', date: '2017-10-21', source: 'https://www.studera.nu/hogskoleprov/fpn/facit-och-provfragor-hosten-2017/' },
+  { id: 'vt2017', name: 'Våren 2017', date: '2017-04-01', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-varen-2017/' },
 ];
 
 const dataModuler = import.meta.glob<{ pass: ExtraPass }>('./data/*.ts', { eager: true });

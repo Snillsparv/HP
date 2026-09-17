@@ -3,12 +3,16 @@
 import type { BankFraga } from './fragebank.js';
 import type { Styrka } from './styrka.js';
 
-export type Lage = 'delprov' | 'typ' | 'svagheter';
+export type Lage = 'delprov' | 'typ' | 'svagheter' | 'snabbkoll';
+
+export type Skal = 'svag' | 'repetera' | 'blandning' | 'avslutning';
 
 export interface Enhet {
   /** En fråga, eller flera som hör ihop (samma diagram eller text). */
   fragor: BankFraga[];
   grupp: string | null;
+  /** Varför enheten valdes i Mina svagheter, så att rundan kan berätta det. */
+  skal?: Skal;
 }
 
 export interface UrvalIn {
@@ -29,9 +33,29 @@ export interface UrvalIn {
   svaga?: Styrka[];
   /** Antal frågor i rundan. */
   antal?: number;
+  /** Fråge-id som inte får ingå (t.ex. de som redan är med i en pågående runda). */
+  utom?: Set<string>;
+  /** Stämmer frågan med ett typval? Standard är exakt typ; frågebanken kan
+   * skicka in en matchare som även förstår "<delprov>:ovrigt". */
+  matchar?: (q: BankFraga, val: string) => boolean;
   /** Slumpkälla 0 till 1, utbytbar i tester. */
   slump?: () => number;
 }
+
+/** Snabbkollen: en fast blandning över de vanligaste typerna, för den som
+ * inte gjort något prov. Ett DTK-diagram räknas med alla sina frågor. */
+export const SNABBKOLL: { typ: string; antal: number }[] = [
+  { typ: 'xyz:algebra', antal: 1 },
+  { typ: 'xyz:aritmetik', antal: 1 },
+  { typ: 'xyz:geometri', antal: 1 },
+  { typ: 'kva:algebra', antal: 1 },
+  { typ: 'kva:aritmetik', antal: 1 },
+  { typ: 'nog:logik', antal: 1 },
+  { typ: 'dtk:diagram', antal: 1 },
+  { typ: 'ord', antal: 2 },
+  { typ: 'mek:1', antal: 1 },
+  { typ: 'mek:2', antal: 1 },
+];
 
 /** Ungefärligt antal frågor i en runda. Enheter med flera frågor (ett
  * diagram, en text) räknas med alla sina frågor, så en DTK-runda blir tre
@@ -109,11 +133,27 @@ function sprid(enheter: Enhet[]): Enhet[] {
 export function valjRunda(inp: UrvalIn): Enhet[] {
   const antal = inp.antal ?? RUNDA;
   const slump = inp.slump ?? Math.random;
-  const { lage, val, pool, sedda, styrkor, senastSedd } = inp;
+  const matchar = inp.matchar ?? ((q: BankFraga, v: string) => q.typ === v);
+  const { lage, val, sedda, styrkor, senastSedd } = inp;
+  const pool = inp.utom && inp.utom.size ? inp.pool.filter(q => !inp.utom!.has(q.id)) : inp.pool;
 
   if (lage === 'delprov' || lage === 'typ') {
-    const enheter = enheterDar(pool, q => lage === 'delprov' ? q.delprov === val : q.typ === val);
+    const enheter = enheterDar(pool, q => lage === 'delprov' ? q.delprov === val : matchar(q, val!));
     return taTillAntal(osedda(enheter, sedda, slump, senastSedd), antal);
+  }
+
+  if (lage === 'snabbkoll') {
+    const valda: Enhet[] = [];
+    const tagna = new Set<string>();
+    for (const slot of SNABBKOLL) {
+      const kandidater = osedda(enheterDar(pool, q => matchar(q, slot.typ)), sedda, slump, senastSedd)
+        .filter(e => !e.fragor.some(q => tagna.has(q.id)));
+      for (const e of kandidater.slice(0, slot.antal)) {
+        valda.push(e);
+        e.fragor.forEach(q => tagna.add(q.id));
+      }
+    }
+    return blanda(valda, slump);
   }
 
   // Mina svagheter: 70 procent från de tre typer där det finns mest att
@@ -133,11 +173,11 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
   const tagna = new Set<string>();
   const tagnaGrupper = new Set<string>();
   const antalValda = () => valda.reduce((n, e) => n + e.fragor.length, 0);
-  const ta = (enheter: Enhet[], n: number) => {
+  const ta = (enheter: Enhet[], n: number, skal: Skal) => {
     for (const e of enheter) {
       if (antalValda() >= antal || n <= 0) break;
       if (e.fragor.some(q => tagna.has(q.id)) || (e.grupp && tagnaGrupper.has(e.grupp))) continue;
-      valda.push(e);
+      valda.push({ ...e, skal });
       e.fragor.forEach(q => tagna.add(q.id));
       if (e.grupp) tagnaGrupper.add(e.grupp);
       n--;
@@ -146,10 +186,10 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
 
   // Återbesök: fel för minst tre dagar sedan (attRepetera), inte nyligen sedda.
   const repetera = enheterDar(pool, q => inp.attRepetera.has(q.id));
-  ta(blanda(repetera, slump), antalRepetera);
+  ta(blanda(repetera, slump), antalRepetera, 'repetera');
 
   // Svagaste typerna, i tur och ordning så att alla tre får plats.
-  const perSvag = svaga.map(s => osedda(enheterDar(pool, q => q.typ === s.typ), sedda, slump, senastSedd));
+  const perSvag = svaga.map(s => osedda(enheterDar(pool, q => matchar(q, s.typ)), sedda, slump, senastSedd));
   let kvar = antalSvaga + (antalRepetera - valda.length);
   let varv = 0;
   while (kvar > 0 && varv < antal * 3) {
@@ -159,7 +199,7 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
       // Hoppa över enheter som redan tagits (t.ex. via återbesöken) tills en går in.
       while (lista.length) {
         const fore = valda.length;
-        ta(lista.splice(0, 1), 1);
+        ta(lista.splice(0, 1), 1, 'svag');
         if (valda.length > fore) { kvar--; tagitNagon = true; break; }
       }
     }
@@ -168,17 +208,17 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
   }
 
   // Blandning från övriga typer (interleaving), annars från hela poolen.
-  const ovriga = ovrigaTyper.size > 0 ? enheterDar(pool, q => ovrigaTyper.has(q.typ)) : tillEnheter(pool);
-  ta(osedda(ovriga, sedda, slump, senastSedd), Math.max(antalOvriga, antal - antalValda()));
+  const ovriga = ovrigaTyper.size > 0 ? enheterDar(pool, q => [...ovrigaTyper].some(t => matchar(q, t))) : tillEnheter(pool);
+  ta(osedda(ovriga, sedda, slump, senastSedd), Math.max(antalOvriga, antal - antalValda()), 'blandning');
   // Om övriga typer inte räckte, fyll på från de svaga.
-  if (antalValda() < antal) for (const lista of perSvag) ta(lista, antal);
+  if (antalValda() < antal) for (const lista of perSvag) ta(lista, antal, 'svag');
 
   // Avsluta med en osedd, fristående uppgift från den starkaste typen
   // utanför de svaga (näst starkaste om den starkaste bara har grupper).
-  const starka = [...styrkor.values()].filter(s => !s.osaker && !svagaTyper.has(s.typ)).sort((a, b) => b.styrka - a.styrka);
+  const starka = [...styrkor.values()].filter(s => !s.osaker && !svagaTyper.has(s.typ) && !s.typ.endsWith(':ovrigt')).sort((a, b) => b.styrka - a.styrka);
   const blandade = blanda(valda, slump);
   for (const stark of starka) {
-    const sist = osedda(tillEnheter(pool.filter(q => q.typ === stark.typ && !tagna.has(q.id) && q.grupp === null)), sedda, slump, senastSedd)[0];
+    const sist = osedda(tillEnheter(pool.filter(q => matchar(q, stark.typ) && !tagna.has(q.id) && q.grupp === null)), sedda, slump, senastSedd)[0];
     if (!sist) continue;
     // Om rundan är full byts en fristående uppgift från en svag typ ut; finns
     // ingen sådan läggs ingen avslutning till, så att antalet inte överskrids.
@@ -186,12 +226,12 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
       let i = -1;
       for (let k = blandade.length - 1; k >= 0; k--) {
         const e = blandade[k];
-        if (e.fragor.length === 1 && svagaTyper.has(e.fragor[0].typ)) { i = k; break; }
+        if (e.fragor.length === 1 && [...svagaTyper].some(t => matchar(e.fragor[0], t))) { i = k; break; }
       }
       if (i < 0 || blandade.length < 2) break;
       blandade.splice(i, 1);
     }
-    blandade.push(sist);
+    blandade.push({ ...sist, skal: 'avslutning' });
     break;
   }
   return blandade;

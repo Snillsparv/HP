@@ -105,6 +105,17 @@ function byggBank(): BankFraga[] {
 /** Alla frågor, i passordning. */
 export const bank: BankFraga[] = byggBank();
 
+// Datafilernas ordning är ett kontrakt: test_results.answers[i] mappas till
+// frågan med index i. Dubbla id:n stoppar starten, brutet nummerföljd varnar.
+{
+  const sedda = new Set<string>();
+  for (const q of bank) {
+    if (sedda.has(q.id)) throw new Error(`Frågebanken har dubbla id: ${q.id}`);
+    sedda.add(q.id);
+    if (q.num !== q.index + 1) console.warn(`Frågebanken: ${q.id} har num ${q.num} men index ${q.index}`);
+  }
+}
+
 const perId = new Map(bank.map(q => [q.id, q]));
 const perTest = new Map<string, BankFraga[]>();
 for (const q of bank) {
@@ -129,16 +140,53 @@ export interface TypInfo {
   antal: number;
 }
 
-/** Alla typer som finns i banken med antal uppgifter, i delprovsordning. */
-export function allaTyper(kallor: Kalla[] = ['extra', 'ht2021']): TypInfo[] {
+/** Typer med färre uppgifter än så här visas inte för sig utan slås ihop
+ * till "<delprov> övrigt". Händelserna behåller den fina typen. */
+export const MINSTA_TYP = 20;
+
+function raknaTyper(kallor: Kalla[]): Map<string, number> {
   const antal = new Map<string, number>();
   for (const q of bank) {
     if (!kallor.includes(q.kalla)) continue;
     antal.set(q.typ, (antal.get(q.typ) || 0) + 1);
   }
+  return antal;
+}
+
+const underGolv = new Set([...raknaTyper(['extra']).entries()].filter(([, n]) => n < MINSTA_TYP).map(([typ]) => typ));
+
+/** Typerna under golvet, t.ex. xyz:enheter. */
+export function typerUnderGolv(): string[] {
+  return [...underGolv];
+}
+
+/** Typen som visas för användaren: under golvet blir det "<delprov>:ovrigt". */
+export function golvTyp(typ: string): string {
+  return underGolv.has(typ) ? `${typ.split(':')[0]}:ovrigt` : typ;
+}
+
+/** Stämmer frågan med ett typval? Hanterar både fina typer och "<delprov>:ovrigt". */
+export function matcharTyp(q: BankFraga, val: string): boolean {
+  if (val.endsWith(':ovrigt')) return q.delprov === val.split(':')[0] && underGolv.has(q.typ);
+  return q.typ === val;
+}
+
+/** Alla typer som finns i banken med antal uppgifter, i delprovsordning.
+ * Typer under golvet slås ihop till "<delprov> övrigt" sist i sitt delprov. */
+export function allaTyper(kallor: Kalla[] = ['extra', 'ht2021']): TypInfo[] {
+  const antal = new Map<string, number>();
+  for (const [typ, n] of raknaTyper(kallor)) {
+    const visad = golvTyp(typ);
+    antal.set(visad, (antal.get(visad) || 0) + n);
+  }
   return [...antal.entries()]
     .map(([typ, n]) => ({ typ, delprov: delprovForTyp(typ)!, namn: typNamn(typ), antal: n }))
-    .sort((a, b) => DELPROV.indexOf(a.delprov) - DELPROV.indexOf(b.delprov) || b.antal - a.antal);
+    .sort((a, b) => DELPROV.indexOf(a.delprov) - DELPROV.indexOf(b.delprov) || (a.typ.endsWith(':ovrigt') ? 1 : 0) - (b.typ.endsWith(':ovrigt') ? 1 : 0) || b.antal - a.antal);
+}
+
+/** Antal frågor som stämmer med ett typval eller delprov. */
+export function antalForVal(lage: 'delprov' | 'typ', val: string, kallor: Kalla[] = ['extra']): number {
+  return bank.filter(q => kallor.includes(q.kalla) && (lage === 'delprov' ? q.delprov === val : matcharTyp(q, val))).length;
 }
 
 /** Ungefärligt antal uppgifter av varje typ i ett provpass: typens andel av
@@ -154,5 +202,5 @@ export function typVikter(kallor: Kalla[] = ['extra']): Map<string, number> {
 }
 
 export function finnsTyp(typ: string): boolean {
-  return bank.some(q => q.typ === typ);
+  return bank.some(q => matcharTyp(q, typ));
 }

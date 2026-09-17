@@ -124,8 +124,8 @@ export async function migrateGuestToUser(guestId: number, targetId: number) {
       [guestId, targetId]
     );
     await client.query(
-      `INSERT INTO question_events (user_id, question_id, delprov, typ, chosen, correct, time_ms, source, created_at)
-       SELECT $2, question_id, delprov, typ, chosen, correct, time_ms, source, created_at
+      `INSERT INTO question_events (user_id, question_id, delprov, typ, chosen, correct, time_ms, source, lage, runda_id, created_at)
+       SELECT $2, question_id, delprov, typ, chosen, correct, time_ms, source, lage, runda_id, created_at
        FROM question_events WHERE user_id = $1`,
       [guestId, targetId]
     );

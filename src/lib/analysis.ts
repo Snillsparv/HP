@@ -164,9 +164,9 @@ export function analyzeResults(
     const svag = sortedCategories[0];
     const stId = subtestResults.find(st => st.shortName === svag.subTest)?.id || svag.subTest.toLowerCase();
     const typ = `${delprovId(stId)}:${svag.category}`;
-    summaryParts.push(`Fokusera på <strong>${categoryLabel(svag.category)}</strong>-uppgifter för att höja dig! <a href="/trana/fokus?lage=typ&val=${encodeURIComponent(typ)}" style="font-weight:600;">Träna på ${svag.subTest} ${categoryLabel(svag.category).toLowerCase()} här.</a>`);
+    summaryParts.push(`Fokusera på <strong>${categoryLabel(svag.category)}</strong>-uppgifter för att höja dig!</p><p style="margin:0.6rem 0 0;"><a class="btn btn-primary btn-sm" style="display:inline-block;" href="/trana/fokus?lage=typ&val=${encodeURIComponent(typ)}">Träna på ${svag.subTest} ${categoryLabel(svag.category).toLowerCase()}</a>`);
   } else if (worstSubtest && worstSubtest.rate < 0.7) {
-    summaryParts.push(`Träna mer på <strong>${worstSubtest.shortName}</strong> för att höja ditt resultat! <a href="/trana/fokus?lage=delprov&val=${encodeURIComponent(delprovId(worstSubtest.id))}" style="font-weight:600;">Träna på ${worstSubtest.shortName} här.</a>`);
+    summaryParts.push(`Träna mer på <strong>${worstSubtest.shortName}</strong> för att höja ditt resultat!</p><p style="margin:0.6rem 0 0;"><a class="btn btn-primary btn-sm" style="display:inline-block;" href="/trana/fokus?lage=delprov&val=${encodeURIComponent(delprovId(worstSubtest.id))}">Träna på ${worstSubtest.shortName}</a>`);
   } else {
     summaryParts.push('Bra jobbat! Fortsätt träna för att bli ännu bättre.');
   }

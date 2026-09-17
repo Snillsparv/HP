@@ -158,6 +158,8 @@ await pool.query(`
     source TEXT NOT NULL DEFAULT 'fokus',
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
+  ALTER TABLE question_events ADD COLUMN IF NOT EXISTS lage TEXT;
+  ALTER TABLE question_events ADD COLUMN IF NOT EXISTS runda_id TEXT;
   CREATE INDEX IF NOT EXISTS question_events_user_idx ON question_events (user_id, created_at);
   CREATE INDEX IF NOT EXISTS test_results_user_test_idx ON test_results (user_id, test_id);
 `);

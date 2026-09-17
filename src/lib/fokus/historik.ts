@@ -2,7 +2,7 @@
 // question_events plus provresultaten i test_results, som räknas om till
 // händelser per fråga via frågebanken. Bara för servern.
 import pool from '../db.js';
-import { fragorForTest } from './fragebank.js';
+import { fragorForTest, fragaMedId, golvTyp } from './fragebank.js';
 import type { Handelse } from './styrka.js';
 
 export const SEDD_DAGAR = 30;
@@ -22,9 +22,10 @@ export async function nyligenBesvarad(userId: number, questionId: string): Promi
   return rows.length > 0;
 }
 
-/** Händelserna som ska räknas i styrkan: inte omförsök. */
+/** Händelserna som ska räknas i styrkan: inte omförsök, och typer under
+ * golvet räknas som "<delprov>:ovrigt". */
 export function forStyrka(handelser: Handelse[]): Handelse[] {
-  return handelser.filter(h => !h.omforsok);
+  return handelser.filter(h => !h.omforsok).map(h => ({ ...h, typ: golvTyp(h.typ) }));
 }
 
 /** Alla händelser för en användare, nyast först. */
@@ -37,10 +38,12 @@ export async function hamtaHandelser(userId: number): Promise<Handelse[]> {
     [userId]
   );
   for (const r of events) {
+    // Typen hämtas ur banken så att gamla händelser följer med om typer byter namn.
+    const q = fragaMedId(r.question_id);
     handelser.push({
       questionId: r.question_id,
-      delprov: r.delprov,
-      typ: r.typ,
+      delprov: q?.delprov || r.delprov,
+      typ: q?.typ || r.typ,
       correct: !!r.correct,
       utanTid: r.source === 'overtid',
       omforsok: r.source === 'omforsok',
@@ -71,7 +74,31 @@ export async function hamtaHandelser(userId: number): Promise<Handelse[]> {
   }
 
   handelser.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+  markeraRepetitioner(handelser);
   return handelser;
+}
+
+/** Sätter omforsok på svar med ett tidigare svar på samma fråga inom
+ * OMFORSOK_TIMMAR (räknas inte) och repetition inom SEDD_DAGAR (halv vikt),
+ * oavsett om svaren kommer från prov eller rundor. Listan ska vara sorterad
+ * nyast först. */
+export function markeraRepetitioner(handelser: Handelse[], dagar = SEDD_DAGAR, timmar = OMFORSOK_TIMMAR) {
+  const fonster = dagar * 24 * 3600 * 1000;
+  const dygn = timmar * 3600 * 1000;
+  const perFraga = new Map<string, Handelse[]>();
+  for (const h of handelser) {
+    const lista = perFraga.get(h.questionId) || [];
+    lista.push(h);
+    perFraga.set(h.questionId, lista);
+  }
+  for (const lista of perFraga.values()) {
+    // Nyast först: ett svar är repetition om nästa (äldre) svar ligger inom fönstret.
+    for (let i = 0; i + 1 < lista.length; i++) {
+      const gap = lista[i].createdAt.getTime() - lista[i + 1].createdAt.getTime();
+      if (gap <= dygn) lista[i].omforsok = true;
+      else if (gap <= fonster) lista[i].repetition = true;
+    }
+  }
 }
 
 /** När varje fråga senast besvarades. */

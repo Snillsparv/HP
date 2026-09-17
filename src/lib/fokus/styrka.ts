@@ -11,6 +11,8 @@ export interface Handelse {
   utanTid?: boolean;
   /** Omförsök på en nyligen besvarad fråga: sparas men räknas inte i styrkan. */
   omforsok?: boolean;
+  /** Frågan besvarades även tidigare inom en månad: räknas med halv vikt. */
+  repetition?: boolean;
   createdAt: Date;
 }
 
@@ -32,19 +34,24 @@ export interface Styrka {
 
 /** Halveringstid i antal svar: det tionde senaste svaret väger hälften av det senaste. */
 export const HALVERINGSTID = 10;
+/** Halveringstid i dagar: ett svar från i våras väger hälften i höst, så att
+ * gamla prov inte färgar kartan för alltid. */
+export const HALVERINGSTID_DAGAR = 90;
 /** Prior Beta(2, 2): två fel av två visas som 33 procent, inte 0. */
 export const PRIOR_A = 2;
 export const PRIOR_B = 2;
-/** Färre svar än så här ger "för lite data". */
-export const MINSTA_ANTAL = 5;
+/** Lägre effektivt antal än så här ger "för lite data". Fem färska svar räcker. */
+export const MINSTA_ANTAL = 4;
+/** Antal svar för att visa räknaren som "för lite data (n svar)" i text. */
+export const MINSTA_SVAR_TEXT = 5;
 
-/** Vikt för det i:te senaste svaret (0 = senast). */
-export function vikt(i: number): number {
-  return Math.pow(0.5, i / HALVERINGSTID);
+/** Vikt för det i:te senaste svaret (0 = senast) som gavs för ett antal dagar sedan. */
+export function vikt(i: number, dagar = 0): number {
+  return Math.pow(0.5, i / HALVERINGSTID) * Math.pow(0.5, Math.max(0, dagar) / HALVERINGSTID_DAGAR);
 }
 
-/** Styrka per typ. Händelserna behöver inte vara sorterade. */
-export function beraknaStyrkor(handelser: Handelse[]): Map<string, Styrka> {
+/** Styrka per typ. Händelserna behöver inte vara sorterade. nu styr kalenderavtagningen. */
+export function beraknaStyrkor(handelser: Handelse[], nu = new Date()): Map<string, Styrka> {
   const perTyp = new Map<string, Handelse[]>();
   for (const h of handelser) {
     const lista = perTyp.get(h.typ) || [];
@@ -63,10 +70,12 @@ export function beraknaStyrkor(handelser: Handelse[]): Map<string, Styrka> {
     while (i < lista.length) {
       let j = i;
       while (j + 1 < lista.length && lista[j + 1].createdAt.getTime() === lista[i].createdAt.getTime()) j++;
-      const w = vikt((i + j) / 2);
+      const dagar = (nu.getTime() - lista[i].createdAt.getTime()) / (24 * 3600 * 1000);
+      const w = vikt((i + j) / 2, dagar);
       for (let k = i; k <= j; k++) {
-        viktadSumma += w;
-        if (lista[k].correct) { viktadRatt += w; ratt++; }
+        const wk = lista[k].repetition ? w * 0.5 : w;
+        viktadSumma += wk;
+        if (lista[k].correct) { viktadRatt += wk; ratt++; }
       }
       i = j + 1;
     }
@@ -81,7 +90,7 @@ export function beraknaStyrkor(handelser: Handelse[]): Map<string, Styrka> {
       antal: n,
       effektivt: viktadSumma,
       ratt,
-      osaker: n < MINSTA_ANTAL,
+      osaker: viktadSumma < MINSTA_ANTAL,
       senast: lista[0].createdAt,
     });
   }
@@ -89,10 +98,13 @@ export function beraknaStyrkor(handelser: Handelse[]): Map<string, Styrka> {
 }
 
 /** Styrka per delprov, samma modell men grupperat grövre. */
-export function beraknaDelprovStyrkor(handelser: Handelse[]): Map<string, Styrka> {
+export function beraknaDelprovStyrkor(handelser: Handelse[], nu = new Date()): Map<string, Styrka> {
   const grov = handelser.map(h => ({ ...h, typ: h.delprov }));
-  return beraknaStyrkor(grov);
+  return beraknaStyrkor(grov, nu);
 }
+
+/** Minst så många svar totalt innan "Mina svagheter" öppnas. */
+export const MINSTA_SVAR_SVAGHETER = 10;
 
 /** Styrka som räknas som "sitter": över den finns lite att hämta. */
 export const MAL_STYRKA = 0.85;
@@ -107,11 +119,13 @@ export function prioritet(s: Styrka, vikt: number): number {
   return vikt * (MAL_STYRKA - s.styrka) + 0.05 / Math.sqrt(s.effektivt + 1);
 }
 
-/** De typer där det finns mest poäng att hämta, med tillräckligt underlag.
- * Utan vikter (alla lika) blir det i praktiken de svagaste. */
-export function svagasteTyper(styrkor: Map<string, Styrka>, antal = 3, vikter?: Map<string, number>): Styrka[] {
+/** De typer där det finns mest poäng att hämta. Osäkra typer tas med bara
+ * om inkluderaOsakra är satt (när användaren har tillräckligt många svar
+ * totalt); priorn håller dem nära 50 procent så att de får plats utan att
+ * dominera. Utan vikter (alla lika) blir det i praktiken de svagaste. */
+export function svagasteTyper(styrkor: Map<string, Styrka>, antal = 3, vikter?: Map<string, number>, inkluderaOsakra = false): Styrka[] {
   return [...styrkor.values()]
-    .filter(s => !s.osaker && s.styrka < MAL_STYRKA)
+    .filter(s => (inkluderaOsakra || !s.osaker) && s.styrka < MAL_STYRKA)
     .map(s => ({ s, p: prioritet(s, vikter?.get(s.typ) ?? 1) }))
     .sort((a, b) => b.p - a.p)
     .slice(0, antal)

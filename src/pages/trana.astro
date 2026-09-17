@@ -2,9 +2,18 @@
 import Base from '../layouts/Base.astro';
 import { getSessionFromCookies } from '../lib/auth.js';
 import { extraStatistik, formatAntal } from '../lib/extraprov/register.js';
+import { allaTyper, typVikter } from '../lib/fokus/fragebank.js';
+import { hamtaHandelser, forStyrka } from '../lib/fokus/historik.js';
+import { beraknaStyrkor, svagasteTyper, MINSTA_SVAR_SVAGHETER } from '../lib/fokus/styrka.js';
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const serverStep = user?.train_step || 1;
 const extra = extraStatistik();
+
+// Fokuserad träning: med historik pekar bannern på de typer som ger mest att hämta.
+const rakneBara = user ? forStyrka(await hamtaHandelser(user.id)) : [];
+const svagaste = rakneBara.length >= MINSTA_SVAR_SVAGHETER ? svagasteTyper(beraknaStyrkor(rakneBara), 3, typVikter(), true) : [];
+const typNamnMap = new Map(allaTyper(['extra']).map(t => [t.typ, t.namn]));
+const svagaText = svagaste.map(s => typNamnMap.get(s.typ) || s.typ).join(', ');
 ---
 
 <Base title="Träna på Högskoleprovet – HPAkuten" description="Träna gratis på riktiga HP-uppgifter med timer och rättning. Steg-för-steg-plan med videogenomgångar för högskoleprovet HT 2021.">
@@ -13,11 +22,19 @@ const extra = extraStatistik();
       <h1>Träna på Högskoleprovet</h1>
       <p class="page-intro">Följ planen steg för steg och du kommer att vara betydligt mer redo på provdagen.</p>
 
-      <a href="/trana/fokus" class="ord-banner">
-        <span class="ord-banner-nyhet">Nyhet</span>
-        <span><strong>Fokusera på dina svagheter!</strong> Träna på ett delprov, en uppgiftstyp eller det du haft fel på: tio uppgifter i taget med förklaring direkt efter varje svar.</span>
-        <span class="ord-banner-cta">Träna →</span>
-      </a>
+      {svagaste.length > 0 ? (
+        <a href="/trana/fokus?lage=svagheter" class="ord-banner">
+          <span class="ord-banner-nyhet">Fokus</span>
+          <span><strong>Just nu ger {svagaText} dig mest att hämta.</strong> Tio uppgifter i taget med förklaring direkt efter varje svar.</span>
+          <span class="ord-banner-cta">Träna på mina svagheter →</span>
+        </a>
+      ) : (
+        <a href="/trana/fokus" class="ord-banner">
+          <span class="ord-banner-nyhet">Nyhet</span>
+          <span><strong>Fokusera på dina svagheter!</strong> Träna på ett delprov, en uppgiftstyp eller det du haft fel på: tio uppgifter i taget med förklaring direkt efter varje svar.</span>
+          <span class="ord-banner-cta">Träna →</span>
+        </a>
+      )}
 
       <a href="/ord" class="ord-banner">
         <span class="ord-banner-nyhet">Ord</span>

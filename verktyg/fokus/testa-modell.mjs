@@ -74,6 +74,22 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   const a2 = sitt([false, false, false, false, false, true, true, true, true, true]);
   assert.ok(Math.abs(a1 - a2) < 1e-9, `samma sittning ger samma styrka, fick ${a1} och ${a2}`);
 
+  // Kalenderavtagning: åtta svar för ett halvår sedan väger som två färska och blir "för lite data".
+  const gamla = S.beraknaStyrkor(Array.from({ length: 8 }, (_, i) => h('las', true, 180 + i)));
+  assert.ok(gamla.get('las').osaker, 'gamla svar ger för lite data');
+  const farska = S.beraknaStyrkor(Array.from({ length: 8 }, (_, i) => h('las', true, i)));
+  assert.ok(!farska.get('las').osaker, 'åtta färska svar räcker');
+
+  // Repetition (samma fråga igen inom en månad) väger hälften.
+  const rep = S.beraknaStyrkor([{ ...h('mek:2', true, 0, 'r1'), repetition: true }, h('mek:2', false, 1, 'r2'), h('mek:2', false, 2, 'r3'), h('mek:2', false, 3, 'r4'), h('mek:2', false, 4, 'r5')]).get('mek:2');
+  const utanRep = S.beraknaStyrkor([h('mek:2', true, 0, 'r1'), h('mek:2', false, 1, 'r2'), h('mek:2', false, 2, 'r3'), h('mek:2', false, 3, 'r4'), h('mek:2', false, 4, 'r5')]).get('mek:2');
+  assert.ok(rep.styrka < utanRep.styrka, 'ett rätt som är repetition lyfter styrkan mindre');
+
+  // Osäkra typer kan tas med i svagheterna när det finns tillräckligt med svar totalt.
+  const fa = S.beraknaStyrkor([h('kva:procent', false, 0), h('kva:procent', false, 1)]);
+  assert.strictEqual(S.svagasteTyper(fa, 3).length, 0, 'utan flaggan utesluts osäkra');
+  assert.strictEqual(S.svagasteTyper(fa, 3, undefined, true).length, 1, 'med flaggan tas osäkra med');
+
   // Färgnivån följer den avrundade procenten.
   const mk = (st) => ({ typ: 't', delprov: 'xyz', styrka: st, antal: 10, effektivt: 8, ratt: 5, osaker: false, senast: null });
   assert.strictEqual(S.styrkeNiva(mk(0.796)), 'gron');
@@ -88,6 +104,7 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   assert.strictEqual(T.typFor('ord', { text: '', options: [], correct: 0, num: 1 }), 'ord');
   assert.strictEqual(T.typNamn('mek:2'), 'MEK med två luckor');
   assert.strictEqual(T.typNamn('dtk:tabell'), 'DTK tabeller');
+  assert.strictEqual(T.typNamn('xyz:ovrigt'), 'XYZ övrigt');
   assert.strictEqual(T.normaliseraDelprov('xyz2'), 'xyz');
   assert.strictEqual(T.frageId('extra-ht2012-1', 17), 'extra-ht2012-1#17');
   console.log('typer: ok');
@@ -181,6 +198,28 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   const r9 = U.valjRunda({ lage: 'delprov', val: 'mek', pool: poolOrd, sedda: seddaOrd, attRepetera: new Set(), styrkor: new Map(), antal: 10, slump });
   assert.strictEqual(r9.filter(e => !seddaOrd.has(e.fragor[0].id)).length, 5, 'alla fem osedda är med fast de ligger i samma pass');
   assert.ok(r9.slice(0, 5).every(e => !seddaOrd.has(e.fragor[0].id)), 'osedda först');
+
+  // utom utesluter frågor som redan ingår i en pågående runda.
+  const utom = new Set(pool.filter(x => x.typ === 'xyz:algebra').slice(0, 17).map(x => x.id));
+  const r10 = U.valjRunda({ lage: 'typ', val: 'xyz:algebra', pool, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), antal: 3, utom, slump });
+  assert.strictEqual(r10.length, 3);
+  assert.ok(r10.every(e => !utom.has(e.fragor[0].id)), 'utom respekteras');
+
+  // Snabbkollen tar en fast blandning över typer och hoppar över typer som saknas i poolen.
+  const poolSnabb = [...pool];
+  for (const t of ['kva:algebra', 'kva:aritmetik', 'nog:logik', 'ord']) for (let i = 0; i < 5; i++) poolSnabb.push(q(t.split(':')[0], t));
+  const r11 = U.valjRunda({ lage: 'snabbkoll', pool: poolSnabb, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), slump });
+  const typer11 = r11.map(e => e.fragor[0].typ);
+  assert.ok(typer11.includes('xyz:algebra') && typer11.includes('kva:algebra') && typer11.includes('nog:logik') && typer11.includes('dtk:diagram') && typer11.includes('mek:1'), `snabbkollen täcker typerna, fick ${typer11}`);
+  assert.strictEqual(typer11.filter(t => t === 'ord').length, 2, 'två ORD i snabbkollen');
+  assert.ok(!typer11.includes('kva:geometri'), 'typer som inte finns i snabbkollen tas inte med');
+
+  // Matcharen från frågebanken: "<delprov>:ovrigt" täcker typerna under golvet.
+  const matchar = (x, v) => v.endsWith(':ovrigt') ? x.delprov === v.split(':')[0] && ['xyz:enheter', 'xyz:logik'].includes(x.typ) : x.typ === v;
+  const poolGolv = [...pool, ...Array.from({ length: 6 }, (_, i) => q('xyz', i % 2 ? 'xyz:enheter' : 'xyz:logik'))];
+  const r12 = U.valjRunda({ lage: 'typ', val: 'xyz:ovrigt', pool: poolGolv, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), antal: 10, matchar, slump });
+  assert.strictEqual(r12.length, 6, 'övrigt-rundan tar alla sex under golvet');
+  assert.ok(r12.every(e => ['xyz:enheter', 'xyz:logik'].includes(e.fragor[0].typ)));
 
   const r5 = U.valjRunda({ lage: 'svagheter', pool, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), antal: 10, slump });
   assert.strictEqual(r5.length, 0, 'utan historik inget urval');

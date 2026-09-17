@@ -27,6 +27,17 @@ export const ANTAL_PER_PASS: Record<DelprovTyp, number> = {
   mek: 10,
 };
 
+/** Ungefärlig provtid per uppgift i sekunder, ur delprovens tid i HT 2021. */
+export const TEMPO_SEK: Record<DelprovTyp, number> = {
+  xyz: 60,
+  kva: 108,
+  nog: 120,
+  dtk: 90,
+  ord: 18,
+  las: 132,
+  mek: 48,
+};
+
 export const DELPROV_LANGT: Record<DelprovTyp, string> = {
   xyz: 'Matematisk problemlösning',
   kva: 'Kvantitativa jämförelser',
@@ -84,6 +95,7 @@ export function typNamn(typ: string): string {
   const [dp, rest] = typ.split(':');
   const namn = DELPROV_NAMN[dp as DelprovTyp] || dp.toUpperCase();
   if (!rest) return namn;
+  if (rest === 'ovrigt') return `${namn} övrigt`;
   if (dp === 'mek') {
     const ord: Record<string, string> = { '1': 'en lucka', '2': 'två luckor', '3': 'tre luckor' };
     return `${namn} med ${ord[rest] || rest + ' luckor'}`;

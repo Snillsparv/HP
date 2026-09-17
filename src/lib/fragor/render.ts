@@ -110,7 +110,7 @@ export function dtkDiagramHTML(q: Fraga, st: Delprov): string {
 
 /** Rättningsdetaljen för en fråga: frågan, alternativen med rätt och fel
  * markerade, samt förklaring (text eller video). */
-export function resultDetailHTML(q: Fraga, st: Delprov, chosen: number | null): string {
+export function resultDetailHTML(q: Fraga, st: Delprov, chosen: number | null, alternativ: { tranaTyp?: string; tranaNamn?: string } = {}): string {
   let fraga = q.text || '';
   if (st.type === 'kva' && q.q1) {
     fraga += `<div class="kva-pair"><div class="kva-row"><span class="kva-label"><i>Kvantitet I:</i></span><span>${q.q1}</span></div><div class="kva-row"><span class="kva-label"><i>Kvantitet II:</i></span><span>${q.q2}</span></div></div>`;
@@ -127,7 +127,12 @@ export function resultDetailHTML(q: Fraga, st: Delprov, chosen: number | null): 
     ? `<p class="pq-res-lasref"><a href="${q.diagram}" target="_blank" rel="noopener">Öppna diagrammet i ny flik</a></p>` : '';
   return `<div class="pq-res-question">${text}${fraga}</div>
     <div class="pq-res-options">${q.options.map((opt, oi) => `<div class="pq-res-opt ${oi === q.correct ? 'pq-res-opt--correct' : ''} ${oi === chosen && oi !== q.correct ? 'pq-res-opt--wrong' : ''}">${LABELS[oi]}. ${opt}</div>`).join('')}</div>
-    ${diagram}${forklaringHTML(q)}`;
+    ${diagram}${forklaringHTML(q)}${alternativ.tranaTyp ? tranaLankHTML(alternativ.tranaTyp, alternativ.tranaNamn) : ''}`;
+}
+
+/** Knappen från rättningen till fokuserad träning på samma uppgiftstyp. */
+export function tranaLankHTML(typ: string, namn?: string): string {
+  return `<p class="pq-res-trana"><a class="btn btn-outline btn-sm" href="/trana/fokus?lage=typ&val=${encodeURIComponent(typ)}">Träna fler av den här typen${namn ? `: ${namn}` : ''}</a></p>`;
 }
 
 /** Förklaringen till en fråga: textförklaring, annars video, annars platshållare. */

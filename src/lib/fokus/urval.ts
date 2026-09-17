@@ -28,7 +28,22 @@ export interface UrvalIn {
   slump?: () => number;
 }
 
+/** Ungefärligt antal frågor i en runda. Enheter med flera frågor (ett
+ * diagram, en text) räknas med alla sina frågor, så en DTK-runda blir tre
+ * eller fyra diagram. */
 export const RUNDA = 10;
+
+/** Tar enheter i ordning tills antalet frågor når målet. */
+export function taTillAntal(enheter: Enhet[], antalFragor: number): Enhet[] {
+  const valda: Enhet[] = [];
+  let n = 0;
+  for (const e of enheter) {
+    if (n >= antalFragor) break;
+    valda.push(e);
+    n += e.fragor.length;
+  }
+  return valda;
+}
 
 /** Grupperar frågor till enheter: DTK-diagram och LÄS-texter hålls ihop. */
 export function tillEnheter(fragor: BankFraga[]): Enhet[] {
@@ -68,7 +83,7 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
 
   if (lage === 'delprov' || lage === 'typ') {
     const kandidater = pool.filter(q => lage === 'delprov' ? q.delprov === val : q.typ === val);
-    return osedda(tillEnheter(kandidater), sedda, antal, slump).slice(0, antal);
+    return taTillAntal(osedda(tillEnheter(kandidater), sedda, antal, slump), antal);
   }
 
   // Mina svagheter: 70 procent från de tre svagaste typerna, 30 procent
@@ -84,9 +99,10 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
 
   const valda: Enhet[] = [];
   const tagna = new Set<string>();
+  const antalValda = () => valda.reduce((n, e) => n + e.fragor.length, 0);
   const ta = (enheter: Enhet[], n: number) => {
     for (const e of enheter) {
-      if (valda.length >= antal || n <= 0) break;
+      if (antalValda() >= antal || n <= 0) break;
       if (e.fragor.some(q => tagna.has(q.id))) continue;
       valda.push(e);
       e.fragor.forEach(q => tagna.add(q.id));
@@ -116,8 +132,9 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
 
   // Blandning från övriga typer (interleaving), annars från hela poolen.
   const ovriga = ovrigaTyper.size > 0 ? pool.filter(q => ovrigaTyper.has(q.typ)) : pool;
-  ta(osedda(tillEnheter(ovriga), sedda, antal, slump), antal - valda.length);
-  void antalOvriga;
+  ta(osedda(tillEnheter(ovriga), sedda, antal, slump), Math.max(antalOvriga, antal - antalValda()));
+  // Om övriga typer inte räckte, fyll på från de svaga.
+  if (antalValda() < antal) for (const lista of perSvag) ta(lista, antal);
 
   return blanda(valda, slump);
 }

@@ -69,6 +69,8 @@
 .pq-res-expl li { margin-bottom: 0.25rem; }
 .pq-res-expl-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-primary); margin-bottom: 0.4rem !important; }
 .pq-res-expl--saknas { color: var(--color-muted); border-left-color: var(--color-border); font-style: italic; }
+.pq-res-trana { margin: 0.9rem 0 0; }
+.pq-res-trana .btn { display: inline-block; }
 .tex { font-size: 1.05em; }
 .btn-sm { padding: 0.5rem 1.2rem; font-size: 0.9rem; }
 .kva-pair { margin-top: 0.8rem; display: flex; flex-direction: column; gap: 0.4rem; }
@@ -105,3 +107,12 @@
 
 @media (max-width: 768px) { .dtk-rotated { max-width: 70%; margin: -5% auto; } }
 @media (max-width: 480px) { .pq-card { padding: 1.2rem; } .pq-options { margin-left: 0; } .nog-statements, .nog-header { margin-left: 0.5rem; } .kva-label { min-width: 75px; } .las-body { max-height: 50vh; font-size: 0.98rem; padding-left: 1rem; padding-right: 1rem; } }
+
+/* Direkt rättning i träningsläget: rätt och fel markeras på alternativen */
+.pq-opt--ratt { background: #ecfdf5 !important; border-color: #22c55e !important; }
+.pq-opt--ratt .pq-letter { background: #22c55e; color: #fff; border-color: #22c55e; }
+.pq-opt--fel { background: #fef2f2 !important; border-color: #ef4444 !important; }
+.pq-opt--fel .pq-letter { background: #ef4444; color: #fff; border-color: #ef4444; }
+.pq-opt--klar { cursor: default; }
+.pq-opt--klar:hover { background: none; }
+button.pq-opt { width: 100%; text-align: left; background: none; font-family: var(--font-sans); color: inherit; font-size: inherit; }

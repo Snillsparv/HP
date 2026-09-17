@@ -79,7 +79,7 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   assert.ok(r2.filter(e => sedda.has(e.fragor[0].id)).length === 5, 'osedda först (5 osedda finns), sedan sedda som utfyllnad');
 
   const r3 = U.valjRunda({ lage: 'delprov', val: 'dtk', pool, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), antal: 10, slump });
-  assert.strictEqual(r3.length, 6, 'bara sex diagram finns');
+  assert.strictEqual(r3.length, 4, 'fyra diagram ger tolv frågor, minst tio');
   assert.ok(r3.every(e => e.fragor.length === 3 && e.fragor.every(f => f.grupp === e.grupp)), 'diagram hålls ihop');
 
   const styrkor = new Map([
@@ -90,10 +90,11 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   ]);
   const attRepetera = new Set([pool[0].id, pool[2].id]);
   const r4 = U.valjRunda({ lage: 'svagheter', pool, sedda: new Set(), attRepetera, styrkor, antal: 10, slump });
-  assert.strictEqual(r4.length, 10, `tio enheter, fick ${r4.length}`);
+  const antalFragor4 = r4.reduce((a, e) => a + e.fragor.length, 0);
+  assert.ok(antalFragor4 >= 10 && antalFragor4 <= 13, `ungefär tio frågor, fick ${antalFragor4}`);
   const typer = r4.map(e => e.fragor[0].typ);
   const svaga = typer.filter(t => t === 'xyz:geometri' || t === 'mek:1' || t === 'xyz:algebra').length;
-  assert.ok(svaga >= 6, `mest från de tre svagaste, fick ${svaga} av 10: ${typer.join(',')}`);
+  assert.ok(svaga >= Math.floor(r4.length * 0.6), `mest från de tre svagaste, fick ${svaga} av ${r4.length}: ${typer.join(',')}`);
   assert.ok(r4.some(e => attRepetera.has(e.fragor[0].id)), 'gamla fel återbesöks');
   assert.strictEqual(new Set(r4.flatMap(e => e.fragor.map(f => f.id))).size, r4.reduce((a, e) => a + e.fragor.length, 0), 'inga dubbletter');
 

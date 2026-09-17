@@ -32,6 +32,8 @@ if (user) {
     import { getNormering } from '../../lib/normering.js';
     import { analyzeResults, getYrkeForScore } from '../../lib/analysis.js';
     import { generateResultImage } from '../../lib/share-image.js';
+    import { typFor, typNamn, normaliseraDelprov } from '../../lib/fokus/typer.js';
+    import { tranaLankHTML } from '../../lib/fragor/render.js';
 
     const subTests = verbalSubTests2;
     const root = document.getElementById('prov-root')!;
@@ -468,6 +470,7 @@ if (user) {
       <div class="pq-res-detail" id="res-${q.num}" style="display:none;">
         <div class="pq-res-question">${q.text || ''}</div>
         <div class="pq-res-options">${q.options.map((opt, oi) => `<div class="pq-res-opt ${oi === q.correct ? 'pq-res-opt--correct' : ''} ${oi === answers[gi] && oi !== q.correct ? 'pq-res-opt--wrong' : ''}">${labels[oi]}. ${opt}</div>`).join('')}</div>
+        ${ok ? '' : tranaLankHTML(typFor(normaliseraDelprov(st.id), q), typNamn(typFor(normaliseraDelprov(st.id), q)))}
       </div>
     </div>`;
           }).join('')}</div>`;

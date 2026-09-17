@@ -38,6 +38,7 @@ const titel = `${tillfalleName}: ${pass.name}`;
     import { analyzeResults, getYrkeForScore } from '../../lib/analysis.js';
     import { generateResultImage } from '../../lib/share-image.js';
     import { laddaKatex, renderTex, questionBodyHTML, lasTextHTML, dtkDiagramHTML, resultDetailHTML, bindZoom, bindFadeIn, bindLasToggle } from '../../lib/fragor/render.js';
+    import { typFor, typNamn } from '../../lib/fokus/typer.js';
     import type { ExtraPass, ExtraDelprov, ExtraFraga } from '../../lib/extraprov/types.js';
 
     const pass: ExtraPass = (window as any).__pass;
@@ -446,7 +447,7 @@ const titel = `${tillfalleName}: ${pass.name}`;
                 ${!ok ? `<span class="pq-res-right">Rätt: <b>${labels[q.correct]}</b></span>` : ''}
                 <span class="pq-res-chevron">▾</span>
               </div>
-              <div class="pq-res-detail" id="res-${q.num}" style="display:none;">${resultDetailHTML(q, st, answers[gi])}</div>
+              <div class="pq-res-detail" id="res-${q.num}" style="display:none;">${resultDetailHTML(q, st, answers[gi], ok ? {} : { tranaTyp: typFor(st.type, q), tranaNamn: typNamn(typFor(st.type, q)) })}</div>
             </div>`;
           }).join('')}</div>`;
       }

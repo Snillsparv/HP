@@ -13,7 +13,8 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
 
 ## Arbetssätt
 
-- All utveckling har skett på grenen `claude/vocab-trainer-interface-g0knip`.
+- Utvecklingen sker på en egen arbetsgren per session (Jonas:
+  `claude/vocab-trainer-interface-g0knip`, Jessica: `claude/zen-pascal-jnj2ca`).
   Deploy = pusha grenen, sedan `git checkout main && git merge --ff-only
   <gren> && git push origin main`, tillbaka till grenen. Jonas laddar ibland
   upp filer direkt på GitHub ("Add files via upload"), så hämta `origin/main`
@@ -65,8 +66,32 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
   ElevenLabs ligger utanför repot (på servern och i en lokal fil, inte i git);
   Jonas har rekommenderats att rotera den.
 
-## Pågående: fokuserad träning på svagheter
+## Fokuserad träning på svagheter (/trana/fokus)
 
-- Se `docs/svaghetstraning/README.md` för uppdrag, status, designriktning och
-  nästa steg. Kartläggningen av koden finns i
-  `docs/svaghetstraning/kartlaggning.md`.
+- Uppdrag, design och status: `docs/svaghetstraning/README.md` (designen i
+  `design.md`, kartläggningen av koden i `kartlaggning.md`).
+- Kod: `src/lib/fokus/` (frågebank med stabila id:n `test_id#num`, typer,
+  styrkemodell, urval, historik, rekommendationer), `src/pages/api/fokus/`
+  (`runda` ger frågor utan facit, `svar` rättar på servern och sparar
+  händelsen), sidan `src/pages/trana/fokus.astro`, komponenten
+  `src/components/Styrkekarta.astro`.
+- Gemensam frågekomponent: `src/lib/fragor/render.ts` och
+  `src/styles/fragor.css`, används av `/extra/[id]` och `/trana/fokus`.
+- Databas: tabellen `question_events` (en rad per besvarad uppgift i
+  träningen) skapas vid start i `src/lib/db.ts`. Provresultaten i
+  `test_results` rörs inte utan räknas om till händelser i
+  `src/lib/fokus/historik.ts`. Gäster får en osynlig gästsession vid första
+  rundan (samma som ordträningen); vid inloggning på ett befintligt konto
+  följer provresultat och händelser med (`migrateGuestToUser`).
+- Ingångar: knappen "Träna fler av den här typen" på varje fel fråga i
+  rättningen (extraproven och HT 2021-proven), länkar i analysblocket,
+  styrkekartan på profilen, bannern på Träna-sidan.
+- Test: `node verktyg/fokus/testa-modell.mjs` (modell, typer, urval utan
+  databas) och `HP_SKARM_DIR=/tmp node verktyg/fokus/testa-fokus.mjs`
+  (Playwright mot lokal server på 4321, mobilvy, hela flödet). Playwright
+  finns globalt i webbmiljön; lokalt `npm i -D playwright` om det saknas.
+- Parametrar att vrida på: `RUNDA` i `urval.ts` (frågor per runda),
+  `HALVERINGSTID`, `PRIOR_A`, `PRIOR_B`, `MINSTA_ANTAL` i `styrka.ts`,
+  `SEDD_DAGAR` och `REPETERA_DAGAR` i `historik.ts`. Poolen är
+  extramaterialet; HT 2021 sparas till stegen (en rad i
+  `src/pages/api/fokus/runda.ts`).

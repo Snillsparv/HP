@@ -2,7 +2,7 @@ import type { APIRoute } from 'astro';
 import { getSessionFromCookies } from '../../../lib/auth.js';
 import { bank, DELPROV, finnsTyp, typNamn, DELPROV_NAMN, type BankFraga } from '../../../lib/fokus/fragebank.js';
 import { valjRunda, type Lage } from '../../../lib/fokus/urval.js';
-import { hamtaHandelser, seddaNyligen, attRepetera } from '../../../lib/fokus/historik.js';
+import { hamtaHandelser, seddaNyligen, attRepetera, senastSedd } from '../../../lib/fokus/historik.js';
 import { beraknaStyrkor, svagasteTyper } from '../../../lib/fokus/styrka.js';
 
 const json = (data: unknown, status = 200) =>
@@ -37,6 +37,7 @@ export const GET: APIRoute = async ({ request }) => {
   const enheter = valjRunda({
     lage, val, pool, antal,
     sedda: seddaNyligen(handelser),
+    senastSedd: senastSedd(handelser),
     attRepetera: attRepetera(handelser),
     styrkor,
   });

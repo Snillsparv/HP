@@ -54,6 +54,16 @@ export async function hamtaHandelser(userId: number): Promise<Handelse[]> {
   return handelser;
 }
 
+/** När varje fråga senast besvarades. */
+export function senastSedd(handelser: Handelse[]): Map<string, Date> {
+  const m = new Map<string, Date>();
+  for (const h of handelser) {
+    const f = m.get(h.questionId);
+    if (!f || f.getTime() < h.createdAt.getTime()) m.set(h.questionId, h.createdAt);
+  }
+  return m;
+}
+
 /** Fråge-id som setts de senaste dagarna. */
 export function seddaNyligen(handelser: Handelse[], dagar = SEDD_DAGAR, nu = new Date()): Set<string> {
   const grans = nu.getTime() - dagar * 24 * 3600 * 1000;

@@ -19,6 +19,8 @@ export interface UrvalIn {
   pool: BankFraga[];
   /** Fråge-id som användaren sett nyligen och helst inte ska få igen. */
   sedda: Set<string>;
+  /** När varje fråga sågs senast, så att utfyllnad tar de äldst sedda först. */
+  senastSedd?: Map<string, Date>;
   /** Fråge-id som användaren haft fel på för ett tag sedan och kan få igen. */
   attRepetera: Set<string>;
   styrkor: Map<string, Styrka>;
@@ -67,11 +69,14 @@ function blanda<T>(lista: T[], slump: () => number): T[] {
   return a;
 }
 
-/** Enheter där ingen fråga är nyligen sedd; om det blir för få, fyll på med sedda. */
-function osedda(enheter: Enhet[], sedda: Set<string>, behov: number, slump: () => number): Enhet[] {
+/** Enheter där ingen fråga är nyligen sedd; om det blir för få, fyll på med
+ * sedda, de som sågs längst tillbaka först. */
+function osedda(enheter: Enhet[], sedda: Set<string>, behov: number, slump: () => number, senastSedd?: Map<string, Date>): Enhet[] {
   const fria = blanda(enheter.filter(e => !e.fragor.some(q => sedda.has(q.id))), slump);
   if (fria.length >= behov) return fria;
-  const resten = blanda(enheter.filter(e => e.fragor.some(q => sedda.has(q.id))), slump);
+  const senast = (e: Enhet) => Math.max(...e.fragor.map(q => senastSedd?.get(q.id)?.getTime() ?? 0));
+  const resten = blanda(enheter.filter(e => e.fragor.some(q => sedda.has(q.id))), slump)
+    .sort((a, b) => senast(a) - senast(b));
   return [...fria, ...resten];
 }
 
@@ -79,11 +84,11 @@ function osedda(enheter: Enhet[], sedda: Set<string>, behov: number, slump: () =
 export function valjRunda(inp: UrvalIn): Enhet[] {
   const antal = inp.antal ?? RUNDA;
   const slump = inp.slump ?? Math.random;
-  const { lage, val, pool, sedda, styrkor } = inp;
+  const { lage, val, pool, sedda, styrkor, senastSedd } = inp;
 
   if (lage === 'delprov' || lage === 'typ') {
     const kandidater = pool.filter(q => lage === 'delprov' ? q.delprov === val : q.typ === val);
-    return taTillAntal(osedda(tillEnheter(kandidater), sedda, antal, slump), antal);
+    return taTillAntal(osedda(tillEnheter(kandidater), sedda, antal, slump, senastSedd), antal);
   }
 
   // Mina svagheter: 70 procent från de tre svagaste typerna, 30 procent
@@ -115,7 +120,7 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
   ta(blanda(repetera, slump), antalRepetera);
 
   // Svagaste typerna, i tur och ordning så att alla tre får plats.
-  const perSvag = svaga.map(s => osedda(tillEnheter(pool.filter(q => q.typ === s.typ)), sedda, antal, slump));
+  const perSvag = svaga.map(s => osedda(tillEnheter(pool.filter(q => q.typ === s.typ)), sedda, antal, slump, senastSedd));
   let kvar = antalSvaga + (antalRepetera - valda.length);
   let varv = 0;
   while (kvar > 0 && varv < antal * 3) {
@@ -132,7 +137,7 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
 
   // Blandning från övriga typer (interleaving), annars från hela poolen.
   const ovriga = ovrigaTyper.size > 0 ? pool.filter(q => ovrigaTyper.has(q.typ)) : pool;
-  ta(osedda(tillEnheter(ovriga), sedda, antal, slump), Math.max(antalOvriga, antal - antalValda()));
+  ta(osedda(tillEnheter(ovriga), sedda, antal, slump, senastSedd), Math.max(antalOvriga, antal - antalValda()));
   // Om övriga typer inte räckte, fyll på från de svaga.
   if (antalValda() < antal) for (const lista of perSvag) ta(lista, antal);
 

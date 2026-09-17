@@ -158,10 +158,15 @@ export function analyzeResults(
     summaryParts.push(worstDetail);
   }
 
+  // Länkarna går till fokuserad träning på just den typen eller det delprovet.
+  const delprovId = (id: string) => id.replace(/2$/, '');
   if (sortedCategories.length > 0 && sortedCategories[0].rate < 0.5) {
-    summaryParts.push(`Fokusera på <strong>${categoryLabel(sortedCategories[0].category)}</strong>-uppgifter för att höja dig!`);
+    const svag = sortedCategories[0];
+    const stId = subtestResults.find(st => st.shortName === svag.subTest)?.id || svag.subTest.toLowerCase();
+    const typ = `${delprovId(stId)}:${svag.category}`;
+    summaryParts.push(`Fokusera på <strong>${categoryLabel(svag.category)}</strong>-uppgifter för att höja dig! <a href="/trana/fokus?lage=typ&val=${encodeURIComponent(typ)}" style="font-weight:600;">Träna på ${svag.subTest} ${categoryLabel(svag.category).toLowerCase()} här.</a>`);
   } else if (worstSubtest && worstSubtest.rate < 0.7) {
-    summaryParts.push(`Träna mer på <strong>${worstSubtest.shortName}</strong> för att höja ditt resultat!`);
+    summaryParts.push(`Träna mer på <strong>${worstSubtest.shortName}</strong> för att höja ditt resultat! <a href="/trana/fokus?lage=delprov&val=${encodeURIComponent(delprovId(worstSubtest.id))}" style="font-weight:600;">Träna på ${worstSubtest.shortName} här.</a>`);
   } else {
     summaryParts.push('Bra jobbat! Fortsätt träna för att bli ännu bättre.');
   }

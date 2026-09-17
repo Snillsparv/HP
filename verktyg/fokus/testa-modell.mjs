@@ -78,6 +78,14 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   assert.strictEqual(r2.length, 10);
   assert.ok(r2.filter(e => sedda.has(e.fragor[0].id)).length === 5, 'osedda först (5 osedda finns), sedan sedda som utfyllnad');
 
+  // Utfyllnad med sedda tar de äldst sedda först.
+  const allaAlg = pool.filter(x => x.typ === 'xyz:algebra');
+  const seddaAlla = new Set(allaAlg.map(x => x.id));
+  const senastSedd = new Map(allaAlg.map((x, i) => [x.id, new Date(nu - (i + 1) * dag)]));
+  const r2b = U.valjRunda({ lage: 'typ', val: 'xyz:algebra', pool, sedda: seddaAlla, senastSedd, attRepetera: new Set(), styrkor: new Map(), antal: 5, slump });
+  const aldst = allaAlg.slice(-5).map(x => x.id);
+  assert.ok(r2b.every(e => aldst.includes(e.fragor[0].id)), 'när allt är sett kommer de äldst sedda först');
+
   const r3 = U.valjRunda({ lage: 'delprov', val: 'dtk', pool, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), antal: 10, slump });
   assert.strictEqual(r3.length, 4, 'fyra diagram ger tolv frågor, minst tio');
   assert.ok(r3.every(e => e.fragor.length === 3 && e.fragor.every(f => f.grupp === e.grupp)), 'diagram hålls ihop');

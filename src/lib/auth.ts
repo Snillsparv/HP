@@ -96,33 +96,47 @@ export async function upgradeGuestToGoogleUser(guestId: number, name: string, em
 // över de ordframsteg som inte krockar och städa bort gästen.
 export async function migrateGuestToUser(guestId: number, targetId: number) {
   if (guestId === targetId) return;
-  await pool.query(
-    `INSERT INTO word_progress (user_id, word_id, box, due_at, reps, lapses, created_at, updated_at)
-     SELECT $2, word_id, box, due_at, reps, lapses, created_at, updated_at
-     FROM word_progress WHERE user_id = $1
-     ON CONFLICT (user_id, word_id) DO NOTHING`,
-    [guestId, targetId]
-  );
-  await pool.query(
-    `INSERT INTO learn_activity (user_id, day)
-     SELECT $2, day FROM learn_activity WHERE user_id = $1
-     ON CONFLICT DO NOTHING`,
-    [guestId, targetId]
-  );
-  // Provresultat och träningshändelser följer också med.
-  await pool.query(
-    `INSERT INTO test_results (user_id, test_id, score, total, answers, time_seconds, created_at)
-     SELECT $2, test_id, score, total, answers, time_seconds, created_at
-     FROM test_results WHERE user_id = $1`,
-    [guestId, targetId]
-  );
-  await pool.query(
-    `INSERT INTO question_events (user_id, question_id, delprov, typ, chosen, correct, time_ms, source, created_at)
-     SELECT $2, question_id, delprov, typ, chosen, correct, time_ms, source, created_at
-     FROM question_events WHERE user_id = $1`,
-    [guestId, targetId]
-  );
-  await pool.query(`DELETE FROM users WHERE id = $1 AND is_guest`, [guestId]);
+  // Hela flytten i en transaktion med gästraden låst, så att två samtidiga
+  // inloggningar med samma gästkaka inte kopierar raderna två gånger.
+  const client = await pool.connect();
+  try {
+    await client.query('BEGIN');
+    const { rows } = await client.query('SELECT id FROM users WHERE id = $1 AND is_guest FOR UPDATE', [guestId]);
+    if (rows.length === 0) { await client.query('ROLLBACK'); return; }
+    await client.query(
+      `INSERT INTO word_progress (user_id, word_id, box, due_at, reps, lapses, created_at, updated_at)
+       SELECT $2, word_id, box, due_at, reps, lapses, created_at, updated_at
+       FROM word_progress WHERE user_id = $1
+       ON CONFLICT (user_id, word_id) DO NOTHING`,
+      [guestId, targetId]
+    );
+    await client.query(
+      `INSERT INTO learn_activity (user_id, day)
+       SELECT $2, day FROM learn_activity WHERE user_id = $1
+       ON CONFLICT DO NOTHING`,
+      [guestId, targetId]
+    );
+    // Provresultat och träningshändelser följer också med.
+    await client.query(
+      `INSERT INTO test_results (user_id, test_id, score, total, answers, time_seconds, created_at)
+       SELECT $2, test_id, score, total, answers, time_seconds, created_at
+       FROM test_results WHERE user_id = $1`,
+      [guestId, targetId]
+    );
+    await client.query(
+      `INSERT INTO question_events (user_id, question_id, delprov, typ, chosen, correct, time_ms, source, created_at)
+       SELECT $2, question_id, delprov, typ, chosen, correct, time_ms, source, created_at
+       FROM question_events WHERE user_id = $1`,
+      [guestId, targetId]
+    );
+    await client.query(`DELETE FROM users WHERE id = $1 AND is_guest`, [guestId]);
+    await client.query('COMMIT');
+  } catch (e) {
+    await client.query('ROLLBACK').catch(() => {});
+    throw e;
+  } finally {
+    client.release();
+  }
 }
 
 export async function deleteSession(token: string) {

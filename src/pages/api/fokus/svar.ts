@@ -15,9 +15,9 @@ export const POST: APIRoute = async ({ request }) => {
   try { body = await request.json(); } catch { return json({ error: 'ogiltig_json' }, 400); }
   const q = typeof body?.questionId === 'string' ? fragaMedId(body.questionId) : undefined;
   if (!q) return json({ error: 'okand_fraga' }, 400);
-  const chosen = body.chosen === null || body.chosen === undefined ? null : Number(body.chosen);
-  if (chosen !== null && (!Number.isInteger(chosen) || chosen < 0 || chosen >= q.options.length)) return json({ error: 'ogiltigt_svar' }, 400);
-  const timeMs = Number.isFinite(Number(body.timeMs)) ? Math.max(0, Math.min(3600_000, Math.round(Number(body.timeMs)))) : null;
+  const chosen: number | null = body.chosen === null || body.chosen === undefined ? null : body.chosen;
+  if (chosen !== null && (typeof chosen !== 'number' || !Number.isInteger(chosen) || chosen < 0 || chosen >= q.options.length)) return json({ error: 'ogiltigt_svar' }, 400);
+  const timeMs = typeof body.timeMs === 'number' && Number.isFinite(body.timeMs) ? Math.max(0, Math.min(3600_000, Math.round(body.timeMs))) : null;
   const correct = chosen !== null && chosen === q.correct;
 
   const user = await getSessionFromCookies(request.headers.get('cookie'));

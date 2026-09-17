@@ -21,7 +21,8 @@ export const GET: APIRoute = async ({ request }) => {
   const url = new URL(request.url);
   const lage = url.searchParams.get('lage') as Lage | null;
   const val = url.searchParams.get('val') || undefined;
-  const antal = Math.min(20, Math.max(1, Number(url.searchParams.get('antal') || 10)));
+  const antalIn = Number.parseInt(url.searchParams.get('antal') ?? '', 10);
+  const antal = Number.isFinite(antalIn) ? Math.min(20, Math.max(1, antalIn)) : 10;
   if (!lage || !['delprov', 'typ', 'svagheter'].includes(lage)) return json({ error: 'okant_lage' }, 400);
   if (lage === 'delprov' && !DELPROV.includes(val as any)) return json({ error: 'okant_delprov' }, 400);
   if (lage === 'typ' && (!val || !finnsTyp(val))) return json({ error: 'okand_typ' }, 400);

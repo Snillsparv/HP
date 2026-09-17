@@ -109,6 +109,19 @@ export async function migrateGuestToUser(guestId: number, targetId: number) {
      ON CONFLICT DO NOTHING`,
     [guestId, targetId]
   );
+  // Provresultat och träningshändelser följer också med.
+  await pool.query(
+    `INSERT INTO test_results (user_id, test_id, score, total, answers, time_seconds, created_at)
+     SELECT $2, test_id, score, total, answers, time_seconds, created_at
+     FROM test_results WHERE user_id = $1`,
+    [guestId, targetId]
+  );
+  await pool.query(
+    `INSERT INTO question_events (user_id, question_id, delprov, typ, chosen, correct, time_ms, source, created_at)
+     SELECT $2, question_id, delprov, typ, chosen, correct, time_ms, source, created_at
+     FROM question_events WHERE user_id = $1`,
+    [guestId, targetId]
+  );
   await pool.query(`DELETE FROM users WHERE id = $1 AND is_guest`, [guestId]);
 }
 

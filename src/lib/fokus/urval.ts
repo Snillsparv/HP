@@ -1,0 +1,123 @@
+// Urval av uppgifter till en träningsrunda. Rena funktioner: banken och
+// användarens historik skickas in, så att urvalet kan testas fristående.
+import type { BankFraga } from './fragebank.js';
+import type { Styrka } from './styrka.js';
+
+export type Lage = 'delprov' | 'typ' | 'svagheter';
+
+export interface Enhet {
+  /** En fråga, eller flera som hör ihop (samma diagram eller text). */
+  fragor: BankFraga[];
+  grupp: string | null;
+}
+
+export interface UrvalIn {
+  lage: Lage;
+  /** Delprov för läge delprov, typ för läge typ. */
+  val?: string;
+  /** Kandidatfrågor (redan filtrerade på källa). */
+  pool: BankFraga[];
+  /** Fråge-id som användaren sett nyligen och helst inte ska få igen. */
+  sedda: Set<string>;
+  /** Fråge-id som användaren haft fel på för ett tag sedan och kan få igen. */
+  attRepetera: Set<string>;
+  styrkor: Map<string, Styrka>;
+  /** Antal enheter i rundan. */
+  antal?: number;
+  /** Slumpkälla 0 till 1, utbytbar i tester. */
+  slump?: () => number;
+}
+
+export const RUNDA = 10;
+
+/** Grupperar frågor till enheter: DTK-diagram och LÄS-texter hålls ihop. */
+export function tillEnheter(fragor: BankFraga[]): Enhet[] {
+  const enheter: Enhet[] = [];
+  const perGrupp = new Map<string, Enhet>();
+  for (const q of fragor) {
+    if (!q.grupp) { enheter.push({ fragor: [q], grupp: null }); continue; }
+    let e = perGrupp.get(q.grupp);
+    if (!e) { e = { fragor: [], grupp: q.grupp }; perGrupp.set(q.grupp, e); enheter.push(e); }
+    e.fragor.push(q);
+  }
+  return enheter;
+}
+
+function blanda<T>(lista: T[], slump: () => number): T[] {
+  const a = [...lista];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(slump() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/** Enheter där ingen fråga är nyligen sedd; om det blir för få, fyll på med sedda. */
+function osedda(enheter: Enhet[], sedda: Set<string>, behov: number, slump: () => number): Enhet[] {
+  const fria = blanda(enheter.filter(e => !e.fragor.some(q => sedda.has(q.id))), slump);
+  if (fria.length >= behov) return fria;
+  const resten = blanda(enheter.filter(e => e.fragor.some(q => sedda.has(q.id))), slump);
+  return [...fria, ...resten];
+}
+
+/** Väljer enheter till en runda. Returnerar tom lista om poolen är tom. */
+export function valjRunda(inp: UrvalIn): Enhet[] {
+  const antal = inp.antal ?? RUNDA;
+  const slump = inp.slump ?? Math.random;
+  const { lage, val, pool, sedda, styrkor } = inp;
+
+  if (lage === 'delprov' || lage === 'typ') {
+    const kandidater = pool.filter(q => lage === 'delprov' ? q.delprov === val : q.typ === val);
+    return osedda(tillEnheter(kandidater), sedda, antal, slump).slice(0, antal);
+  }
+
+  // Mina svagheter: 70 procent från de tre svagaste typerna, 30 procent
+  // blandat från övriga typer med underlag, plus återbesök av gamla fel.
+  const svaga = [...styrkor.values()].filter(s => !s.osaker).sort((a, b) => a.styrka - b.styrka).slice(0, 3);
+  if (svaga.length === 0) return [];
+  const svagaTyper = new Set(svaga.map(s => s.typ));
+  const ovrigaTyper = new Set([...styrkor.values()].filter(s => !svagaTyper.has(s.typ)).map(s => s.typ));
+
+  const antalRepetera = Math.min(2, Math.floor(antal * 0.2));
+  const antalSvaga = Math.round((antal - antalRepetera) * 0.7);
+  const antalOvriga = antal - antalRepetera - antalSvaga;
+
+  const valda: Enhet[] = [];
+  const tagna = new Set<string>();
+  const ta = (enheter: Enhet[], n: number) => {
+    for (const e of enheter) {
+      if (valda.length >= antal || n <= 0) break;
+      if (e.fragor.some(q => tagna.has(q.id))) continue;
+      valda.push(e);
+      e.fragor.forEach(q => tagna.add(q.id));
+      n--;
+    }
+  };
+
+  // Återbesök: fel för minst tre dagar sedan (attRepetera), inte nyligen sedda.
+  const repetera = tillEnheter(pool.filter(q => inp.attRepetera.has(q.id)));
+  ta(blanda(repetera, slump), antalRepetera);
+
+  // Svagaste typerna, i tur och ordning så att alla tre får plats.
+  const perSvag = svaga.map(s => osedda(tillEnheter(pool.filter(q => q.typ === s.typ)), sedda, antal, slump));
+  let kvar = antalSvaga + (antalRepetera - valda.length);
+  let varv = 0;
+  while (kvar > 0 && varv < antal * 3) {
+    let tagitNagon = false;
+    for (const lista of perSvag) {
+      if (kvar <= 0) break;
+      const fore = valda.length;
+      ta(lista.splice(0, 1), 1);
+      if (valda.length > fore) { kvar--; tagitNagon = true; }
+    }
+    if (!tagitNagon) break;
+    varv++;
+  }
+
+  // Blandning från övriga typer (interleaving), annars från hela poolen.
+  const ovriga = ovrigaTyper.size > 0 ? pool.filter(q => ovrigaTyper.has(q.typ)) : pool;
+  ta(osedda(tillEnheter(ovriga), sedda, antal, slump), antal - valda.length);
+  void antalOvriga;
+
+  return blanda(valda, slump);
+}

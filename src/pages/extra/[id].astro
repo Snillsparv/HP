@@ -4,7 +4,7 @@
 import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
 import { hamtaPass, provtillfallen, antalFragor, antalForklarade, testId } from '../../lib/extraprov/register.js';
-import { typerUnderGolv } from '../../lib/fokus/fragebank.js';
+import { golvBreddning } from '../../lib/fokus/fragebank.js';
 import '../../styles/fragor.css';
 
 const { id } = Astro.params;
@@ -27,14 +27,14 @@ const titel = `${tillfalleName}: ${pass.name}`;
     </div>
   </div>
 
-  <script define:vars={{ isLoggedIn: !!user, pass, tillfalleName, testIdValue: testId(pass), forklarade, underGolv: typerUnderGolv() , arGast: !!user?.is_guest }}>
+  <script define:vars={{ isLoggedIn: !!user, pass, tillfalleName, testIdValue: testId(pass), forklarade, golv: golvBreddning(), arGast: !!user?.is_guest }}>
     window.__arGast = arGast;
     window.__isLoggedIn = isLoggedIn;
     window.__pass = pass;
     window.__tillfalleName = tillfalleName;
     window.__testId = testIdValue;
     window.__forklarade = forklarade;
-    window.__underGolv = underGolv;
+    window.__golv = golv;
   </script>
 
   <script>
@@ -42,12 +42,17 @@ const titel = `${tillfalleName}: ${pass.name}`;
     import { generateResultImage } from '../../lib/share-image.js';
     import { laddaKatex, renderTex, questionBodyHTML, lasTextHTML, dtkDiagramHTML, resultDetailHTML, bindZoom, bindFadeIn, bindLasToggle } from '../../lib/fragor/render.js';
     import { typFor, typNamn } from '../../lib/fokus/typer.js';
-    const underGolv = new Set<string>((window as any).__underGolv || []);
-    // Länken från ett fel svar: typen, eller hela delprovet om typen är för liten.
+    const golv: Record<string, { kategori: string; antal: number }> = (window as any).__golv || {};
+    const KATEGORI_NAMN: Record<string, string> = { algebra: 'algebra', aritmetik: 'aritmetik', geometri: 'geometri', funktioner: 'funktioner och grafer', procent: 'procent', sannolikhet: 'sannolikhet', statistik: 'statistik', enheter: 'enheter', logik: 'logiskt resonemang' };
+    // Länken från ett fel svar: typen, kategorin över delproven om typen är
+    // för liten, och hela delprovet för ORD och LÄS.
     function tranaFor(st: ExtraDelprov, q: ExtraFraga) {
       const typ = typFor(st.type, q);
-      const val = underGolv.has(typ) ? `${st.type}:ovrigt` : typ;
-      return { lage: 'typ' as const, val, namn: typNamn(val), fran: TEST_ID };
+      if (typ === 'ord') return { lage: 'delprov' as const, val: 'ord', namn: 'ORD-uppgifter', fran: TEST_ID };
+      if (typ === 'las') return { lage: 'delprov' as const, val: 'las', namn: 'LÄS-texter', fran: TEST_ID };
+      const b = golv[typ];
+      if (b) return { lage: 'kategori' as const, val: b.kategori, namn: KATEGORI_NAMN[b.kategori] || b.kategori, fran: TEST_ID, antal: b.antal };
+      return { lage: 'typ' as const, val: typ, namn: typNamn(typ), fran: TEST_ID };
     }
     import type { ExtraPass, ExtraDelprov, ExtraFraga } from '../../lib/extraprov/types.js';
 
@@ -178,22 +183,37 @@ const titel = `${tillfalleName}: ${pass.name}`;
       const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
       stored[TEST_ID] = resultData;
       localStorage.setItem('hp-results', JSON.stringify(stored));
-      if ((window as any).__isLoggedIn) {
-        try {
-          await fetch('/api/test/results', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ testId: TEST_ID, score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
-          });
-          saveStatus = 'server';
-        } catch {
-          saveStatus = 'error';
-        }
-      } else {
-        saveStatus = 'anon';
+      // Postas alltid: med gästsessionen från provstarten sparas resultatet
+      // på servern och räknas i fokuserad träning även utan konto.
+      try {
+        const res = await fetch('/api/test/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ testId: TEST_ID, score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
+        });
+        saveStatus = res.ok ? 'server' : res.status === 401 ? 'anon' : 'error';
+      } catch {
+        saveStatus = (window as any).__isLoggedIn ? 'error' : 'anon';
       }
       const saveArea = document.getElementById('save-area');
       if (saveArea) saveArea.innerHTML = saveAreaHTML();
+    }
+
+    // Svar som gavs efter tiden sparas som händelser i fokuserad träning (de
+    // ingår inte i provresultatet), en gång per fråga.
+    let overtidPostad = false;
+    function postaOvertid() {
+      if (!overtime || overtidPostad) return;
+      overtidPostad = true;
+      allQuestions.forEach((q, i) => {
+        if (timedAnswers[i] === null && answers[i] !== null) {
+          fetch('/api/fokus/svar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questionId: `${TEST_ID}#${q.num}`, chosen: answers[i], lage: 'overtid' }),
+          }).catch(() => {});
+        }
+      });
     }
 
     function renderTimeUp() {
@@ -521,6 +541,7 @@ const titel = `${tillfalleName}: ${pass.name}`;
         await persistResult(totalScore, answers, elapsed);
       }
       document.getElementById('save-area')!.innerHTML = saveAreaHTML();
+      postaOvertid();
 
       root.querySelectorAll('[data-toggle]').forEach(el => {
         el.addEventListener('click', () => {

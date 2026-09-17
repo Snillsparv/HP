@@ -90,16 +90,23 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
   databas) och `HP_SKARM_DIR=/tmp node verktyg/fokus/testa-fokus.mjs`
   (Playwright mot lokal server på 4321, mobilvy, hela flödet). Playwright
   finns globalt i webbmiljön; lokalt `npm i -D playwright` om det saknas.
-- Parametrar att vrida på: `RUNDA` (frågor per runda), `MAX_PER_PASS` och
-  `SNABBKOLL` (snabbkollens sammansättning) i `urval.ts`; `HALVERINGSTID`
-  (svar), `HALVERINGSTID_DAGAR`, `PRIOR_A`, `PRIOR_B`, `MINSTA_ANTAL`
-  (effektiva svar för att visa procent), `MINSTA_SVAR_SVAGHETER` och
-  `MAL_STYRKA` i `styrka.ts`; `SEDD_DAGAR`, `REPETERA_DAGAR` och
-  `OMFORSOK_TIMMAR` i `historik.ts`; `MINSTA_TYP` (golvet för små typer) och
+- Parametrar att vrida på: `RUNDA` (frågor per runda), `TYP_ANDEL` (sju av
+  tio i typläget), `MAX_PER_PASS`, `KONTROLL_DAGAR` och `SNABBKOLL`
+  (snabbkollens sammansättning) i `urval.ts`; `HALVERINGSTID` (20 svar),
+  `HALVERINGSTID_DAGAR` (90), `KALLVIKT_RUNDA` (0,7), `GRUPPTAK` (2),
+  `PRIOR_A`, `PRIOR_B`, `PRIOR_TYP`, `MINSTA_ANTAL` (effektiva svar för att
+  visa procent), `MINSTA_SAKRA_TYPER` (gaten för Mina svagheter),
+  `MAL_STYRKA` och `MAL_STYRKA_SVART` i `styrka.ts`; `SEDD_DAGAR`,
+  `REPETERA_DAGAR` och `OMFORSOK_TIMMAR` i `historik.ts`; `MINSTA_TYP`
+  (golvet för små typer), `VIKT_UTAN_UNDERTYP` (ORD och LÄS) och
   `ANTAL_PER_PASS` (vikterna) i `fragebank.ts` och `typer.ts`. Poolen är
   extramaterialet; HT 2021 sparas till stegen (en rad i
   `src/pages/api/fokus/runda.ts`).
+- Tabeller: `question_events` (händelser med `source` fokus, snabbkoll,
+  overtid eller omforsok, plus `lage`, `runda_id`, `position`) och
+  `fokus_rundor` (en rad per startad runda), båda skapas vid start.
 - Provlöparna skapar en gästsession vid "Starta provet" (som ordträningen)
   så att resultatet sparas på servern och räknas i träningen även utan
   konto. Gäster ser "Resultat sparat! Skapa ett gratis konto ..." i stället
-  för "sparat i ditt konto".
+  för "sparat i ditt konto". Svar efter tiden ("Gör klart resten") postas
+  till `/api/fokus/svar` med `lage: 'overtid'`.

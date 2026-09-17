@@ -124,9 +124,15 @@ export async function migrateGuestToUser(guestId: number, targetId: number) {
       [guestId, targetId]
     );
     await client.query(
-      `INSERT INTO question_events (user_id, question_id, delprov, typ, chosen, correct, time_ms, source, lage, runda_id, created_at)
-       SELECT $2, question_id, delprov, typ, chosen, correct, time_ms, source, lage, runda_id, created_at
+      `INSERT INTO question_events (user_id, question_id, delprov, typ, chosen, correct, time_ms, source, lage, runda_id, position, created_at)
+       SELECT $2, question_id, delprov, typ, chosen, correct, time_ms, source, lage, runda_id, position, created_at
        FROM question_events WHERE user_id = $1`,
+      [guestId, targetId]
+    );
+    await client.query(
+      `INSERT INTO fokus_rundor (id, user_id, lage, val, fran, antal, created_at)
+       SELECT id, $2, lage, val, fran, antal, created_at FROM fokus_rundor WHERE user_id = $1
+       ON CONFLICT (id) DO NOTHING`,
       [guestId, targetId]
     );
     await client.query(`DELETE FROM users WHERE id = $1 AND is_guest`, [guestId]);

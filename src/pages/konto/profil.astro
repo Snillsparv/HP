@@ -10,7 +10,7 @@ import { verbalSubTests2 as verbal2Tests } from '../../lib/questions-verbal2-ht2
 import { allaPass, provtillfallen, testId as extraTestId, normeradPoang } from '../../lib/extraprov/register.js';
 import { allaTyper, typVikter } from '../../lib/fokus/fragebank.js';
 import { hamtaHandelser, forStyrka } from '../../lib/fokus/historik.js';
-import { beraknaStyrkor, svagasteTyper, prioritet, MINSTA_SVAR_SVAGHETER } from '../../lib/fokus/styrka.js';
+import { beraknaTypStyrkor, svagasteTyper, antalSakraTyper, MINSTA_SAKRA_TYPER } from '../../lib/fokus/styrka.js';
 import { byggKarta } from '../../lib/fokus/karta.js';
 import Styrkekarta from '../../components/Styrkekarta.astro';
 
@@ -120,14 +120,11 @@ const harStegprov = testOrder.some(id => resultMap.has(id));
 // Fokuserad träning: styrka per uppgiftstyp ur prov och träningsrundor.
 const handelser = await hamtaHandelser(user.id);
 const rakneBara = forStyrka(handelser);
-const styrkor = beraknaStyrkor(rakneBara);
+const styrkor = beraknaTypStyrkor(rakneBara);
 const vikter = typVikter();
-const svagaste = rakneBara.length >= MINSTA_SVAR_SVAGHETER ? svagasteTyper(styrkor, 3, vikter, true) : [];
-const svagaTyper = new Set(svagaste.map(s => s.typ));
+const svagaste = antalSakraTyper(styrkor) >= MINSTA_SAKRA_TYPER ? svagasteTyper(styrkor, 3, vikter) : [];
 // Samma ordning som på träningssidan: mest att hämta först, osäkra sist.
-const karta = byggKarta(styrkor, allaTyper(['extra']))
-  .map(r => ({ ...r, prio: styrkor.get(r.typ) ? prioritet(styrkor.get(r.typ)!, vikter.get(r.typ) ?? 1) : 0, etikett: svagaTyper.has(r.typ) ? (r.osaker ? 'att testa' : 'mest att hämta') : '' }))
-  .sort((a, b) => (a.osaker === b.osaker ? b.prio - a.prio : a.osaker ? 1 : -1));
+const karta = byggKarta(styrkor, allaTyper(['extra']), vikter);
 const antalRundsvar = rakneBara.length;
 ---
 

@@ -160,7 +160,19 @@ await pool.query(`
   );
   ALTER TABLE question_events ADD COLUMN IF NOT EXISTS lage TEXT;
   ALTER TABLE question_events ADD COLUMN IF NOT EXISTS runda_id TEXT;
+  ALTER TABLE question_events ADD COLUMN IF NOT EXISTS position INTEGER;
   CREATE INDEX IF NOT EXISTS question_events_user_idx ON question_events (user_id, created_at);
+  -- En rad per startad runda, för att kunna utvärdera verktyget (hur många
+  -- rundor fullföljs, hur ofta knappen i rättningen används).
+  CREATE TABLE IF NOT EXISTS fokus_rundor (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    lage TEXT NOT NULL,
+    val TEXT,
+    fran TEXT,
+    antal INTEGER NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
   CREATE INDEX IF NOT EXISTS test_results_user_test_idx ON test_results (user_id, test_id);
 `);
 

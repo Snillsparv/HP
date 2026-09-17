@@ -110,7 +110,7 @@ export function dtkDiagramHTML(q: Fraga, st: Delprov): string {
 
 /** Rättningsdetaljen för en fråga: frågan, alternativen med rätt och fel
  * markerade, samt förklaring (text eller video). */
-export function resultDetailHTML(q: Fraga, st: Delprov, chosen: number | null, alternativ: { trana?: { lage: 'typ' | 'delprov'; val: string; namn: string; fran?: string } } = {}): string {
+export function resultDetailHTML(q: Fraga, st: Delprov, chosen: number | null, alternativ: { trana?: TranaLank } = {}): string {
   let fraga = q.text || '';
   if (st.type === 'kva' && q.q1) {
     fraga += `<div class="kva-pair"><div class="kva-row"><span class="kva-label"><i>Kvantitet I:</i></span><span>${q.q1}</span></div><div class="kva-row"><span class="kva-label"><i>Kvantitet II:</i></span><span>${q.q2}</span></div></div>`;
@@ -132,9 +132,13 @@ export function resultDetailHTML(q: Fraga, st: Delprov, chosen: number | null, a
 
 /** Knappen från rättningen till fokuserad träning på samma uppgiftstyp.
  * fran är provets test_id, så att kvittot kan leda tillbaka till rättningen. */
-export function tranaLankHTML(alt: { lage: 'typ' | 'delprov'; val: string; namn: string; fran?: string }): string {
+export interface TranaLank { lage: 'typ' | 'delprov' | 'kategori'; val: string; namn: string; fran?: string; antal?: number }
+
+export function tranaLankHTML(alt: TranaLank): string {
   const url = `/trana/fokus?lage=${alt.lage}&val=${encodeURIComponent(alt.val)}${alt.fran ? `&fran=${encodeURIComponent(alt.fran)}` : ''}`;
-  const text = alt.lage === 'typ' ? `Fler som den här: ${alt.namn}` : `Fler ${alt.namn}`;
+  const text = alt.lage === 'typ' ? `Fler som den här: ${alt.namn}`
+    : alt.lage === 'kategori' ? `Fler om ${alt.namn}${alt.antal ? ` (${alt.antal} uppgifter)` : ''}`
+    : `Fler ${alt.namn}`;
   return `<p class="pq-res-trana" style="margin:0.9rem 0 0;"><a class="btn btn-primary btn-sm" style="display:block; text-align:center;" href="${url}">${text}</a></p>`;
 }
 

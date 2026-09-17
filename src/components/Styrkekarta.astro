@@ -13,7 +13,7 @@ const { rader } = Astro.props;
   {rader.map(r => (
     <a class="fokus-karta-rad" href={`/trana/fokus?lage=typ&val=${encodeURIComponent(r.typ)}${r.osaker ? '&antal=5' : ''}`}>
       <span class="fokus-karta-namn">{r.namn}{r.etikett ? <span class="fokus-karta-etikett">{r.etikett}</span> : null}</span>
-      <span class="fokus-karta-stapel"><span class="fokus-karta-fyll" style={`width:${r.osaker ? 100 : r.pct}%; background:${r.farg};`}></span></span>
+      <span class="fokus-karta-stapel" role="img" aria-label={r.nivaText}><span class="fokus-karta-fyll" style={`width:${r.osaker ? 100 : r.pct}%; background:${r.farg};`}></span></span>
       <span class="fokus-karta-varde">{r.osaker ? <Fragment>{r.varde} · <span class="fokus-karta-testa">testa 5</span></Fragment> : r.varde}</span>
     </a>
   ))}

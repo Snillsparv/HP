@@ -9,7 +9,7 @@ import { subTests as kvant2 } from '../questions-kvant2-ht2021.js';
 import { verbalSubTests as verbal1 } from '../questions-verbal-ht2021.js';
 import { verbalSubTests2 as verbal2 } from '../questions-verbal2-ht2021.js';
 import type { Fraga } from '../fragor/render.js';
-import { DELPROV, ANTAL_PER_PASS, frageId, typFor, typNamn, delprovForTyp, normaliseraDelprov } from './typer.js';
+import { DELPROV, ANTAL_PER_PASS, frageId, typFor, typNamn, delprovForTyp, normaliseraDelprov, rangTyp } from './typer.js';
 
 export { DELPROV, DELPROV_NAMN, DELPROV_LANGT, frageId, typFor, typNamn, delprovForTyp, antalLuckor } from './typer.js';
 
@@ -165,10 +165,36 @@ export function golvTyp(typ: string): string {
   return underGolv.has(typ) ? `${typ.split(':')[0]}:ovrigt` : typ;
 }
 
-/** Stämmer frågan med ett typval? Hanterar både fina typer och "<delprov>:ovrigt". */
+/** Stämmer frågan med ett typval? Hanterar fina typer, "<delprov>:ovrigt" och
+ * rangordningstypen mek (alla luckantal). */
 export function matcharTyp(q: BankFraga, val: string): boolean {
   if (val.endsWith(':ovrigt')) return q.delprov === val.split(':')[0] && underGolv.has(q.typ);
+  if (val === 'mek') return q.delprov === 'mek';
   return q.typ === val;
+}
+
+/** De kvantitativa delproven som delar matematisk kategori. */
+export const KATEGORI_DELPROV: DelprovTyp[] = ['xyz', 'kva', 'nog'];
+
+/** Stämmer frågan med en kategori över delproven (t.ex. sannolikhet i XYZ, KVA och NOG)? */
+export function matcharKategori(q: BankFraga, kategori: string): boolean {
+  return KATEGORI_DELPROV.includes(q.delprov) && q.category === kategori;
+}
+
+export function finnsKategori(kategori: string): boolean {
+  return bank.some(q => matcharKategori(q, kategori));
+}
+
+/** Kategorin och antalet uppgifter som knappen i rättningen breddar till för
+ * en typ under golvet, t.ex. xyz:sannolikhet till sannolikhet (40). */
+export function golvBreddning(): Record<string, { kategori: string; antal: number }> {
+  const ut: Record<string, { kategori: string; antal: number }> = {};
+  for (const typ of underGolv) {
+    const kategori = typ.split(':')[1];
+    if (!kategori) continue;
+    ut[typ] = { kategori, antal: bank.filter(q => q.kalla === 'extra' && matcharKategori(q, kategori)).length };
+  }
+  return ut;
 }
 
 /** Alla typer som finns i banken med antal uppgifter, i delprovsordning.
@@ -184,20 +210,32 @@ export function allaTyper(kallor: Kalla[] = ['extra', 'ht2021']): TypInfo[] {
     .sort((a, b) => DELPROV.indexOf(a.delprov) - DELPROV.indexOf(b.delprov) || (a.typ.endsWith(':ovrigt') ? 1 : 0) - (b.typ.endsWith(':ovrigt') ? 1 : 0) || b.antal - a.antal);
 }
 
-/** Antal frågor som stämmer med ett typval eller delprov. */
-export function antalForVal(lage: 'delprov' | 'typ', val: string, kallor: Kalla[] = ['extra']): number {
-  return bank.filter(q => kallor.includes(q.kalla) && (lage === 'delprov' ? q.delprov === val : matcharTyp(q, val))).length;
+/** Antal frågor som stämmer med ett val: delprov, typ eller kategori. */
+export function antalForVal(lage: 'delprov' | 'typ' | 'kategori', val: string, kallor: Kalla[] = ['extra']): number {
+  return bank.filter(q => kallor.includes(q.kalla) && matcharVal(q, lage, val)).length;
+}
+
+export function matcharVal(q: BankFraga, lage: 'delprov' | 'typ' | 'kategori', val: string): boolean {
+  return lage === 'delprov' ? q.delprov === val : lage === 'kategori' ? matcharKategori(q, val) : matcharTyp(q, val);
 }
 
 /** Ungefärligt antal uppgifter av varje typ i ett provpass: typens andel av
  * delprovet i banken gånger delprovets antal i passet. Används för att
- * rangordna svagheter efter hur mycket de kan ge på provet. */
+ * rangordna svagheter efter hur mycket de kan ge på provet. ORD och LÄS
+ * halveras tills de har undertyper, MEK samlas till en typ. */
+export const VIKT_UTAN_UNDERTYP = 0.5;
+
 export function typVikter(kallor: Kalla[] = ['extra']): Map<string, number> {
   const typer = allaTyper(kallor);
   const perDelprov = new Map<string, number>();
   for (const t of typer) perDelprov.set(t.delprov, (perDelprov.get(t.delprov) || 0) + t.antal);
   const vikter = new Map<string, number>();
-  for (const t of typer) vikter.set(t.typ, (t.antal / (perDelprov.get(t.delprov) || 1)) * ANTAL_PER_PASS[t.delprov]);
+  for (const t of typer) {
+    const r = rangTyp(t.typ);
+    const v = (t.antal / (perDelprov.get(t.delprov) || 1)) * ANTAL_PER_PASS[t.delprov] * (t.typ === 'ord' || t.typ === 'las' ? VIKT_UTAN_UNDERTYP : 1);
+    vikter.set(r, (vikter.get(r) || 0) + v);
+    if (r !== t.typ) vikter.set(t.typ, v);
+  }
   return vikter;
 }
 

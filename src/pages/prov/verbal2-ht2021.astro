@@ -11,7 +11,7 @@ if (user) {
   );
   if (rows.length) prevResult = rows[0];
 }
-import { typerUnderGolv } from '../../lib/fokus/fragebank.js';
+import { golvBreddning } from '../../lib/fokus/fragebank.js';
 ---
 
 <Base title="Verbalt prov 2 HT 2021 – HPAkuten" description="Gör den andra verbala delen av högskoleprovet HT 2021 (utan ELF). 30 uppgifter, 33 minuter.">
@@ -21,9 +21,9 @@ import { typerUnderGolv } from '../../lib/fokus/fragebank.js';
     </div>
   </div>
 
-  <script define:vars={{ isLoggedIn: !!user, prevScore: prevResult?.score ?? null, prevTotal: prevResult?.total ?? null , underGolv: typerUnderGolv() , arGast: !!user?.is_guest }}>
+  <script define:vars={{ isLoggedIn: !!user, prevScore: prevResult?.score ?? null, prevTotal: prevResult?.total ?? null , golv: golvBreddning() , arGast: !!user?.is_guest }}>
     window.__arGast = arGast;
-    window.__underGolv = underGolv;
+    window.__golv = golv;
     window.__isLoggedIn = isLoggedIn;
     window.__prevScore = prevScore;
     window.__prevTotal = prevTotal;
@@ -37,13 +37,18 @@ import { typerUnderGolv } from '../../lib/fokus/fragebank.js';
     import { generateResultImage } from '../../lib/share-image.js';
     import { typFor, typNamn, normaliseraDelprov } from '../../lib/fokus/typer.js';
     import { tranaLankHTML } from '../../lib/fragor/render.js';
-    const underGolv = new Set<string>((window as any).__underGolv || []);
-    // Länken från ett fel svar: typen, eller hela delprovet om typen är för liten.
+    const golv: Record<string, { kategori: string; antal: number }> = (window as any).__golv || {};
+    const KATEGORI_NAMN: Record<string, string> = { algebra: 'algebra', aritmetik: 'aritmetik', geometri: 'geometri', funktioner: 'funktioner och grafer', procent: 'procent', sannolikhet: 'sannolikhet', statistik: 'statistik', enheter: 'enheter', logik: 'logiskt resonemang' };
+    // Länken från ett fel svar: typen, kategorin över delproven om typen är
+    // för liten, och hela delprovet för ORD och LÄS.
     function tranaFor(stId: string, q: { num: number; text: string; options: string[]; correct: number; category?: string }) {
       const dp = normaliseraDelprov(stId);
       const typ = typFor(dp, q);
-      const val = underGolv.has(typ) ? `${dp}:ovrigt` : typ;
-      return { lage: 'typ' as const, val, namn: typNamn(val), fran: 'verbal2-ht2021' };
+      if (typ === 'ord') return { lage: 'delprov' as const, val: 'ord', namn: 'ORD-uppgifter', fran: 'verbal2-ht2021' };
+      if (typ === 'las') return { lage: 'delprov' as const, val: 'las', namn: 'LÄS-texter', fran: 'verbal2-ht2021' };
+      const b = golv[typ];
+      if (b) return { lage: 'kategori' as const, val: b.kategori, namn: KATEGORI_NAMN[b.kategori] || b.kategori, fran: 'verbal2-ht2021', antal: b.antal };
+      return { lage: 'typ' as const, val: typ, namn: typNamn(typ), fran: 'verbal2-ht2021' };
     }
 
     const subTests = verbalSubTests2;
@@ -168,23 +173,38 @@ import { typerUnderGolv } from '../../lib/fokus/fragebank.js';
       const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
       stored['verbal2-ht2021'] = resultData;
       localStorage.setItem('hp-results', JSON.stringify(stored));
-      if ((window as any).__isLoggedIn) {
-        try {
-          await fetch('/api/test/results', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ testId: 'verbal2-ht2021', score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
-          });
-          saveStatus = 'server';
-        } catch {
-          saveStatus = 'error';
-        }
-      } else {
-        saveStatus = 'anon';
+      // Postas alltid: med gästsessionen från provstarten sparas resultatet
+      // på servern och räknas i fokuserad träning även utan konto.
+      try {
+        const res = await fetch('/api/test/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ testId: 'verbal2-ht2021', score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
+        });
+        saveStatus = res.ok ? 'server' : res.status === 401 ? 'anon' : 'error';
+      } catch {
+        saveStatus = (window as any).__isLoggedIn ? 'error' : 'anon';
       }
       // Uppdatera spar-rutan om resultatvyn redan hunnit visas
       const saveArea = document.getElementById('save-area');
       if (saveArea) saveArea.innerHTML = saveAreaHTML();
+    }
+
+    // Svar som gavs efter tiden sparas som händelser i fokuserad träning (de
+    // ingår inte i provresultatet), en gång per fråga.
+    let overtidPostad = false;
+    function postaOvertid() {
+      if (!overtime || overtidPostad) return;
+      overtidPostad = true;
+      allQuestions.forEach((q, i) => {
+        if (timedAnswers[i] === null && answers[i] !== null) {
+          fetch('/api/fokus/svar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questionId: `verbal2-ht2021#${q.num}`, chosen: answers[i], lage: 'overtid' }),
+          }).catch(() => {});
+        }
+      });
     }
 
     function renderTimeUp() {
@@ -562,6 +582,7 @@ import { typerUnderGolv } from '../../lib/fokus/fragebank.js';
         await persistResult(totalScore, answers, elapsed);
       }
       document.getElementById('save-area')!.innerHTML = saveAreaHTML();
+      postaOvertid();
 
       // Accordion toggle for question details
       root.querySelectorAll('[data-toggle]').forEach(el => {

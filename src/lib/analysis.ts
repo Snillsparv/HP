@@ -93,7 +93,7 @@ export function analyzeResults(
 ): { weakAreas: string[]; summaryHTML: string } {
   const subtestMap = new Map<string, SubtestResult>();
   const categoryMap = new Map<string, CategoryResult>();
-  const trackCategories = new Set(['xyz', 'xyz2', 'kva', 'kva2', 'dtk', 'dtk2']);
+  const trackCategories = new Set(['xyz', 'xyz2', 'kva', 'kva2', 'nog', 'nog2', 'dtk', 'dtk2']);
 
   questions.forEach((q, i) => {
     const stId = q.subTest.id;

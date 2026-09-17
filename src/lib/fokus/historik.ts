@@ -3,6 +3,7 @@
 // händelser per fråga via frågebanken. Bara för servern.
 import pool from '../db.js';
 import { fragorForTest, fragaMedId, golvTyp } from './fragebank.js';
+import { rangTyp } from './typer.js';
 import type { Handelse } from './styrka.js';
 
 export const SEDD_DAGAR = 30;
@@ -22,13 +23,21 @@ export async function nyligenBesvarad(userId: number, questionId: string): Promi
   return rows.length > 0;
 }
 
-/** Händelserna som ska räknas i styrkan: inte omförsök, och typer under
- * golvet räknas som "<delprov>:ovrigt". */
-export function forStyrka(handelser: Handelse[]): Handelse[] {
-  return handelser.filter(h => !h.omforsok).map(h => ({ ...h, typ: golvTyp(h.typ) }));
+/** Finns ett sparat provresultat för test_id? (för knappen Tillbaka till rättningen) */
+export async function harProvresultat(userId: number, testId: string): Promise<boolean> {
+  const { rows } = await pool.query('SELECT 1 FROM test_results WHERE user_id = $1 AND test_id = $2 LIMIT 1', [userId, testId]);
+  return rows.length > 0;
 }
 
-/** Alla händelser för en användare, nyast först. */
+/** Händelserna som ska räknas i styrkan: inte omförsök, typer under golvet
+ * räknas som "<delprov>:ovrigt" och MEK som en typ. */
+export function forStyrka(handelser: Handelse[]): Handelse[] {
+  return handelser.filter(h => !h.omforsok).map(h => ({ ...h, typ: rangTyp(golvTyp(h.typ)) }));
+}
+
+/** Alla händelser för en användare, nyast först. Provsvar kommer ur
+ * test_results (obesvarade frågor räknas som fel med halv vikt), rundsvar
+ * och övertidssvar ur question_events. */
 export async function hamtaHandelser(userId: number): Promise<Handelse[]> {
   const handelser: Handelse[] = [];
 
@@ -37,16 +46,19 @@ export async function hamtaHandelser(userId: number): Promise<Handelse[]> {
      FROM question_events WHERE user_id = $1`,
     [userId]
   );
+  const overtid = new Set<string>();
   for (const r of events) {
     // Typen hämtas ur banken så att gamla händelser följer med om typer byter namn.
     const q = fragaMedId(r.question_id);
+    if (r.source === 'overtid') overtid.add(r.question_id);
     handelser.push({
       questionId: r.question_id,
       delprov: q?.delprov || r.delprov,
       typ: q?.typ || r.typ,
       correct: !!r.correct,
+      kalla: 'runda',
+      grupp: q?.grupp ?? null,
       utanTid: r.source === 'overtid',
-      omforsok: r.source === 'omforsok',
       createdAt: new Date(r.created_at),
     });
   }
@@ -60,17 +72,23 @@ export async function hamtaHandelser(userId: number): Promise<Handelse[]> {
     if (!fragor.length) continue;
     const svar: unknown[] = Array.isArray(r.answers) ? r.answers : (typeof r.answers === 'string' ? JSON.parse(r.answers) : []);
     const nar = new Date(r.created_at);
-    svar.forEach((a, i) => {
-      if (a === null || a === undefined || i >= fragor.length) return;
+    for (let i = 0; i < fragor.length; i++) {
       const q = fragor[i];
+      const a = i < svar.length ? svar[i] : null;
+      const obesvarad = a === null || a === undefined;
+      // Övertidssvaret ersätter regeln om obesvarad fråga.
+      if (obesvarad && overtid.has(q.id)) continue;
       handelser.push({
         questionId: q.id,
         delprov: q.delprov,
         typ: q.typ,
-        correct: Number(a) === q.correct,
+        correct: !obesvarad && Number(a) === q.correct,
+        kalla: 'prov',
+        grupp: q.grupp,
+        obesvarad,
         createdAt: nar,
       });
-    });
+    }
   }
 
   handelser.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
@@ -111,7 +129,7 @@ export function senastSedd(handelser: Handelse[]): Map<string, Date> {
   return m;
 }
 
-/** Fråge-id som setts de senaste dagarna. */
+/** Fråge-id som setts de senaste dagarna (obesvarade i ett prov räknas som sedda). */
 export function seddaNyligen(handelser: Handelse[], dagar = SEDD_DAGAR, nu = new Date()): Set<string> {
   const grans = nu.getTime() - dagar * 24 * 3600 * 1000;
   const s = new Set<string>();
@@ -129,6 +147,17 @@ export function attRepetera(handelser: Handelse[], dagar = REPETERA_DAGAR, nu = 
     if (!senaste.has(h.questionId)) senaste.set(h.questionId, h);
   }
   const s = new Set<string>();
-  for (const [id, h] of senaste) if (!h.correct && h.createdAt.getTime() <= grans) s.add(id);
+  for (const [id, h] of senaste) if (!h.correct && !h.obesvarad && h.createdAt.getTime() <= grans) s.add(id);
   return s;
+}
+
+/** Senaste svaret per typ, för kontrollhinken (gröna typer som inte setts på länge). */
+export function senastPerTyp(handelser: Handelse[]): Map<string, Date> {
+  const m = new Map<string, Date>();
+  for (const h of handelser) {
+    const t = rangTyp(golvTyp(h.typ));
+    const f = m.get(t);
+    if (!f || f.getTime() < h.createdAt.getTime()) m.set(t, h.createdAt);
+  }
+  return m;
 }

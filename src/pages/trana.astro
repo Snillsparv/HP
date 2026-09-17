@@ -4,15 +4,17 @@ import { getSessionFromCookies } from '../lib/auth.js';
 import { extraStatistik, formatAntal } from '../lib/extraprov/register.js';
 import { allaTyper, typVikter } from '../lib/fokus/fragebank.js';
 import { hamtaHandelser, forStyrka } from '../lib/fokus/historik.js';
-import { beraknaStyrkor, svagasteTyper, MINSTA_SVAR_SVAGHETER } from '../lib/fokus/styrka.js';
+import { beraknaTypStyrkor, svagasteTyper, antalSakraTyper, MINSTA_SAKRA_TYPER } from '../lib/fokus/styrka.js';
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const serverStep = user?.train_step || 1;
 const extra = extraStatistik();
 
 // Fokuserad träning: med historik pekar bannern på de typer som ger mest att hämta.
 const rakneBara = user ? forStyrka(await hamtaHandelser(user.id)) : [];
-const svagaste = rakneBara.length >= MINSTA_SVAR_SVAGHETER ? svagasteTyper(beraknaStyrkor(rakneBara), 3, typVikter(), true) : [];
+const styrkorT = beraknaTypStyrkor(rakneBara);
+const svagaste = antalSakraTyper(styrkorT) >= MINSTA_SAKRA_TYPER ? svagasteTyper(styrkorT, 1, typVikter()) : [];
 const typNamnMap = new Map(allaTyper(['extra']).map(t => [t.typ, t.namn]));
+typNamnMap.set('mek', 'MEK');
 const svagaText = svagaste.map(s => typNamnMap.get(s.typ) || s.typ).join(', ');
 ---
 

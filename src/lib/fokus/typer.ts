@@ -103,6 +103,11 @@ export function typNamn(typ: string): string {
   return `${namn} ${KATEGORI_NAMN[rest] || rest}`;
 }
 
+/** Typen som rangordnas i Mina svagheter: MEK räknas som en typ, luckorna är bara chips. */
+export function rangTyp(typ: string): string {
+  return typ.startsWith('mek') ? 'mek' : typ;
+}
+
 /** Delprovet en typ hör till. */
 export function delprovForTyp(typ: string): DelprovTyp | null {
   const dp = typ.split(':')[0];

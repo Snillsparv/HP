@@ -10,7 +10,7 @@ import { verbalSubTests2 as verbal2Tests } from '../../lib/questions-verbal2-ht2
 import { allaPass, provtillfallen, testId as extraTestId, normeradPoang } from '../../lib/extraprov/register.js';
 import { allaTyper, typVikter } from '../../lib/fokus/fragebank.js';
 import { hamtaHandelser, forStyrka } from '../../lib/fokus/historik.js';
-import { beraknaStyrkor, svagasteTyper } from '../../lib/fokus/styrka.js';
+import { beraknaStyrkor, svagasteTyper, prioritet, MINSTA_SVAR_SVAGHETER } from '../../lib/fokus/styrka.js';
 import { byggKarta } from '../../lib/fokus/karta.js';
 import Styrkekarta from '../../components/Styrkekarta.astro';
 
@@ -119,10 +119,16 @@ const harStegprov = testOrder.some(id => resultMap.has(id));
 
 // Fokuserad träning: styrka per uppgiftstyp ur prov och träningsrundor.
 const handelser = await hamtaHandelser(user.id);
-const styrkor = beraknaStyrkor(forStyrka(handelser));
-const karta = byggKarta(styrkor, allaTyper(['extra']));
-const svagaste = svagasteTyper(styrkor, 3, typVikter());
-const antalRundsvar = forStyrka(handelser).length;
+const rakneBara = forStyrka(handelser);
+const styrkor = beraknaStyrkor(rakneBara);
+const vikter = typVikter();
+const svagaste = rakneBara.length >= MINSTA_SVAR_SVAGHETER ? svagasteTyper(styrkor, 3, vikter, true) : [];
+const svagaTyper = new Set(svagaste.map(s => s.typ));
+// Samma ordning som på träningssidan: mest att hämta först, osäkra sist.
+const karta = byggKarta(styrkor, allaTyper(['extra']))
+  .map(r => ({ ...r, prio: styrkor.get(r.typ) ? prioritet(styrkor.get(r.typ)!, vikter.get(r.typ) ?? 1) : 0, etikett: svagaTyper.has(r.typ) ? (r.osaker ? 'att testa' : 'mest att hämta') : '' }))
+  .sort((a, b) => (a.osaker === b.osaker ? b.prio - a.prio : a.osaker ? 1 : -1));
+const antalRundsvar = rakneBara.length;
 ---
 
 <Base title="Min profil – HPAkuten">
@@ -203,7 +209,7 @@ const antalRundsvar = forStyrka(handelser).length;
         <p style="color: var(--color-muted);">När du gjort ett prov eller tränat på <a href="/trana/fokus">fokuserad träning</a> ser du här vilka uppgiftstyper som sitter och vilka som behöver mer.</p>
       ) : (
         <Fragment>
-          <p style="color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1rem;">Andel rätt per typ ur {antalRundsvar} svar, där nya svar väger mer än gamla. Klicka på en rad för att träna på just den typen.</p>
+          <p style="color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1rem;">Andel rätt per typ ur {antalRundsvar} svar, där nya svar väger mer än gamla och vanliga typer på provet ligger överst. Klicka på en rad för att träna på just den typen.</p>
           {svagaste.length > 0 && (
             <a href="/trana/fokus?lage=svagheter" class="svag-card">
               <span class="svag-card-label">Mest att hämta just nu</span>

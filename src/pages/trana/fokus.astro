@@ -34,7 +34,7 @@ const harSvagheter = harTillrackligt && svagaste.length > 0;
 // Kartan sorteras som "Mina svagheter": mest att hämta först, osäkra sist.
 const svagaTyper = new Set(svagaste.map(s => s.typ));
 const karta = byggKarta(styrkor, typer)
-  .map(r => ({ ...r, prio: styrkor.get(r.typ) ? prioritet(styrkor.get(r.typ)!, vikter.get(r.typ) ?? 1) : 0, etikett: svagaTyper.has(r.typ) ? 'mest att hämta' : '' }))
+  .map(r => ({ ...r, prio: styrkor.get(r.typ) ? prioritet(styrkor.get(r.typ)!, vikter.get(r.typ) ?? 1) : 0, etikett: svagaTyper.has(r.typ) ? (r.osaker ? 'att testa' : 'mest att hämta') : '' }))
   .sort((a, b) => (a.osaker === b.osaker ? b.prio - a.prio : a.osaker ? 1 : -1));
 const typNamnMap: Record<string, string> = Object.fromEntries(typer.map(t => [t.typ, t.namn]));
 for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
@@ -51,7 +51,7 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
           {harSvagheter ? (
             <Fragment>
               <h2>Mina svagheter</h2>
-              <p>Mest att hämta just nu: <strong>{svagaste.map(s => typNamnMap[s.typ] || s.typ).join(', ')}</strong>. Jag blandar uppgifter från de typerna med lite annat insprängt, så att det inte blir ren drill.</p>
+              <p>{svagaste.every(s => s.osaker) ? 'Att testa först' : 'Mest att hämta just nu'}: <strong>{svagaste.map(s => typNamnMap[s.typ] || s.typ).join(', ')}</strong>. Jag blandar uppgifter från de typerna med lite annat insprängt, så att det inte blir ren drill.</p>
               <button class="btn btn-primary fokus-start" data-lage="svagheter" data-val="">Träna på mina svagheter</button>
             </Fragment>
           ) : (

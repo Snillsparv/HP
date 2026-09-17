@@ -89,6 +89,10 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   const fa = S.beraknaStyrkor([h('kva:procent', false, 0), h('kva:procent', false, 1)]);
   assert.strictEqual(S.svagasteTyper(fa, 3).length, 0, 'utan flaggan utesluts osäkra');
   assert.strictEqual(S.svagasteTyper(fa, 3, undefined, true).length, 1, 'med flaggan tas osäkra med');
+  // Säkra typer går före osäkra, och osäkra rangordnas utan provvikt (ett rätt på ORD toppar inte).
+  const tunn = S.beraknaStyrkor([h('ord', true, 0), h('xyz:algebra', false, 0), ...Array.from({ length: 8 }, (_, i) => h('kva:geometri', i % 2 === 0, i))]);
+  const ordn = S.svagasteTyper(tunn, 3, new Map([['ord', 10], ['xyz:algebra', 3.6], ['kva:geometri', 2.1]]), true).map(x => x.typ);
+  assert.deepStrictEqual(ordn, ['kva:geometri', 'xyz:algebra', 'ord'], `säkra först, sedan osäkra efter fel, fick ${ordn}`);
 
   // Färgnivån följer den avrundade procenten.
   const mk = (st) => ({ typ: 't', delprov: 'xyz', styrka: st, antal: 10, effektivt: 8, ratt: 5, osaker: false, senast: null });

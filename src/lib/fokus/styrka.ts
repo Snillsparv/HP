@@ -124,12 +124,17 @@ export function prioritet(s: Styrka, vikt: number): number {
  * totalt); priorn håller dem nära 50 procent så att de får plats utan att
  * dominera. Utan vikter (alla lika) blir det i praktiken de svagaste. */
 export function svagasteTyper(styrkor: Map<string, Styrka>, antal = 3, vikter?: Map<string, number>, inkluderaOsakra = false): Styrka[] {
-  return [...styrkor.values()]
-    .filter(s => (inkluderaOsakra || !s.osaker) && s.styrka < MAL_STYRKA)
+  const alla = [...styrkor.values()].filter(s => s.styrka < MAL_STYRKA);
+  // Säkra typer först, rangordnade efter poäng att hämta. Osäkra typer fyller
+  // på i mån av plats, rangordnade bara efter hur det gått (utan provvikt, så
+  // att en vanlig typ inte toppar på ett enda svar).
+  const sakra = alla.filter(s => !s.osaker)
     .map(s => ({ s, p: prioritet(s, vikter?.get(s.typ) ?? 1) }))
-    .sort((a, b) => b.p - a.p)
-    .slice(0, antal)
-    .map(x => x.s);
+    .sort((a, b) => b.p - a.p);
+  const osakra = inkluderaOsakra
+    ? alla.filter(s => s.osaker).map(s => ({ s, p: prioritet(s, 1) })).sort((a, b) => b.p - a.p)
+    : [];
+  return [...sakra, ...osakra].slice(0, antal).map(x => x.s);
 }
 
 /** Den starkaste typen med tillräckligt underlag, för att avsluta en runda på ett bra sätt. */

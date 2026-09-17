@@ -58,9 +58,26 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   assert.deepStrictEqual(ordning, ['dtk:diagram', 'xyz:enheter'], `vikt styr ordningen, fick ${ordning}`);
   const utanVikt = S.svagasteTyper(styrkorP, 3).map(x => x.typ);
   assert.deepStrictEqual(utanVikt, ['xyz:enheter', 'dtk:diagram'], 'utan vikter är det lägst styrka först');
-  // Typer som redan sitter (över målstyrkan med litet påslag) hamnar sist eller utanför.
-  const stark = S.beraknaStyrkor(Array.from({ length: 12 }, (_, i) => h('kva:algebra', true, i)));
-  assert.ok(S.svagasteTyper(stark, 3).length <= 1, 'en stark typ ger nästan ingen prioritet');
+  // Typer som redan sitter (över målstyrkan) rankas aldrig som svagheter, hur vanliga de än är.
+  const stark = S.beraknaStyrkor(Array.from({ length: 20 }, (_, i) => h('kva:algebra', true, i)));
+  assert.strictEqual(S.svagasteTyper(stark, 3).length, 0, 'en behärskad typ ger ingen prioritet');
+  const blandat = S.beraknaStyrkor([
+    ...Array.from({ length: 20 }, (_, i) => h('ord', true, i)),
+    ...Array.from({ length: 8 }, (_, i) => h('xyz:sannolikhet', false, i)),
+  ]);
+  const rank = S.svagasteTyper(blandat, 3, new Map([['ord', 10], ['xyz:sannolikhet', 0.27]])).map(x => x.typ);
+  assert.deepStrictEqual(rank, ['xyz:sannolikhet'], `20 av 20 rätt på ORD är ingen svaghet, fick ${rank}`);
+
+  // Svar med samma tidsstämpel (ett provpass) väger lika oavsett ordning i passet.
+  const sitt = (ordning) => S.beraknaStyrkor(ordning.map((c, i) => ({ questionId: 'p' + i, delprov: 'ord', typ: 'ord', correct: c, createdAt: new Date(nu) }))).get('ord').styrka;
+  const a1 = sitt([true, true, true, true, true, false, false, false, false, false]);
+  const a2 = sitt([false, false, false, false, false, true, true, true, true, true]);
+  assert.ok(Math.abs(a1 - a2) < 1e-9, `samma sittning ger samma styrka, fick ${a1} och ${a2}`);
+
+  // Färgnivån följer den avrundade procenten.
+  const mk = (st) => ({ typ: 't', delprov: 'xyz', styrka: st, antal: 10, effektivt: 8, ratt: 5, osaker: false, senast: null });
+  assert.strictEqual(S.styrkeNiva(mk(0.796)), 'gron');
+  assert.strictEqual(S.styrkeNiva(mk(0.794)), 'bla');
   console.log('styrkemodell: ok');
 }
 
@@ -143,6 +160,27 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   assert.ok(svaga >= Math.floor(r4.length * 0.6), `mest från de tre svagaste, fick ${svaga} av ${r4.length}: ${typer.join(',')}`);
   assert.ok(r4.some(e => attRepetera.has(e.fragor[0].id)), 'gamla fel återbesöks');
   assert.strictEqual(new Set(r4.flatMap(e => e.fragor.map(f => f.id))).size, r4.reduce((a, e) => a + e.fragor.length, 0), 'inga dubbletter');
+
+  // Diagram vars frågor har olika kategori hålls ihop och kommer aldrig två gånger.
+  const poolBland = [...pool];
+  for (let d = 0; d < 6; d++) for (let i = 0; i < 4; i++) poolBland.push(q('dtk', i === 3 ? 'dtk:diagram' : 'dtk:tabell', `bland${d}`));
+  const r7 = U.valjRunda({ lage: 'typ', val: 'dtk:tabell', pool: poolBland, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), antal: 10, slump });
+  assert.ok(r7.every(e => e.fragor.length === 4), 'hela diagrammet följer med även om en fråga har annan kategori');
+  const styrkorD = new Map([
+    ['dtk:tabell', { typ: 'dtk:tabell', delprov: 'dtk', styrka: 0.3, antal: 8, effektivt: 8, ratt: 2, osaker: false, senast: new Date() }],
+    ['dtk:diagram', { typ: 'dtk:diagram', delprov: 'dtk', styrka: 0.35, antal: 8, effektivt: 8, ratt: 3, osaker: false, senast: new Date() }],
+    ['mek:1', { typ: 'mek:1', delprov: 'mek', styrka: 0.9, antal: 8, effektivt: 8, ratt: 7, osaker: false, senast: new Date() }],
+  ]);
+  const r8 = U.valjRunda({ lage: 'svagheter', pool: poolBland, sedda: new Set(), attRepetera: new Set(), styrkor: styrkorD, antal: 10, slump });
+  const grupper8 = r8.map(e => e.grupp).filter(Boolean);
+  assert.strictEqual(new Set(grupper8).size, grupper8.length, `samma diagram får inte komma två gånger: ${grupper8}`);
+
+  // Osedda kommer alltid före sedda, även när de osedda ligger i samma pass.
+  const poolOrd = pool.filter(x => x.delprov === 'mek').map((x, i) => ({ ...x, testId: i < 5 ? 'samma' : `p${i}` }));
+  const seddaOrd = new Set(poolOrd.slice(5).map(x => x.id));
+  const r9 = U.valjRunda({ lage: 'delprov', val: 'mek', pool: poolOrd, sedda: seddaOrd, attRepetera: new Set(), styrkor: new Map(), antal: 10, slump });
+  assert.strictEqual(r9.filter(e => !seddaOrd.has(e.fragor[0].id)).length, 5, 'alla fem osedda är med fast de ligger i samma pass');
+  assert.ok(r9.slice(0, 5).every(e => !seddaOrd.has(e.fragor[0].id)), 'osedda först');
 
   const r5 = U.valjRunda({ lage: 'svagheter', pool, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), antal: 10, slump });
   assert.strictEqual(r5.length, 0, 'utan historik inget urval');

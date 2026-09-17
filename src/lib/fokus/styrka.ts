@@ -57,11 +57,19 @@ export function beraknaStyrkor(handelser: Handelse[]): Map<string, Styrka> {
     let viktadRatt = 0;
     let viktadSumma = 0;
     let ratt = 0;
-    lista.forEach((h, i) => {
-      const w = vikt(i);
-      viktadSumma += w;
-      if (h.correct) { viktadRatt += w; ratt++; }
-    });
+    // Svar med samma tidsstämpel (ett helt provpass) får samma vikt: mitten
+    // av gruppens platser, så att frågornas ordning i passet inte spelar roll.
+    let i = 0;
+    while (i < lista.length) {
+      let j = i;
+      while (j + 1 < lista.length && lista[j + 1].createdAt.getTime() === lista[i].createdAt.getTime()) j++;
+      const w = vikt((i + j) / 2);
+      for (let k = i; k <= j; k++) {
+        viktadSumma += w;
+        if (lista[k].correct) { viktadRatt += w; ratt++; }
+      }
+      i = j + 1;
+    }
     // Priorn räknas mot det effektiva antalet (summan av vikterna), så att
     // en lång historik inte ser säkrare ut än de senaste cirka femton svaren.
     const n = lista.length;
@@ -90,20 +98,21 @@ export function beraknaDelprovStyrkor(handelser: Handelse[]): Map<string, Styrka
 export const MAL_STYRKA = 0.85;
 
 /** Hur mycket det finns att hämta i en typ: hur vanlig typen är i provet
- * gånger avståndet till målstyrkan, plus ett litet påslag för osäkerhet så
- * att typer med få svar inte försvinner helt. vikt är typens ungefärliga
- * antal uppgifter i ett provpass. */
+ * gånger avståndet till målstyrkan, plus ett litet oviktat påslag för
+ * osäkerhet så att typer med få svar går före vid lika avstånd. vikt är
+ * typens ungefärliga antal uppgifter i ett provpass. Typer som redan sitter
+ * (över målstyrkan) ger 0. */
 export function prioritet(s: Styrka, vikt: number): number {
-  return vikt * (Math.max(0, MAL_STYRKA - s.styrka) + 0.15 / Math.sqrt(s.effektivt + 1));
+  if (s.styrka >= MAL_STYRKA) return 0;
+  return vikt * (MAL_STYRKA - s.styrka) + 0.05 / Math.sqrt(s.effektivt + 1);
 }
 
 /** De typer där det finns mest poäng att hämta, med tillräckligt underlag.
  * Utan vikter (alla lika) blir det i praktiken de svagaste. */
 export function svagasteTyper(styrkor: Map<string, Styrka>, antal = 3, vikter?: Map<string, number>): Styrka[] {
   return [...styrkor.values()]
-    .filter(s => !s.osaker)
+    .filter(s => !s.osaker && s.styrka < MAL_STYRKA)
     .map(s => ({ s, p: prioritet(s, vikter?.get(s.typ) ?? 1) }))
-    .filter(x => x.p > 0)
     .sort((a, b) => b.p - a.p)
     .slice(0, antal)
     .map(x => x.s);
@@ -114,10 +123,11 @@ export function starkasteTyp(styrkor: Map<string, Styrka>): Styrka | undefined {
   return [...styrkor.values()].filter(s => !s.osaker).sort((a, b) => b.styrka - a.styrka)[0];
 }
 
-/** Färgnivå för en styrka: samma trösklar som analysens staplar. */
+/** Färgnivå för en styrka: samma trösklar som analysens staplar, räknat på
+ * den avrundade procenten som visas. */
 export function styrkeNiva(s: Styrka | undefined): 'gra' | 'rod' | 'gul' | 'bla' | 'gron' {
   if (!s || s.osaker) return 'gra';
-  const pct = s.styrka * 100;
+  const pct = Math.round(s.styrka * 100);
   if (pct >= 80) return 'gron';
   if (pct >= 60) return 'bla';
   if (pct >= 40) return 'gul';

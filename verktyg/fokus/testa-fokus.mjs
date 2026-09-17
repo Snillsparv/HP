@@ -35,6 +35,7 @@ for (let i = 0; i < n; i++) {
 await page.waitForSelector('.pq-result-head');
 await page.screenshot({ path: SC + '/fokus-sammanf.png', fullPage: true });
 console.log('resultat:', (await page.locator('.pq-score').textContent()).trim(), '| rader:', await page.locator('.pq-res').count());
+console.log('rekommendationer:', await page.locator('.fokus-rek a').evaluateAll(as => as.map(a => a.getAttribute('href') + ' (' + a.textContent.trim() + ')')));
 await page.locator('.pq-res').first().click();
 console.log('detalj synlig:', await page.locator('.pq-res-detail').first().isVisible());
 

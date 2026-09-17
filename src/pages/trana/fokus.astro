@@ -102,6 +102,7 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
   <script>
     import { laddaKatex, renderTex, questionBodyHTML, lasTextHTML, dtkDiagramHTML, forklaringHTML, resultDetailHTML, bindZoom, bindFadeIn, bindLasToggle, LABELS } from '../../lib/fragor/render.js';
     import type { Fraga, Delprov } from '../../lib/fragor/render.js';
+    import { rekommendationFor } from '../../lib/fokus/rekommendationer.js';
 
     interface KlientFraga extends Fraga {
       id: string;
@@ -285,8 +286,16 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
         perTyp.set(s.fraga.typ, t);
       }
       const typRader = [...perTyp.entries()].sort((a, b) => a[1].ratt / a[1].antal - b[1].ratt / b[1].antal);
-      const delprov = new Set(svar.map(s => s.fraga.delprov));
-      const strategi = delprov.size === 1 ? [...delprov][0] : null;
+      // Genomgångar för den typ som gick sämst i rundan (vid lika: den första).
+      const svagastTyp = typRader.find(([, t]) => t.ratt < t.antal)?.[0] || typRader[0]?.[0];
+      const rek = svagastTyp ? rekommendationFor(svagastTyp) : null;
+      const rekHTML = rek ? `<div class="fokus-rek">
+          <p class="fokus-rek-label">Vill du ha hjälp med ${fokus.typNamnMap[svagastTyp!] || svagastTyp}?</p>
+          <div class="fokus-rek-lankar">
+            <a href="${rek.strategi.url}">${rek.strategi.namn}</a>
+            ${rek.matte.map(m => `<a href="${m.url}">Matterepetition: ${m.namn}</a>`).join('')}
+          </div>
+        </div>` : '';
       const beromm = antalRatt === svar.length ? 'Alla rätt, snyggt!' : antalRatt >= svar.length * 0.7 ? 'Bra jobbat!' : 'Bra att du tränar på det som är svårt, det är så man höjer sig.';
       root.innerHTML = `
         <div class="pq-result-head">
@@ -300,7 +309,7 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
           <button class="btn btn-primary fokus-start" data-lage="${runda!.lage}" data-val="${runda!.val || ''}">Kör tio till</button>
           <button class="btn btn-outline" id="btn-valj">Välj något annat</button>
         </div>
-        ${strategi ? `<p style="text-align:center; font-size:0.9rem;"><a href="/delprov/${strategi}">Läs min strategi för ${fokus.typNamnMap[strategi] || strategi.toUpperCase()}</a></p>` : ''}
+        ${rekHTML}
         ${fokus.arGast || !fokus.harSession ? '<div class="tip-box" style="font-size:0.9rem;"><strong>Tips:</strong> <a href="#" onclick="event.preventDefault(); window.openSignupModal();">Skapa ett gratis konto</a> så sparas din träning permanent och dina styrkor följer med mellan enheter.</div>' : ''}
         <h3 style="margin:2rem 0 0.5rem;">Uppgifterna i rundan</h3>
         <p style="font-size:0.85rem; color:var(--color-muted); margin-bottom:0.8rem;">Klicka på en uppgift för att se den och förklaringen igen.</p>
@@ -364,6 +373,9 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
   .fokus-fb { margin-top: 1rem; padding: 0.8rem 1rem; border-radius: var(--radius); font-size: 0.95rem; }
   .fokus-fb--ok { background: #ecfdf5; color: #065f46; }
   .fokus-fb--no { background: #fef2f2; color: #991b1b; }
+  .fokus-rek { max-width: 420px; margin: 0 auto 1.2rem; padding: 0.9rem 1.1rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius); }
+  .fokus-rek-label { margin: 0 0 0.4rem; font-weight: 700; font-size: 0.9rem; color: #166534; }
+  .fokus-rek-lankar { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
   .fokus-sammanf-typer { display: flex; flex-direction: column; gap: 0.3rem; max-width: 420px; margin: 0 auto; }
   .fokus-sammanf-rad { display: flex; justify-content: space-between; gap: 1rem; padding: 0.5rem 0.9rem; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); cursor: pointer; font-family: var(--font-sans); font-size: 0.92rem; color: var(--color-text); }
   .fokus-sammanf-rad:hover { border-color: var(--color-primary); }

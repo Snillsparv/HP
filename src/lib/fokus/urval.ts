@@ -127,9 +127,12 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
     let tagitNagon = false;
     for (const lista of perSvag) {
       if (kvar <= 0) break;
-      const fore = valda.length;
-      ta(lista.splice(0, 1), 1);
-      if (valda.length > fore) { kvar--; tagitNagon = true; }
+      // Hoppa över enheter som redan tagits (t.ex. via återbesöken) tills en går in.
+      while (lista.length) {
+        const fore = valda.length;
+        ta(lista.splice(0, 1), 1);
+        if (valda.length > fore) { kvar--; tagitNagon = true; break; }
+      }
     }
     if (!tagitNagon) break;
     varv++;

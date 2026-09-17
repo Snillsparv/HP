@@ -260,7 +260,15 @@ import Base from '../layouts/Base.astro';
     }
 
     loadProgress();
-    renderCategoryList();
+    // Djuplänk från fokuserad träning: /ovningsuppgifter#ekvationer öppnar avsnittet direkt.
+    const hashCat = categories.find(c => c.id === window.location.hash.replace('#', ''));
+    if (hashCat) {
+      currentCat = hashCat;
+      currentIdx = catProgress.get(hashCat.id) || 0;
+      renderExercise();
+    } else {
+      renderCategoryList();
+    }
   </script>
 
   <style is:global>

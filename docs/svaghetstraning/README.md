@@ -1,9 +1,10 @@
-# Fokuserad träning på svagheter: designunderlag (pausat arbete)
+# Fokuserad träning på svagheter
 
-Status 2026-09-17: designarbetet pausades på grund av begränsade credits. Det här
-dokumentet samlar uppdraget, det som hann bli klart, min designriktning och vad
-som återstår, så att arbetet kan tas upp av någon annan (t.ex. Jessica) utan att
-börja om. Ingen kod för själva verktyget är skriven ännu.
+Status 2026-09-17: MVP:n är byggd och driftsatt på `/trana/fokus`. Det här
+dokumentet beskriver uppdraget, vad som finns, hur det hänger ihop och vad
+som är nästa steg. Designen i sin helhet finns i `design.md`, kartläggningen
+av koden i `kartlaggning.md`, och driftdetaljer (filer, databas, test,
+parametrar) i `docs/OVERLAMNING.md`.
 
 ## Uppdraget (Jonas)
 
@@ -14,123 +15,92 @@ man sedan få träna på fler uppgifter av just den typen. Jag vill ha det ultim
 och smartaste träningsverktyget som gör det så lätt som möjligt att fokusera
 specifikt på sina svagheter."
 
-## Vad som är klart
+## Hur det togs fram
 
-- Kartläggning av nuläget i tre delar (frågedata och taxonomi, tränings- och
-  provflöden, resultat- och användardata). Se `kartlaggning.md`. Den fjärde
-  delen (strategiinnehåll per delprov, för att koppla svaga typer till rätt
-  video eller matterepetition) hann inte göras.
-- Ett arbetsflöde för att ta fram designen med flera oberoende förslag som
-  bedöms, syntetiseras och granskas: `workflow-designa.js`. Faserna
-  "Designa", "Bedöm", "Syntes" och "Granska" har inte körts. Skriptet kan
-  köras i Claude Code med Workflow-verktyget, eller användas som checklista
-  för att göra samma sak för hand.
+1. Kartläggning av koden i fyra delar (`kartlaggning.md`).
+2. Fyra oberoende designförslag med olika utgångspunkt (inlärningsvetenskap,
+   enkelhet, ingenjörsmässig pragmatik, motivation), tre domare, en syntes
+   och tre kritiska granskningar, via `workflow-designa.js` i Claude Code.
+   Resultatet är `design.md`.
+3. Bygget skedde parallellt med designarbetet: grunden (frågebank,
+   styrkemodell, urval, API) först, sedan gränssnittet, och till sist de
+   ändringar domarna och granskarna var eniga om.
 
-## Designriktning (mitt förslag så långt)
+## Vad som finns (MVP)
 
-Det här är min egen sammanfattning, inte resultatet av bedömningsrundan. Den
-bygger på kartläggningen och på att jag byggt extraproven och känner koden.
+### Tre lägen på `/trana/fokus`
 
-### Tre lägen, en knapp bort
+1. **Mina svagheter**: verktyget väljer själv. 70 procent av rundan kommer
+   från de tre typer där det finns mest att hämta, 30 procent blandas in från
+   övriga typer med underlag, gamla fel återbesöks, och rundan avslutas med
+   en uppgift från den starkaste typen. Knappen är grå tills det finns minst
+   fem svar på någon typ.
+2. **Ett delprov**: slumpade uppgifter ur alla 3 640 i extramaterialet för
+   XYZ, KVA, NOG, DTK, ORD, LÄS eller MEK.
+3. **En uppgiftstyp**: delprov plus kategori för de kvantitativa (t.ex. XYZ
+   algebra, DTK tabeller), antal luckor för MEK. ORD och LÄS har bara sig
+   själva än så länge.
 
-1. **Delprov**: slumpade uppgifter ur alla 26 prov plus HT 2021 för ett valt
-   delprov (XYZ, KVA, NOG, DTK, ORD, LÄS, MEK).
-2. **Typ**: slumpade uppgifter av en vald typ, t.ex. XYZ algebra eller MEK med
-   tre luckor.
-3. **Mina svagheter**: verktyget väljer själv, viktat mot de typer där
-   användaren är svagast, med lite blandning så att det inte blir ren drill.
+En runda är omkring tio uppgifter utan tid, med rättning och textförklaring
+direkt efter varje svar och "Vet inte, visa svaret" som utväg. DTK-diagram
+och LÄS-texter hålls ihop (en DTK-runda blir tre till fyra diagram). Efter
+rundan: resultat, rätt per typ, "Kör tio till", genomgångar för den typ som
+gick sämst (strategisidan och matterepetitionens avsnitt), och alla
+uppgifter med förklaring igen.
 
-Ingången från ett fel svar är det viktigaste flödet: i rättningen av varje prov
-(både `/extra/[id]` och HT 2021-proven) får varje fel fråga en knapp
-"Träna fler av den här typen" som startar läge 2 med rätt typ förvald.
+### Ingången från ett fel svar
+
+Varje fel fråga i rättningen av extraproven och HT 2021-proven har knappen
+"Träna fler av den här typen", som startar en runda på just den typen utan
+mellansida. Analysblocket efter provet länkar också dit, och profilen visar
+styrkekartan med de typer där det finns mest att hämta.
 
 ### Uppgiftstyper
 
-- Kvantitativa uppgifter har redan `category` i data (algebra 414, diagram 372,
-  aritmetik 352, geometri 238, tabell 164, funktioner 129, logik 109, karta 88,
-  procent 83, statistik 75, sannolikhet 40, enheter 16 i extraproven). Typ =
-  delprov plus kategori, t.ex. "XYZ algebra" och "KVA geometri". DTK har
-  diagram, tabell och karta.
-- Verbala uppgifter saknar kategori. Grov typ i MVP: ORD, LÄS, MEK. Finare
-  typer som går att härleda automatiskt ur data: antal luckor i MEK (räkna
-  understreck i frågetexten), LÄS-frågans frågetyp (mönster i frågetexten:
-  syfte, slutsats, påstående som stämmer, detalj), ordklass i ORD (kan
-  härledas ur ordet med enkla regler eller taggas för hand, 260 ord är
-  överkomligt). ELF finns inte alls.
-- Stabilt fråge-id: `<passId>#<num>`, t.ex. `ht2012-1#17`. HT 2021-frågorna
-  behöver motsvarande id (t.ex. `ht2021-kvant1#5`) och kategorin finns redan i
-  `src/lib/questions-*.ts`.
+- Stabilt fråge-id `test_id#num`, t.ex. `extra-ht2012-1#17`, `kvant-ht2021#5`.
+- Kvantitativa: `delprov:kategori` ur fältet `category` (algebra, aritmetik,
+  geometri, funktioner, procent, sannolikhet, statistik, enheter, logik;
+  DTK diagram, tabell, karta). MEK: `mek:1`, `mek:2`, `mek:3` efter antal
+  luckor. ORD och LÄS: bara delprovet.
+- Poolen är extramaterialet. HT 2021 sparas till stegen på Träna-sidan men
+  räknas in i styrkan.
 
-### Svaghetsmodell
+### Svaghetsmodellen
 
-Styrka per typ = viktad andel rätt över användarens senaste svar på typen, där
-nya svar väger mer än gamla (exponentiell avtagning med halveringstid omkring
-tio svar). Lägg till en försiktig prior (t.ex. Beta(2, 2)) så att två fel av
-två inte visas som 0 procent, och visa "för lite data" under fem svar. Svar
-efter provtiden räknas, men markeras som "utan tid". Senare steg: tid per
-fråga som andra signal (rätt men långsamt är också en svaghet).
+Styrka per typ = viktad andel rätt över alla svar på typen (prov och rundor),
+där det i:te senaste svaret väger 0,5^(i/10), med prior Beta(2, 2) räknad
+mot summan av vikterna (så att en lång historik aldrig ser säkrare ut än de
+senaste cirka femton svaren). Under fem svar visas "för lite data". Samma
+fråga igen inom ett dygn sparas som omförsök och räknas inte.
 
-Allt detta går att räkna ut redan i dag från `test_results.answers` (svar per
-fråga som index-array) om man mappar index till fråge-id via passets
-frågeordning; se kartläggningen. En ny tabell för händelser per fråga
-(`question_events`: user_id, question_id, delprov, typ, rätt, tid_ms, källa,
-tidsstämpel) gör det enklare och gör att träningsrundor och prov behandlas
-lika. Gäster utan konto sparar samma händelser i localStorage och flyttar med
-vid kontoskapande på samma sätt som ordträningens framsteg
-(`migrateGuestToUser` i `src/lib/auth.ts`).
+"Mest att hämta" = typens ungefärliga antal uppgifter i ett provpass gånger
+avståndet till 85 procent, plus ett litet påslag för osäkerhet. Det gör att
+DTK diagram (12 uppgifter per pass) går före XYZ enheter (under en) vid
+samma svaghet.
 
-### Urval av nästa uppgift
+### Data
 
-- Pool = alla frågor av typen minus de användaren sett de senaste 30 dagarna
-  (eller minus de senast sedda om poolen tar slut).
-- DTK: välj ett diagram och ge dess 2 till 4 frågor i följd. LÄS: välj en text
-  och ge dess frågor i följd. Annars blir varje fråga orimligt dyr.
-- "Mina svagheter": 70 procent från de tre svagaste typerna, 30 procent
-  blandat från övriga (interleaving), plus återbesök av frågor användaren
-  hade fel på för minst tre dagar sedan (repetition, samma tanke som
-  ordträningens Leitner-lådor).
-- En runda är 10 uppgifter (DTK och LÄS räknar en grupp som en enhet), utan
-  synlig timer men med tid per uppgift i bakgrunden, och med rättning och
-  textförklaring direkt efter varje svar.
+- `question_events`: en rad per besvarad uppgift i träningen. Provsvaren
+  ligger kvar i `test_results` och räknas om till händelser vid läsning
+  (`src/lib/fokus/historik.ts`), så ingen backfyllning behövs.
+- Gäster får en osynlig gästsession vid första rundan; vid registrering
+  behålls raden, vid inloggning på befintligt konto flyttas provresultat
+  och händelser med.
 
-### Skärmar
+## Nästa steg
 
-- `/trana/fokus`: tre korta rader (Delprov, Typ, Mina svagheter) och en
-  "Kör"-knapp. Under: en styrkekarta per typ (stapel per typ, färg efter
-  styrka, grå för "för lite data"), varje stapel klickbar till läge 2.
-- Rundan: samma frågekomponent som i `/extra/[id]` (KVA-par, NOG-påståenden,
-  DTK-diagram med zoom, LÄS-text som kan fällas ihop), svar, rättning,
-  förklaring, "Nästa". Efter tio: sammanfattning per typ och knappen
-  "Kör tio till".
-- Profilen: styrkekartan och de tre svagaste typerna med knapp "Träna".
-- Träna-sidan: ett kort "Fokusera på dina svagheter" när det finns data.
+Se avsnittet Leveransplan i `design.md`. De viktigaste:
 
-### Leveransplan
+- Finare verbala typer (ORD ord eller uttryck, LÄS kort eller lång text och
+  frågetyp där regex träffar, DTK diagramtyp ur `diagramAlt`), härledda av
+  ett skript och committade som data.
+- Snabbdiagnos vid kallstart (tolv kvantitativa och tio verbala uppgifter,
+  rättning efter sista frågan) så att "Mina svagheter" fungerar för nya
+  användare.
+- Övertidssvar i proven som händelser, tid per fråga som temposignal.
+- Gemensam streak med ordträningen.
 
-1. **MVP (några dagar)**: stabila fråge-id:n, gemensam frågekomponent bruten ur
-   `/extra/[id].astro`, sidan `/trana/fokus` med läge 1 och 2 (grov verbal
-   typ), knappen "Träna fler av den här typen" i rättningen, tabellen
-   `question_events` med backfyllning från `test_results`, styrkekarta på
-   profilen.
-2. **Steg 2**: läge "Mina svagheter", finare verbala typer, repetition av
-   gamla fel, gäster via localStorage.
-3. **Steg 3**: tid per fråga som signal, mål kopplat till normerad poäng,
-   koppling från svag typ till rätt video på `/delprov/*` och till
-   matterepetitionen.
+## Öppna frågor till Jonas
 
-### Öppna frågor till Jonas
-
-- Ska huvudmaterialet HT 2021 ingå i poolen, eller ska det sparas till stegen
-  på Träna-sidan så att man inte "bränner" det?
-- Direkt rättning efter varje fråga i träningsläget, eller rättning efter tio?
-- Vill du tagga ORD-orden med ordklass för hand, eller räcker grov typ?
-
-## Hur man fortsätter
-
-1. Läs `kartlaggning.md` (nuläget i koden med filhänvisningar).
-2. Gör den fjärde kartläggningen (strategiinnehåll) om steg 3 i planen ska
-   designas färdigt; annars kan den vänta.
-3. Antingen kör `workflow-designa.js` i Claude Code (Workflow-verktyget) för
-   att få fyra oberoende förslag, bedömning, syntes och granskning, eller
-   bygg MVP:n direkt utifrån designriktningen ovan.
-4. Följ `docs/OVERLAMNING.md` för arbetssätt, deploy och kontroller.
+Se sista avsnittet i `design.md`. Standardval tills han svarat: HT 2021 hålls
+utanför poolen, rättning direkt efter varje fråga, grov verbal typ.

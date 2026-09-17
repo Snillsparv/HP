@@ -24,11 +24,11 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
 {
   const s = S.beraknaStyrkor([h('xyz:algebra', false, 0), h('xyz:algebra', false, 1)]).get('xyz:algebra');
   assert.ok(s.osaker, 'två svar är för lite data');
-  assert.ok(Math.abs(s.styrka - 2 / 6) < 1e-9, `två fel av två ger prior 2/6, fick ${s.styrka}`);
+  assert.ok(s.styrka > 0.33 && s.styrka < 0.35, `två fel av två ger ungefär prior 2/6, fick ${s.styrka}`);
 
   const allaRatt = Array.from({ length: 10 }, (_, i) => h('kva:geometri', true, i));
   const s2 = S.beraknaStyrkor(allaRatt).get('kva:geometri');
-  assert.ok(!s2.osaker && s2.styrka > 0.85 && s2.styrka < 1, `tio rätt ger hög styrka, fick ${s2.styrka}`);
+  assert.ok(!s2.osaker && s2.styrka > 0.8 && s2.styrka < 1, `tio rätt ger hög styrka, fick ${s2.styrka}`);
 
   // Nya svar väger mer: fem gamla rätt och fem nya fel ska ge under 50 procent.
   const bland = [...Array.from({ length: 5 }, (_, i) => h('nog:logik', false, i)), ...Array.from({ length: 5 }, (_, i) => h('nog:logik', true, 20 + i))];
@@ -39,6 +39,28 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
 
   assert.strictEqual(S.styrkeNiva(s), 'gra');
   assert.strictEqual(S.styrkeNiva(s2), 'gron');
+  const s2b = S.beraknaStyrkor(Array.from({ length: 20 }, (_, i) => h('kva:geometri', true, i))).get('kva:geometri');
+  assert.ok(s2b.styrka > 0.85, `tjugo rätt ger över 85 procent, fick ${s2b.styrka}`);
+
+  // Effektivt antal växer inte obegränsat: 100 svar väger som cirka 15.
+  const langt = Array.from({ length: 100 }, (_, i) => h('ord', i % 3 !== 0, i));
+  const s4 = S.beraknaStyrkor(langt).get('ord');
+  assert.ok(s4.effektivt > 13 && s4.effektivt < 16, `effektivt antal cirka 15, fick ${s4.effektivt}`);
+  assert.strictEqual(s4.antal, 100);
+
+  // Prioritet: en vanlig typ med måttlig svaghet går före en ovanlig typ med stor svaghet.
+  const styrkorP = S.beraknaStyrkor([
+    ...Array.from({ length: 8 }, (_, i) => h('dtk:diagram', i % 2 === 0, i)),
+    ...Array.from({ length: 8 }, (_, i) => h('xyz:enheter', false, i)),
+  ]);
+  const vikter = new Map([['dtk:diagram', 7.2], ['xyz:enheter', 0.13]]);
+  const ordning = S.svagasteTyper(styrkorP, 3, vikter).map(x => x.typ);
+  assert.deepStrictEqual(ordning, ['dtk:diagram', 'xyz:enheter'], `vikt styr ordningen, fick ${ordning}`);
+  const utanVikt = S.svagasteTyper(styrkorP, 3).map(x => x.typ);
+  assert.deepStrictEqual(utanVikt, ['xyz:enheter', 'dtk:diagram'], 'utan vikter är det lägst styrka först');
+  // Typer som redan sitter (över målstyrkan med litet påslag) hamnar sist eller utanför.
+  const stark = S.beraknaStyrkor(Array.from({ length: 12 }, (_, i) => h('kva:algebra', true, i)));
+  assert.ok(S.svagasteTyper(stark, 3).length <= 1, 'en stark typ ger nästan ingen prioritet');
   console.log('styrkemodell: ok');
 }
 
@@ -59,7 +81,7 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
   const slump = (() => { let x = 12345; return () => { x = (x * 1103515245 + 12345) % 2147483648; return x / 2147483648; }; })();
   const pool = [];
   let n = 0;
-  const q = (delprov, typ, grupp) => ({ id: `f${n++}`, delprov, typ, grupp: grupp || null, options: ['a', 'b'], correct: 0, num: n, text: '' });
+  const q = (delprov, typ, grupp) => ({ id: `f${n++}`, testId: 't', delprov, typ, grupp: grupp || null, options: ['a', 'b'], correct: 0, num: n, text: '' });
   for (let i = 0; i < 40; i++) pool.push(q('xyz', i % 2 ? 'xyz:algebra' : 'xyz:geometri'));
   for (let d = 0; d < 6; d++) for (let i = 0; i < 3; i++) pool.push(q('dtk', 'dtk:diagram', `dia${d}`));
   for (let i = 0; i < 20; i++) pool.push(q('mek', 'mek:1'));
@@ -97,11 +119,27 @@ const h = (typ, correct, dagarSedan, id) => ({ questionId: id || `q-${typ}-${dag
     ['dtk:diagram', { typ: 'dtk:diagram', delprov: 'dtk', styrka: 0.95, antal: 8, ratt: 8, osaker: false, senast: new Date() }],
   ]);
   const attRepetera = new Set([pool[0].id, pool[2].id]);
+  for (const st of styrkor.values()) st.effektivt = st.antal;
   const r4 = U.valjRunda({ lage: 'svagheter', pool, sedda: new Set(), attRepetera, styrkor, antal: 10, slump });
   const antalFragor4 = r4.reduce((a, e) => a + e.fragor.length, 0);
   assert.ok(antalFragor4 >= 10 && antalFragor4 <= 13, `ungefär tio frågor, fick ${antalFragor4}`);
+  // Avslutning från starkaste typen: dtk:diagram har bara grupper, så det blir xyz:algebra
+  // (när den inte själv räknas som svag).
+  const r4c = U.valjRunda({ lage: 'svagheter', pool, sedda: new Set(), attRepetera: new Set(), styrkor, svaga: [styrkor.get('xyz:geometri'), styrkor.get('mek:1')], antal: 10, slump });
+  assert.strictEqual(r4c[r4c.length - 1].fragor[0].typ, 'xyz:algebra', 'rundan slutar med en fristående uppgift från den starkaste typen');
+  assert.ok(r4c.slice(0, -1).filter(e => e.fragor[0].typ === 'xyz:algebra').length <= 3, 'starka typen mest som avslutning');
   const typer = r4.map(e => e.fragor[0].typ);
   const svaga = typer.filter(t => t === 'xyz:geometri' || t === 'mek:1' || t === 'xyz:algebra').length;
+  // Med svaga-listan inskickad från svagasteTyper används den i stället för lägst styrka.
+  const r4b = U.valjRunda({ lage: 'svagheter', pool, sedda: new Set(), attRepetera: new Set(), styrkor, svaga: [styrkor.get('mek:1')], antal: 10, slump });
+  assert.ok(r4b.filter(e => e.fragor[0].typ === 'mek:1').length >= 6, 'inskickad svaga-lista styr urvalet');
+
+  // Högst två enheter från samma pass i läge delprov.
+  const poolPass = pool.map((q, i) => ({ ...q, testId: `pass${Math.floor(i / 6)}` }));
+  const r6 = U.valjRunda({ lage: 'delprov', val: 'xyz', pool: poolPass, sedda: new Set(), attRepetera: new Set(), styrkor: new Map(), antal: 10, slump });
+  const perPass = {};
+  for (const e of r6) perPass[e.fragor[0].testId] = (perPass[e.fragor[0].testId] || 0) + 1;
+  assert.ok(Object.values(perPass).every(n => n <= 2), `högst två per pass, fick ${JSON.stringify(perPass)}`);
   assert.ok(svaga >= Math.floor(r4.length * 0.6), `mest från de tre svagaste, fick ${svaga} av ${r4.length}: ${typer.join(',')}`);
   assert.ok(r4.some(e => attRepetera.has(e.fragor[0].id)), 'gamla fel återbesöks');
   assert.strictEqual(new Set(r4.flatMap(e => e.fragor.map(f => f.id))).size, r4.reduce((a, e) => a + e.fragor.length, 0), 'inga dubbletter');

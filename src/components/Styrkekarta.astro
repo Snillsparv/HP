@@ -11,10 +11,10 @@ const { rader } = Astro.props;
 
 <div class="fokus-karta">
   {rader.map(r => (
-    <a class="fokus-karta-rad" href={`/trana/fokus?lage=typ&val=${encodeURIComponent(r.typ)}`}>
+    <a class="fokus-karta-rad" href={`/trana/fokus?lage=typ&val=${encodeURIComponent(r.typ)}${r.osaker ? '&antal=5' : ''}`}>
       <span class="fokus-karta-namn">{r.namn}</span>
       <span class="fokus-karta-stapel"><span class="fokus-karta-fyll" style={`width:${r.osaker ? 100 : r.pct}%; background:${r.farg};`}></span></span>
-      <span class="fokus-karta-varde">{r.varde}</span>
+      <span class="fokus-karta-varde">{r.osaker ? <Fragment>{r.varde} · <span class="fokus-karta-testa">testa 5</span></Fragment> : r.varde}</span>
     </a>
   ))}
 </div>
@@ -27,6 +27,7 @@ const { rader } = Astro.props;
   .fokus-karta-stapel { display: block; height: 10px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
   .fokus-karta-fyll { display: block; height: 100%; border-radius: 999px; }
   .fokus-karta-varde { font-size: 0.8rem; color: var(--color-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fokus-karta-testa { color: var(--color-primary); font-weight: 600; }
   @media (max-width: 480px) {
     .fokus-karta-rad { grid-template-columns: 1fr; gap: 0.25rem; }
   }

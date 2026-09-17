@@ -4,8 +4,8 @@
 // Utan timer, med rättning och förklaring direkt efter varje svar.
 import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
-import { allaTyper, DELPROV, DELPROV_NAMN, DELPROV_LANGT, typNamn } from '../../lib/fokus/fragebank.js';
-import { hamtaHandelser } from '../../lib/fokus/historik.js';
+import { allaTyper, typVikter, DELPROV, DELPROV_NAMN, DELPROV_LANGT, typNamn } from '../../lib/fokus/fragebank.js';
+import { hamtaHandelser, forStyrka } from '../../lib/fokus/historik.js';
 import { beraknaStyrkor, svagasteTyper } from '../../lib/fokus/styrka.js';
 import { byggKarta } from '../../lib/fokus/karta.js';
 import { formatAntal } from '../../lib/extraprov/register.js';
@@ -14,7 +14,7 @@ import '../../styles/fragor.css';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const handelser = user ? await hamtaHandelser(user.id) : [];
-const styrkor = beraknaStyrkor(handelser);
+const styrkor = beraknaStyrkor(forStyrka(handelser));
 const typer = allaTyper(['extra']);
 const totalt = typer.reduce((n, t) => n + t.antal, 0);
 
@@ -24,7 +24,7 @@ const typrader = DELPROV
   .filter(r => r.typer.length > 1);
 
 const karta = byggKarta(styrkor, typer);
-const svagaste = svagasteTyper(styrkor, 3);
+const svagaste = svagasteTyper(styrkor, 3, typVikter());
 const harSvagheter = svagaste.length > 0;
 const typNamnMap: Record<string, string> = Object.fromEntries(typer.map(t => [t.typ, t.namn]));
 for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
@@ -40,7 +40,7 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
         <section class="fokus-block fokus-block--svag">
           <h2>Mina svagheter</h2>
           {harSvagheter ? (
-            <p>Just nu har du svårast för <strong>{svagaste.map(s => typNamnMap[s.typ] || s.typ).join(', ')}</strong>. Jag blandar uppgifter från de typerna med lite annat insprängt, så att det inte blir ren drill.</p>
+            <p>Mest att hämta just nu: <strong>{svagaste.map(s => typNamnMap[s.typ] || s.typ).join(', ')}</strong>. Jag blandar uppgifter från de typerna med lite annat insprängt, så att det inte blir ren drill.</p>
           ) : (
             <p>När du gjort ett prov eller en runda här vet jag vad du har svårast för, och kan välja uppgifter åt dig. Börja med ett delprov eller en typ nedan.</p>
           )}
@@ -143,7 +143,7 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
       } catch {}
     }
 
-    async function startaRunda(lage: string, val: string) {
+    async function startaRunda(lage: string, val: string, antal = 0) {
       if (laddar) return;
       laddar = true;
       valRoot.style.display = 'none';
@@ -152,7 +152,7 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
       window.scrollTo({ top: 0 });
       await sakraSession();
       try {
-        const res = await fetch(`/api/fokus/runda?lage=${encodeURIComponent(lage)}&val=${encodeURIComponent(val)}`);
+        const res = await fetch(`/api/fokus/runda?lage=${encodeURIComponent(lage)}&val=${encodeURIComponent(val)}${antal ? `&antal=${antal}` : ''}`);
         const data = await res.json();
         if (!res.ok || data.error) throw new Error(data.error || 'fel');
         runda = data;
@@ -163,6 +163,7 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
         const url = new URL(window.location.href);
         url.searchParams.set('lage', lage);
         if (val) url.searchParams.set('val', val); else url.searchParams.delete('val');
+        url.searchParams.delete('antal');
         history.replaceState(null, '', url.toString());
         renderFraga();
       } catch (e: any) {
@@ -351,7 +352,7 @@ for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
     const params = new URLSearchParams(window.location.search);
     const lage = params.get('lage');
     if (lage === 'delprov' || lage === 'typ' || lage === 'svagheter') {
-      startaRunda(lage, params.get('val') || '');
+      startaRunda(lage, params.get('val') || '', Number(params.get('antal') || 0));
     }
   </script>
 </Base>

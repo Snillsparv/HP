@@ -16,6 +16,17 @@ export const DELPROV_NAMN: Record<DelprovTyp, string> = {
   mek: 'MEK',
 };
 
+/** Antal uppgifter per delprov i ett provpass (två pass per delprov i ett helt prov). */
+export const ANTAL_PER_PASS: Record<DelprovTyp, number> = {
+  xyz: 12,
+  kva: 10,
+  nog: 6,
+  dtk: 12,
+  ord: 10,
+  las: 10,
+  mek: 10,
+};
+
 export const DELPROV_LANGT: Record<DelprovTyp, string> = {
   xyz: 'Matematisk problemlösning',
   kva: 'Kvantitativa jämförelser',

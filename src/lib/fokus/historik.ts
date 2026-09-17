@@ -7,6 +7,25 @@ import type { Handelse } from './styrka.js';
 
 export const SEDD_DAGAR = 30;
 export const REPETERA_DAGAR = 3;
+/** Ett svar på en fråga som besvarats de senaste timmarna är ett omförsök:
+ * det sparas (source 'omforsok') men räknas inte i styrkan, eftersom det
+ * mäter minnet av facit snarare än kunskap. */
+export const OMFORSOK_TIMMAR = 24;
+
+/** Har användaren besvarat frågan de senaste timmarna (i träningen)? */
+export async function nyligenBesvarad(userId: number, questionId: string): Promise<boolean> {
+  const { rows } = await pool.query(
+    `SELECT 1 FROM question_events WHERE user_id = $1 AND question_id = $2
+     AND created_at > NOW() - ($3 || ' hours')::interval LIMIT 1`,
+    [userId, questionId, String(OMFORSOK_TIMMAR)]
+  );
+  return rows.length > 0;
+}
+
+/** Händelserna som ska räknas i styrkan: inte omförsök. */
+export function forStyrka(handelser: Handelse[]): Handelse[] {
+  return handelser.filter(h => !h.omforsok);
+}
 
 /** Alla händelser för en användare, nyast först. */
 export async function hamtaHandelser(userId: number): Promise<Handelse[]> {
@@ -24,6 +43,7 @@ export async function hamtaHandelser(userId: number): Promise<Handelse[]> {
       typ: r.typ,
       correct: !!r.correct,
       utanTid: r.source === 'overtid',
+      omforsok: r.source === 'omforsok',
       createdAt: new Date(r.created_at),
     });
   }

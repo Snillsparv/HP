@@ -33,7 +33,7 @@ export function byggKarta(styrkor: Map<string, Styrka>, typer: TypInfo[]): Karta
         osaker: s.osaker,
         farg: NIVA_FARG[niva],
         niva,
-        varde: s.osaker ? `för lite data (${s.antal} av ${MINSTA_ANTAL} svar)` : `${pct} %`,
+        varde: s.osaker ? `för lite data (${s.antal} av ${MINSTA_ANTAL} svar)` : `${pct} % (${s.antal} svar)`,
       };
     })
     .sort((a, b) => (a.osaker === b.osaker ? a.pct - b.pct : a.osaker ? 1 : -1));

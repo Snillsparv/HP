@@ -9,7 +9,7 @@ import { subTests as kvant2 } from '../questions-kvant2-ht2021.js';
 import { verbalSubTests as verbal1 } from '../questions-verbal-ht2021.js';
 import { verbalSubTests2 as verbal2 } from '../questions-verbal2-ht2021.js';
 import type { Fraga } from '../fragor/render.js';
-import { DELPROV, frageId, typFor, typNamn, delprovForTyp, normaliseraDelprov } from './typer.js';
+import { DELPROV, ANTAL_PER_PASS, frageId, typFor, typNamn, delprovForTyp, normaliseraDelprov } from './typer.js';
 
 export { DELPROV, DELPROV_NAMN, DELPROV_LANGT, frageId, typFor, typNamn, delprovForTyp, antalLuckor } from './typer.js';
 
@@ -139,6 +139,18 @@ export function allaTyper(kallor: Kalla[] = ['extra', 'ht2021']): TypInfo[] {
   return [...antal.entries()]
     .map(([typ, n]) => ({ typ, delprov: delprovForTyp(typ)!, namn: typNamn(typ), antal: n }))
     .sort((a, b) => DELPROV.indexOf(a.delprov) - DELPROV.indexOf(b.delprov) || b.antal - a.antal);
+}
+
+/** Ungefärligt antal uppgifter av varje typ i ett provpass: typens andel av
+ * delprovet i banken gånger delprovets antal i passet. Används för att
+ * rangordna svagheter efter hur mycket de kan ge på provet. */
+export function typVikter(kallor: Kalla[] = ['extra']): Map<string, number> {
+  const typer = allaTyper(kallor);
+  const perDelprov = new Map<string, number>();
+  for (const t of typer) perDelprov.set(t.delprov, (perDelprov.get(t.delprov) || 0) + t.antal);
+  const vikter = new Map<string, number>();
+  for (const t of typer) vikter.set(t.typ, (t.antal / (perDelprov.get(t.delprov) || 1)) * ANTAL_PER_PASS[t.delprov]);
+  return vikter;
 }
 
 export function finnsTyp(typ: string): boolean {

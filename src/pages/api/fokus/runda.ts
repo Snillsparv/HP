@@ -1,8 +1,8 @@
 import type { APIRoute } from 'astro';
 import { getSessionFromCookies } from '../../../lib/auth.js';
-import { bank, DELPROV, finnsTyp, typNamn, DELPROV_NAMN, type BankFraga } from '../../../lib/fokus/fragebank.js';
+import { bank, DELPROV, finnsTyp, typNamn, typVikter, DELPROV_NAMN, type BankFraga } from '../../../lib/fokus/fragebank.js';
 import { valjRunda, type Lage } from '../../../lib/fokus/urval.js';
-import { hamtaHandelser, seddaNyligen, attRepetera, senastSedd } from '../../../lib/fokus/historik.js';
+import { hamtaHandelser, seddaNyligen, attRepetera, senastSedd, forStyrka } from '../../../lib/fokus/historik.js';
 import { beraknaStyrkor, svagasteTyper } from '../../../lib/fokus/styrka.js';
 
 const json = (data: unknown, status = 200) =>
@@ -28,8 +28,9 @@ export const GET: APIRoute = async ({ request }) => {
 
   const user = await getSessionFromCookies(request.headers.get('cookie'));
   const handelser = user ? await hamtaHandelser(user.id) : [];
-  const styrkor = beraknaStyrkor(handelser);
-  if (lage === 'svagheter' && svagasteTyper(styrkor).length === 0) return json({ error: 'ingen_historik' }, 400);
+  const styrkor = beraknaStyrkor(forStyrka(handelser));
+  const svaga = svagasteTyper(styrkor, 3, typVikter());
+  if (lage === 'svagheter' && svaga.length === 0) return json({ error: 'ingen_historik' }, 400);
 
   // Poolen är extramaterialet. Huvudmaterialet HT 2021 sparas till stegen på
   // Träna-sidan så att proven där inte förbrukas i förväg.
@@ -40,6 +41,7 @@ export const GET: APIRoute = async ({ request }) => {
     senastSedd: senastSedd(handelser),
     attRepetera: attRepetera(handelser),
     styrkor,
+    svaga,
   });
   if (!enheter.length) return json({ error: 'tomt_urval' }, 400);
 

@@ -2,6 +2,7 @@ import type { APIRoute } from 'astro';
 import { getSessionFromCookies } from '../../../lib/auth.js';
 import pool from '../../../lib/db.js';
 import { fragaMedId } from '../../../lib/fokus/fragebank.js';
+import { nyligenBesvarad } from '../../../lib/fokus/historik.js';
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -21,13 +22,16 @@ export const POST: APIRoute = async ({ request }) => {
 
   const user = await getSessionFromCookies(request.headers.get('cookie'));
   let sparad = false;
+  let omforsok = false;
   if (user) {
+    // Samma fråga igen inom ett dygn sparas som omförsök och räknas inte i styrkan.
+    omforsok = await nyligenBesvarad(user.id, q.id);
     await pool.query(
       `INSERT INTO question_events (user_id, question_id, delprov, typ, chosen, correct, time_ms, source)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, 'fokus')`,
-      [user.id, q.id, q.delprov, q.typ, chosen, correct, timeMs]
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)`,
+      [user.id, q.id, q.delprov, q.typ, chosen, correct, timeMs, omforsok ? 'omforsok' : 'fokus']
     );
     sparad = true;
   }
-  return json({ correct: q.correct, ratt: correct, explanation: q.explanation || null, videoId: q.videoId || null, sparad });
+  return json({ correct: q.correct, ratt: correct, explanation: q.explanation || null, videoId: q.videoId || null, sparad, omforsok });
 };

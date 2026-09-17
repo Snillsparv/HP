@@ -24,7 +24,10 @@ export interface UrvalIn {
   /** Fråge-id som användaren haft fel på för ett tag sedan och kan få igen. */
   attRepetera: Set<string>;
   styrkor: Map<string, Styrka>;
-  /** Antal enheter i rundan. */
+  /** Typerna som "Mina svagheter" ska fokusera på (från svagasteTyper). Utan
+   * lista tas de tre med lägst styrka. */
+  svaga?: Styrka[];
+  /** Antal frågor i rundan. */
   antal?: number;
   /** Slumpkälla 0 till 1, utbytbar i tester. */
   slump?: () => number;
@@ -80,6 +83,22 @@ function osedda(enheter: Enhet[], sedda: Set<string>, behov: number, slump: () =
   return [...fria, ...resten];
 }
 
+/** Högst så många enheter från samma pass i en runda, så att ett pass inte
+ * förbrukas i förtid. Enheter utöver det flyttas bakåt i ordningen. */
+export const MAX_PER_PASS = 2;
+
+function sprid(enheter: Enhet[]): Enhet[] {
+  const antal = new Map<string, number>();
+  const forst: Enhet[] = [];
+  const senare: Enhet[] = [];
+  for (const e of enheter) {
+    const pass = e.fragor[0].testId;
+    const n = antal.get(pass) || 0;
+    if (n < MAX_PER_PASS) { forst.push(e); antal.set(pass, n + 1); } else senare.push(e);
+  }
+  return [...forst, ...senare];
+}
+
 /** Väljer enheter till en runda. Returnerar tom lista om poolen är tom. */
 export function valjRunda(inp: UrvalIn): Enhet[] {
   const antal = inp.antal ?? RUNDA;
@@ -88,12 +107,14 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
 
   if (lage === 'delprov' || lage === 'typ') {
     const kandidater = pool.filter(q => lage === 'delprov' ? q.delprov === val : q.typ === val);
-    return taTillAntal(osedda(tillEnheter(kandidater), sedda, antal, slump, senastSedd), antal);
+    return taTillAntal(sprid(osedda(tillEnheter(kandidater), sedda, antal, slump, senastSedd)), antal);
   }
 
-  // Mina svagheter: 70 procent från de tre svagaste typerna, 30 procent
-  // blandat från övriga typer med underlag, plus återbesök av gamla fel.
-  const svaga = [...styrkor.values()].filter(s => !s.osaker).sort((a, b) => a.styrka - b.styrka).slice(0, 3);
+  // Mina svagheter: 70 procent från de tre typer där det finns mest att
+  // hämta, 30 procent blandat från övriga typer med underlag (interleaving),
+  // plus återbesök av gamla fel. Rundan avslutas med en uppgift från den
+  // starkaste typen.
+  const svaga = inp.svaga ?? [...styrkor.values()].filter(s => !s.osaker).sort((a, b) => a.styrka - b.styrka).slice(0, 3);
   if (svaga.length === 0) return [];
   const svagaTyper = new Set(svaga.map(s => s.typ));
   const ovrigaTyper = new Set([...styrkor.values()].filter(s => !svagaTyper.has(s.typ)).map(s => s.typ));
@@ -120,7 +141,7 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
   ta(blanda(repetera, slump), antalRepetera);
 
   // Svagaste typerna, i tur och ordning så att alla tre får plats.
-  const perSvag = svaga.map(s => osedda(tillEnheter(pool.filter(q => q.typ === s.typ)), sedda, antal, slump, senastSedd));
+  const perSvag = svaga.map(s => sprid(osedda(tillEnheter(pool.filter(q => q.typ === s.typ)), sedda, antal, slump, senastSedd)));
   let kvar = antalSvaga + (antalRepetera - valda.length);
   let varv = 0;
   while (kvar > 0 && varv < antal * 3) {
@@ -144,5 +165,20 @@ export function valjRunda(inp: UrvalIn): Enhet[] {
   // Om övriga typer inte räckte, fyll på från de svaga.
   if (antalValda() < antal) for (const lista of perSvag) ta(lista, antal);
 
-  return blanda(valda, slump);
+  // Avsluta med en osedd, fristående uppgift från den starkaste typen
+  // utanför de svaga (näst starkaste om den starkaste bara har grupper).
+  const starka = [...styrkor.values()].filter(s => !s.osaker && !svagaTyper.has(s.typ)).sort((a, b) => b.styrka - a.styrka);
+  const blandade = blanda(valda, slump);
+  for (const stark of starka) {
+    const sist = osedda(tillEnheter(pool.filter(q => q.typ === stark.typ && !tagna.has(q.id) && q.grupp === null)), sedda, 1, slump, senastSedd)[0];
+    if (!sist) continue;
+    // Byt ut en enhet från den svagaste typen om rundan redan är full.
+    if (antalValda() >= antal) {
+      const i = blandade.map(e => e.fragor[0].typ).lastIndexOf(svaga[0].typ);
+      if (i >= 0 && blandade.length > 1) blandade.splice(i, 1);
+    }
+    blandade.push(sist);
+    break;
+  }
+  return blandade;
 }

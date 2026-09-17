@@ -132,7 +132,7 @@ export function resultDetailHTML(q: Fraga, st: Delprov, chosen: number | null, a
 
 /** Knappen från rättningen till fokuserad träning på samma uppgiftstyp. */
 export function tranaLankHTML(typ: string, namn?: string): string {
-  return `<p class="pq-res-trana"><a class="btn btn-outline btn-sm" href="/trana/fokus?lage=typ&val=${encodeURIComponent(typ)}">Träna fler av den här typen${namn ? `: ${namn}` : ''}</a></p>`;
+  return `<p class="pq-res-trana" style="margin:0.9rem 0 0;"><a class="btn btn-primary btn-sm" style="display:block; text-align:center;" href="/trana/fokus?lage=typ&val=${encodeURIComponent(typ)}">Träna fler av den här typen${namn ? `: ${namn}` : ''}</a></p>`;
 }
 
 /** Förklaringen till en fråga: textförklaring, annars video, annars platshållare. */

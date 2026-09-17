@@ -3,7 +3,7 @@ import { getSessionFromCookies } from '../../../lib/auth.js';
 import { bank, DELPROV, finnsTyp, typNamn, DELPROV_NAMN, type BankFraga } from '../../../lib/fokus/fragebank.js';
 import { valjRunda, type Lage } from '../../../lib/fokus/urval.js';
 import { hamtaHandelser, seddaNyligen, attRepetera } from '../../../lib/fokus/historik.js';
-import { beraknaStyrkor } from '../../../lib/fokus/styrka.js';
+import { beraknaStyrkor, svagasteTyper } from '../../../lib/fokus/styrka.js';
 
 const json = (data: unknown, status = 200) =>
   new Response(JSON.stringify(data), { status, headers: { 'Content-Type': 'application/json' } });
@@ -29,7 +29,7 @@ export const GET: APIRoute = async ({ request }) => {
   const user = await getSessionFromCookies(request.headers.get('cookie'));
   const handelser = user ? await hamtaHandelser(user.id) : [];
   const styrkor = beraknaStyrkor(handelser);
-  if (lage === 'svagheter' && styrkor.size === 0) return json({ error: 'ingen_historik' }, 400);
+  if (lage === 'svagheter' && svagasteTyper(styrkor).length === 0) return json({ error: 'ingen_historik' }, 400);
 
   // Poolen är extramaterialet. Huvudmaterialet HT 2021 sparas till stegen på
   // Träna-sidan så att proven där inte förbrukas i förväg.

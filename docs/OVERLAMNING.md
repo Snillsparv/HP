@@ -65,6 +65,26 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
   ElevenLabs ligger utanför repot (på servern och i en lokal fil, inte i git);
   Jonas har rekommenderats att rotera den.
 
+## Idé från Jonas: stjärnmarkera uppgifter i provläget
+
+Jonas vill kunna stjärnmarkera uppgifter under ett pass för att komma tillbaka
+till dem om det finns tid över när alla 40 är gjorda, precis som man gör på
+det riktiga provet. Skiss:
+
+- En stjärnknapp bredvid uppgiftsnumret i provlöparen (`src/pages/extra/[id].astro`
+  och HT 2021-proven i `src/pages/prov/*.astro`), tangentbord: `s`.
+- Stjärnorna sparas i samma `hp-progress-<testId>` i localStorage som svaren,
+  så de överlever "Fortsätt där du var".
+- Prickraden längst ned (`.pq-dot`) och översikten (`.pq-ov-btn`) visar en
+  liten stjärna på markerade uppgifter, och när användaren når sista frågan
+  och trycker Nästa hoppar löparen till första stjärnmarkerade i stället för
+  till fråga 1. Knappen "Rätta" visar "2 markerade kvar" som påminnelse.
+- I rättningen listas stjärnmarkerade uppgifter först ("Uppgifter du ville
+  titta mer på"), och de behåller markeringen så att de kan hittas i
+  profilens granskningsläge (`?review=1`).
+- Steg 2: låt stjärnorna bli en ingång till fokuserad träning
+  ("Träna fler av den här typen") när det verktyget finns.
+
 ## Pågående: fokuserad träning på svagheter
 
 - Se `docs/svaghetstraning/README.md` för uppdrag, status, designriktning och

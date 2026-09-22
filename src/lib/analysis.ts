@@ -93,7 +93,7 @@ export function analyzeResults(
 ): { weakAreas: string[]; summaryHTML: string } {
   const subtestMap = new Map<string, SubtestResult>();
   const categoryMap = new Map<string, CategoryResult>();
-  const trackCategories = new Set(['xyz', 'xyz2', 'kva', 'kva2', 'dtk', 'dtk2']);
+  const trackCategories = new Set(['xyz', 'xyz2', 'kva', 'kva2', 'nog', 'nog2', 'dtk', 'dtk2']);
 
   questions.forEach((q, i) => {
     const stId = q.subTest.id;
@@ -158,10 +158,15 @@ export function analyzeResults(
     summaryParts.push(worstDetail);
   }
 
+  // Länkarna går till fokuserad träning på just den typen eller det delprovet.
+  const delprovId = (id: string) => id.replace(/2$/, '');
   if (sortedCategories.length > 0 && sortedCategories[0].rate < 0.5) {
-    summaryParts.push(`Fokusera på <strong>${categoryLabel(sortedCategories[0].category)}</strong>-uppgifter för att höja dig!`);
+    const svag = sortedCategories[0];
+    const stId = subtestResults.find(st => st.shortName === svag.subTest)?.id || svag.subTest.toLowerCase();
+    const typ = `${delprovId(stId)}:${svag.category}`;
+    summaryParts.push(`Fokusera på <strong>${categoryLabel(svag.category)}</strong>-uppgifter för att höja dig!</p><p style="margin:0.6rem 0 0;"><a class="btn btn-primary btn-sm" style="display:inline-block;" href="/trana/fokus?lage=typ&val=${encodeURIComponent(typ)}">Träna på ${svag.subTest} ${categoryLabel(svag.category).toLowerCase()}</a>`);
   } else if (worstSubtest && worstSubtest.rate < 0.7) {
-    summaryParts.push(`Träna mer på <strong>${worstSubtest.shortName}</strong> för att höja ditt resultat!`);
+    summaryParts.push(`Träna mer på <strong>${worstSubtest.shortName}</strong> för att höja ditt resultat!</p><p style="margin:0.6rem 0 0;"><a class="btn btn-primary btn-sm" style="display:inline-block;" href="/trana/fokus?lage=delprov&val=${encodeURIComponent(delprovId(worstSubtest.id))}">Träna på ${worstSubtest.shortName}</a>`);
   } else {
     summaryParts.push('Bra jobbat! Fortsätt träna för att bli ännu bättre.');
   }

@@ -1,0 +1,698 @@
+---
+// Fokuserad träning på svagheter: tio uppgifter i taget från extramaterialet,
+// per delprov, per uppgiftstyp eller viktat mot det användaren haft svårt för.
+// Utan timer, med rättning och förklaring direkt efter varje svar. Utan
+// historik börjar man med en snabbkoll över de vanligaste typerna.
+import Base from '../../layouts/Base.astro';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import { allaTyper, typVikter, DELPROV, DELPROV_NAMN, DELPROV_LANGT, typNamn } from '../../lib/fokus/fragebank.js';
+import { hamtaHandelser, forStyrka } from '../../lib/fokus/historik.js';
+import { beraknaTypStyrkor, beraknaDelprovStyrkor, svagasteTyper, antalSakraTyper, delprovAttFortsattaMed, MINSTA_SAKRA_TYPER, malFor } from '../../lib/fokus/styrka.js';
+import { byggKarta } from '../../lib/fokus/karta.js';
+import { TEMPO_SEK, ANTAL_PER_PASS } from '../../lib/fokus/typer.js';
+import { formatAntal } from '../../lib/extraprov/register.js';
+import Styrkekarta from '../../components/Styrkekarta.astro';
+import '../../styles/fragor.css';
+
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const handelser = user ? await hamtaHandelser(user.id) : [];
+const rakneBara = forStyrka(handelser);
+const styrkor = beraknaTypStyrkor(rakneBara);
+const typer = allaTyper(['extra']);
+const totalt = typer.reduce((n, t) => n + t.antal, 0);
+
+// Typrader: delprov som har undertyper (ORD och LÄS har bara sig själva).
+// Typer under golvet ("övrigt") visas inte som chips, bara på kartan.
+const typrader = DELPROV
+  .map(dp => ({ dp, typer: typer.filter(t => t.delprov === dp && t.typ !== dp && !t.typ.endsWith(':ovrigt')) }))
+  .filter(r => r.typer.length > 1);
+
+const vikter = typVikter();
+// Gaten: minst tre typer med underlag. Före det: fortsätt med ett delprov
+// (om något är säkert på delprovsnivå), annars snabbkollen.
+const svagaste = antalSakraTyper(styrkor) >= MINSTA_SAKRA_TYPER ? svagasteTyper(styrkor, 3, vikter) : [];
+const harSvagheter = svagaste.length > 0;
+const fortsatt = !harSvagheter ? delprovAttFortsattaMed(beraknaDelprovStyrkor(rakneBara), ANTAL_PER_PASS) : undefined;
+const karta = byggKarta(styrkor, typer, vikter);
+const typNamnMap: Record<string, string> = Object.fromEntries(typer.map(t => [t.typ, t.namn]));
+for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
+typNamnMap['mek'] = 'MEK';
+// Raden under den primära knappen: varför den översta typen ligger först.
+let varforText = '';
+if (harSvagheter) {
+  const t = svagaste[0];
+  const dp = t.delprov as keyof typeof ANTAL_PER_PASS;
+  const perPass = Math.round(vikter.get(t.typ) ?? 0);
+  const kategori = (typNamnMap[t.typ] || t.typ).replace(/^\S+ /, '');
+  varforText = t.typ.includes(':') && perPass > 0
+    ? `${typNamnMap[t.typ]} först: ${perPass} av ${ANTAL_PER_PASS[dp]} ${DELPROV_NAMN[dp]}-uppgifter på provet är ${kategori}.`
+    : `${typNamnMap[t.typ] || t.typ} först: ${Math.round(t.styrka * 100)} % rätt hittills, målet är ${Math.round(malFor(t.typ) * 100)}.`;
+}
+---
+
+<Base title="Fokusera på dina svagheter – HPAkuten" description={`Träna på just de uppgiftstyper du behöver: välj delprov eller typ, eller låt verktyget välja utifrån dina svagheter. ${formatAntal(totalt)} uppgifter från tidigare högskoleprov med förklaring direkt efter varje svar.`}>
+  <div class="page-content">
+    <div class="container" style="max-width: 700px;">
+      <div id="fokus-val">
+        <h1>Fokusera på dina svagheter</h1>
+        <p class="page-intro">Tio uppgifter i taget från tidigare högskoleprov, utan timer och med förklaring direkt efter varje svar. Jag väljer, du kör.</p>
+
+        <section class="fokus-block fokus-block--svag">
+          {harSvagheter ? (
+            <Fragment>
+              <h2>Mina svagheter</h2>
+              <p>Mest att hämta just nu: <strong>{svagaste.map(s => typNamnMap[s.typ] || s.typ).join(', ')}</strong>. Jag blandar uppgifter från de typerna med lite annat insprängt, så att det inte blir ren drill.</p>
+              <button class="btn btn-primary fokus-start" data-lage="svagheter" data-val="">Träna på mina svagheter</button>
+              <p style="margin:0.6rem 0 0; font-size:0.85rem;">{varforText}</p>
+            </Fragment>
+          ) : fortsatt ? (
+            <Fragment>
+              <h2>Fortsätt med {DELPROV_NAMN[fortsatt.delprov as keyof typeof DELPROV_NAMN]}</h2>
+              <p>Det delprov som ger dig mest att hämta just nu. När jag har underlag på tre uppgiftstyper kan jag välja typer åt dig.</p>
+              <button class="btn btn-primary fokus-start" data-lage="delprov" data-val={fortsatt.delprov}>Fortsätt med {DELPROV_NAMN[fortsatt.delprov as keyof typeof DELPROV_NAMN]}</button>
+            </Fragment>
+          ) : (
+            <Fragment>
+              <h2>Börja med en snabbkoll</h2>
+              <p>Arton uppgifter över alla delprov, utan timer. Sedan vet jag ungefär var du står. Ett helt pass på 40 uppgifter ger en bättre bild.</p>
+              <button class="btn btn-primary fokus-start" data-lage="snabbkoll" data-val="">Snabbkoll, cirka tio minuter</button>
+            </Fragment>
+          )}
+        </section>
+
+        <section class="fokus-block">
+          <h2>Så här ligger du till</h2>
+          {karta.length === 0 ? (
+            <p>Här ser du hur det går per uppgiftstyp när du börjat träna. Både proven och rundorna här räknas.</p>
+          ) : (
+            <Fragment>
+              <p>Andel rätt per uppgiftstyp, där nya svar väger mer än gamla. Jag räknar också hur vanlig typen är på provet, så det som ger mest att hämta ligger överst. Klicka på en rad för att träna på just den typen.</p>
+              <Styrkekarta rader={karta} />
+            </Fragment>
+          )}
+        </section>
+
+        <section class="fokus-block">
+          <h2>Ett delprov</h2>
+          <p>Slumpade uppgifter ur alla {formatAntal(totalt)} i extramaterialet.</p>
+          <div class="fokus-chips">
+            {DELPROV.map(dp => (
+              <button class="fokus-chip fokus-start" data-lage="delprov" data-val={dp} title={DELPROV_LANGT[dp]}>{DELPROV_NAMN[dp]}</button>
+            ))}
+          </div>
+        </section>
+
+        <details class="fokus-block fokus-details">
+          <summary><h2>En uppgiftstyp</h2><span class="fokus-details-hint">Visa alla {typrader.reduce((n, r) => n + r.typer.length, 0)} typer</span></summary>
+          <p>Mer specifikt: en kategori inom ett delprov.</p>
+          {typrader.map(r => (
+            <div class="fokus-typrad">
+              <span class="fokus-typrad-label">{DELPROV_NAMN[r.dp]}</span>
+              <div class="fokus-chips">
+                {r.typer.map(t => (
+                  <button class="fokus-chip fokus-chip--typ fokus-start" data-lage="typ" data-val={t.typ}>{typNamn(t.typ).replace(/^\S+ /, '')} <span class="fokus-chip-antal">{t.antal}</span></button>
+                ))}
+              </div>
+            </div>
+          ))}
+        </details>
+
+        {!user || user.is_guest ? (
+          <div class="tip-box" style="font-size:0.9rem;">
+            <strong>Tips:</strong> Utan konto sparas träningen i en månad. <a href="#" onclick="event.preventDefault(); window.openSignupModal();">Skapa ett gratis konto</a> så sparas den för alltid och följer med mellan enheter.
+          </div>
+        ) : null}
+      </div>
+
+      <div id="fokus-runda" style="display:none;"></div>
+    </div>
+  </div>
+
+  <script define:vars={{ harSession: !!user, arGast: !!user?.is_guest, typNamnMap, tempo: TEMPO_SEK, delprovNamn: DELPROV_NAMN }}>
+    window.__fokus = { harSession, arGast, typNamnMap, tempo, delprovNamn };
+  </script>
+
+  <script>
+    import { laddaKatex, renderTex, questionBodyHTML, lasTextHTML, dtkDiagramHTML, forklaringHTML, resultDetailHTML, bindZoom, bindFadeIn, bindLasToggle, LABELS } from '../../lib/fragor/render.js';
+    import type { Fraga, Delprov } from '../../lib/fragor/render.js';
+    import { rekommendationFor } from '../../lib/fokus/rekommendationer.js';
+
+    interface KlientFraga extends Fraga {
+      id: string;
+      testId: string;
+      delprov: string;
+      typ: string;
+      grupp: string | null;
+      shortName: string;
+      lasText?: { title: string; html: string };
+    }
+    interface Enhet { grupp: string | null; skal?: string | null; fragor: KlientFraga[] }
+    interface StyrkaInfo { typ?: string; styrka: number; antal: number; effektivt: number; osaker: boolean }
+    interface Runda {
+      lage: string; val: string; rubrik: string; enheter: Enhet[]; antalFragor: number; rundaId: string; fran: string | null; franFinns: boolean;
+      styrkorFore: Record<string, StyrkaInfo | null>; sett: { antal: number; av: number } | null; nastaSvaga: string[];
+    }
+    interface Svar { fraga: KlientFraga; chosen: number | null; ratt: boolean; correct: number; explanation: string | null; videoId: string | null; timeMs: number }
+
+    const fokus = (window as any).__fokus as { harSession: boolean; arGast: boolean; typNamnMap: Record<string, string>; tempo: Record<string, number>; delprovNamn: Record<string, string> };
+    const valRoot = document.getElementById('fokus-val')!;
+    const root = document.getElementById('fokus-runda')!;
+    const SPARAD = 'hp-fokus-runda';
+    const NASTA = 'hp-fokus-nasta';
+    const SERIE = 'hp-fokus-serie';
+    const MINSTA_EFFEKTIVT = 4;
+    const KALLVIKT_RUNDA = 0.7;
+    const LAGEN = ['delprov', 'typ', 'kategori', 'svagheter', 'snabbkoll'];
+    laddaKatex();
+
+    // Allt som sätts in i HTML från servern eller adressen escapas.
+    const esc = (v: unknown) => String(v ?? '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+    const giltigtVal = (v: string) => /^[a-z0-9:]*$/.test(v);
+    const giltigtFran = (v: string) => /^[a-z0-9-]*$/.test(v);
+
+    let runda: Runda | null = null;
+    let platta: KlientFraga[] = [];
+    let idx = 0;
+    let svar: Svar[] = [];
+    let fran = '';
+    let styrkorEfter: Record<string, StyrkaInfo> = {};
+    let startTid = 0;
+    let textOpen = true;
+    let laddar = false;
+    let rundaId = '';
+    let ejSparat = false;
+    let skalPerFraga: Record<string, string> = {};
+    // Räknas upp vid varje ny fråga; ett svar som kommer in för en gammal fråga ignoreras.
+    let fragaToken = 0;
+
+    const rangTyp = (typ: string) => typ.startsWith('mek') ? 'mek' : typ;
+    const namn = (typ: string) => fokus.typNamnMap[typ] || fokus.typNamnMap[rangTyp(typ)] || typ;
+    const pct = (s: StyrkaInfo | null | undefined) => s && !s.osaker ? `${Math.round(s.styrka * 100)} %` : null;
+    const fmtTid = (ms: number) => { const s = Math.round(ms / 1000); return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`; };
+
+    function delprovFor(q: KlientFraga): Delprov {
+      const texts: { title: string; html: string }[] = [];
+      if (q.lasText) texts[q.textIndex ?? 0] = q.lasText;
+      return { id: q.delprov, shortName: q.shortName, type: q.delprov, texts: texts.length ? texts : undefined };
+    }
+
+    async function sakraSession() {
+      if (fokus.harSession) return;
+      try {
+        const r = await fetch('/api/auth/guest', { method: 'POST' }).then(x => x.json());
+        if (r && r.ok) { fokus.harSession = true; fokus.arGast = !!r.guest; }
+      } catch {}
+    }
+
+    function sparaRunda() {
+      try {
+        if (!runda) { localStorage.removeItem(SPARAD); return; }
+        localStorage.setItem(SPARAD, JSON.stringify({ runda, platta, idx, svar, fran, styrkorEfter, textOpen, rundaId, skalPerFraga, tid: Date.now() }));
+      } catch {}
+    }
+
+    /** Återupptar en sparad runda om den är färsk (under två timmar) och, när
+     * adressen pekar på en runda, har samma läge, val och prov. */
+    function lasSparad(lage?: string, val?: string, franIn?: string): boolean {
+      try {
+        const raw = localStorage.getItem(SPARAD);
+        if (!raw) return false;
+        const d = JSON.parse(raw);
+        if (!d?.runda || !Array.isArray(d.platta) || !d.platta.length || d.idx >= d.platta.length || !d.tid || Date.now() - d.tid > 2 * 3600 * 1000) { localStorage.removeItem(SPARAD); return false; }
+        if (lage !== undefined && (d.runda.lage !== lage || (d.runda.val || '') !== (val || '') || (d.fran || '') !== (franIn || ''))) return false;
+        runda = d.runda; platta = d.platta; idx = d.idx; svar = d.svar || []; fran = d.fran || ''; styrkorEfter = d.styrkorEfter || {}; textOpen = d.textOpen ?? true;
+        rundaId = d.rundaId || ''; skalPerFraga = d.skalPerFraga || {};
+        return true;
+      } catch { return false; }
+    }
+
+    /** Typ som "Mer av det här nästa runda" sparat: blir svaga[0] i nästa svaghetsrunda. */
+    function nastaTyp(): string {
+      try { const t = localStorage.getItem(NASTA) || ''; return giltigtVal(t) ? t : ''; } catch { return ''; }
+    }
+
+    /** Räknar typrundor i rad på samma typ, för att växla till blandat efter två. */
+    function serie(val: string): number {
+      try {
+        const d = JSON.parse(localStorage.getItem(SERIE) || '{}');
+        return d.val === val ? Number(d.n) || 0 : 0;
+      } catch { return 0; }
+    }
+    function sparaSerie(lage: string, val: string) {
+      try {
+        if (lage !== 'typ') { localStorage.removeItem(SERIE); return; }
+        localStorage.setItem(SERIE, JSON.stringify({ val, n: serie(val) + 1 }));
+      } catch {}
+    }
+
+    function visaRunda() {
+      valRoot.style.display = 'none';
+      root.style.display = 'block';
+    }
+
+    async function startaRunda(lage: string, val: string, antal = 0, franIn = '') {
+      if (laddar) return;
+      if (!giltigtVal(val)) val = '';
+      const franOk = giltigtFran(franIn) ? franIn : '';
+      laddar = true;
+      visaRunda();
+      root.innerHTML = '<p style="text-align:center; color:var(--color-muted); padding:3rem 0;">Väljer uppgifter …</p>';
+      window.scrollTo({ top: 0 });
+      await sakraSession();
+      try {
+        const forst = lage === 'svagheter' ? nastaTyp() : '';
+        const res = await fetch(`/api/fokus/runda?lage=${encodeURIComponent(lage)}&val=${encodeURIComponent(val)}${antal ? `&antal=${antal}` : ''}${franOk ? `&fran=${encodeURIComponent(franOk)}` : ''}${forst ? `&forst=${encodeURIComponent(forst)}` : ''}`);
+        const data = await res.json();
+        if (!res.ok || data.error) { const e: any = new Error(data.error || 'fel'); e.data = data; throw e; }
+        if (forst) { try { localStorage.removeItem(NASTA); } catch {} }
+        runda = data;
+        platta = data.enheter.flatMap((e: Enhet) => e.fragor);
+        skalPerFraga = {};
+        for (const e of data.enheter as Enhet[]) if (e.skal) for (const q of e.fragor) skalPerFraga[q.id] = e.skal;
+        idx = 0;
+        svar = [];
+        fran = franOk;
+        styrkorEfter = {};
+        textOpen = true;
+        ejSparat = false;
+        rundaId = data.rundaId || String(Date.now());
+        sparaSerie(lage, val);
+        const url = new URL(window.location.href);
+        url.search = '';
+        url.searchParams.set('lage', lage);
+        if (val) url.searchParams.set('val', val);
+        if (franOk) url.searchParams.set('fran', franOk);
+        // pushState så att bakåt går till valsidan; en delad adress ger en ny runda.
+        if (url.toString() !== window.location.href) history.pushState(null, '', url.toString());
+        sparaRunda();
+        renderFraga();
+      } catch (e: any) {
+        const kod = e?.message;
+        const fortsatt = e?.data?.fortsatt as string | null | undefined;
+        const msg = kod === 'ingen_historik'
+          ? (fortsatt ? `Jag har inte underlag på tre uppgiftstyper än. Fortsätt med ${esc(fokus.delprovNamn[fortsatt] || fortsatt)} ett tag, så kan jag välja åt dig sedan.` : 'Jag vet inte vad du har svårt för ännu. Gör snabbkollen eller ett prov först, sedan kan jag välja åt dig.')
+          : kod === 'tomt_urval'
+            ? 'Det finns inga sådana uppgifter. Välj något annat.'
+            : ['okand_typ', 'okant_delprov', 'okant_lage'].includes(kod)
+              ? 'Den här länken pekar på en uppgiftstyp som inte finns. Välj något i listan i stället.'
+              : 'Kunde inte hämta uppgifter just nu. Försök igen om en stund.';
+        runda = null;
+        sparaRunda();
+        root.style.display = 'none';
+        valRoot.style.display = 'block';
+        valRoot.insertAdjacentHTML('afterbegin', `<div class="tip-box warning" id="fokus-felruta">${msg}</div>`);
+        history.replaceState(null, '', window.location.pathname);
+      }
+      laddar = false;
+    }
+
+    function tillbaka() {
+      // Laddar om sidan så att styrkekartan visar de nya svaren.
+      runda = null;
+      sparaRunda();
+      window.location.href = window.location.pathname;
+    }
+
+    function rundaRubrik(): string {
+      if (runda!.lage === 'snabbkoll') return `Snabbkoll · ${platta.length} uppgifter`;
+      const enheter = runda!.enheter.length;
+      if (enheter < platta.length && (runda!.val === 'dtk' || runda!.val === 'las' || (runda!.val || '').startsWith('dtk:'))) {
+        return `${runda!.rubrik} · ${enheter} ${runda!.val === 'las' ? 'texter' : 'diagram'} · ${platta.length} frågor`;
+      }
+      return runda!.rubrik;
+    }
+
+    /** Adressen tillbaka till rättningen för provet rundan startades från. */
+    function franUrl(): string {
+      if (!fran) return '';
+      return fran.startsWith('extra-') ? `/extra/${esc(fran.slice(6))}?review=1` : `/prov/${esc(fran)}?review=1`;
+    }
+
+    /** Varför just den här uppgiften kom. */
+    function skalText(q: KlientFraga): string {
+      const skal = skalPerFraga[q.id];
+      if (!skal) return '';
+      const t: Record<string, string> = {
+        svag: `${namn(q.typ)}, en av dina tre svagaste`,
+        repetera: `${namn(q.typ)}: du hade fel på en sådan för ett tag sedan`,
+        utforska: `Ny för dig: ${namn(q.typ)}`,
+        blandning: `Insprängt: ${namn(q.typ)}`,
+        insprangt: `Insprängt: ${namn(q.typ)}`,
+        kontroll: `Kontroll: ${namn(q.typ)}, en typ som brukar sitta`,
+      };
+      return t[skal] ? `<p class="fokus-sett">${esc(t[skal])}</p>` : '';
+    }
+
+    function renderFraga() {
+      const q = platta[idx];
+      const st = delprovFor(q);
+      const grupp = q.grupp;
+      const iGrupp = grupp ? platta.filter(x => x.grupp === grupp) : [];
+      const gruppText = iGrupp.length > 1 ? ` · ${q.delprov === 'las' ? 'texten' : 'diagrammet'} har ${iGrupp.length} frågor` : '';
+      const sett = runda!.sett;
+      const settText = idx === 0 && sett && (sett.antal > 0 || sett.av < 30)
+        ? `<p class="fokus-sett">${sett.av} uppgifter av den här sorten finns, du har sett ${sett.antal}${sett.antal >= sett.av ? '. Nu kommer de du sett längst tillbaka igen' : ''}.</p>`
+        : '';
+      root.innerHTML = `
+        <div class="prov-top-bar">
+          <span class="prov-section-tag">${esc(rundaRubrik())}</span>
+          <button class="btn-timer-toggle" id="btn-avbryt" title="Avsluta rundan" aria-label="Avsluta rundan">✕</button>
+        </div>
+        <div class="pq-progress">Uppgift ${idx + 1} av ${platta.length}${gruppText}</div>
+        ${settText}${skalText(q)}
+        ${dtkDiagramHTML(q, st)}
+        ${lasTextHTML(q, st, textOpen)}
+        <div class="pq-card">
+          ${questionBodyHTML(q, st)}
+          <div class="pq-options">
+            ${q.options.map((opt, i) => `
+              <button class="pq-opt" data-oi="${i}" type="button">
+                <span class="pq-letter">${LABELS[i]}</span>
+                <span class="pq-opt-text">${opt}</span>
+              </button>
+            `).join('')}
+          </div>
+          <div id="fokus-fb" aria-live="polite"></div>
+        </div>
+        <div class="pq-nav fokus-nav" id="fokus-nav">
+          <button class="btn btn-outline btn-sm" id="btn-hoppa" type="button">Vet inte, visa svaret</button>
+        </div>
+      `;
+      startTid = performance.now();
+      fragaToken++;
+      root.querySelectorAll('.pq-opt').forEach(el => {
+        el.addEventListener('click', () => besvara(Number(el.getAttribute('data-oi'))));
+      });
+      document.getElementById('btn-hoppa')?.addEventListener('click', () => besvara(null));
+      document.getElementById('btn-avbryt')?.addEventListener('click', () => {
+        if (svar.length === 0) { tillbaka(); return; }
+        // Inline-bekräftelse i stället för en dialogruta.
+        const ruta = document.getElementById('fokus-avbryt');
+        if (ruta) { ruta.remove(); return; }
+        root.querySelector('.prov-top-bar')?.insertAdjacentHTML('afterend', `<div class="fokus-avbryt" id="fokus-avbryt"><span>Avsluta rundan? Svaren du gett är sparade.</span><button class="btn btn-primary btn-sm" id="btn-avbryt-ja" type="button">Visa resultat</button><button class="btn btn-outline btn-sm" id="btn-avbryt-nej" type="button">Fortsätt</button></div>`);
+        document.getElementById('btn-avbryt-ja')?.addEventListener('click', () => renderSammanfattning());
+        document.getElementById('btn-avbryt-nej')?.addEventListener('click', () => document.getElementById('fokus-avbryt')?.remove());
+      });
+      bindLasToggle(root, open => { textOpen = open; sparaRunda(); });
+      bindZoom(root);
+      bindFadeIn(root);
+      renderTex();
+    }
+
+    async function besvara(chosen: number | null) {
+      const q = platta[idx];
+      const minToken = fragaToken;
+      const timeMs = Math.round(performance.now() - startTid);
+      // Lås alternativen direkt så att dubbelklick inte ger två svar.
+      root.querySelectorAll('.pq-opt').forEach(el => { el.classList.add('pq-opt--klar'); (el as HTMLButtonElement).disabled = true; });
+      const hoppa = document.getElementById('btn-hoppa') as HTMLButtonElement | null;
+      if (hoppa) hoppa.style.display = 'none';
+      let data: any = null;
+      try {
+        const res = await fetch('/api/fokus/svar', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ questionId: q.id, chosen, timeMs, lage: runda?.lage, rundaId, position: idx }),
+        });
+        data = await res.json();
+      } catch {}
+      // Rundan kan ha avslutats eller bytt fråga medan svaret var på väg.
+      if (minToken !== fragaToken || !document.getElementById('fokus-fb')) return;
+      if (!data || data.error) {
+        document.getElementById('fokus-fb')!.innerHTML = '<div class="tip-box warning" style="margin:1rem 0 0;">Kunde inte rätta just nu. Prova igen.</div>';
+        root.querySelectorAll('.pq-opt').forEach(el => { el.classList.remove('pq-opt--klar'); (el as HTMLButtonElement).disabled = false; });
+        if (hoppa) hoppa.style.display = '';
+        return;
+      }
+      const ratt = !!data.ratt;
+      svar.push({ fraga: q, chosen, ratt, correct: data.correct, explanation: data.explanation, videoId: data.videoId, timeMs });
+      if (data.styrkaEfter) styrkorEfter[data.styrkaEfter.typ] = data.styrkaEfter;
+      if (data.sparad === false) ejSparat = true;
+      sparaRunda();
+      root.querySelectorAll('.pq-opt').forEach(el => {
+        const oi = Number(el.getAttribute('data-oi'));
+        if (oi === data.correct) el.classList.add('pq-opt--ratt');
+        else if (oi === chosen) el.classList.add('pq-opt--fel');
+      });
+      const rubrik = ratt
+        ? '<strong>Rätt!</strong>'
+        : chosen === null
+          ? `<strong>Rätt svar är ${LABELS[data.correct]}.</strong>`
+          : `<strong>Inte rätt den här gången.</strong> Rätt svar är ${LABELS[data.correct]}.`;
+      const sista = idx === platta.length - 1;
+      // Efter fel utanför läge typ: "Mer av det här nästa runda" sparar typen
+      // så att nästa svaghetsrunda börjar där. Ingen insprängning mitt i rundan.
+      const kanMer = !ratt && runda!.lage !== 'typ' && runda!.lage !== 'kategori' && q.typ !== 'ord' && q.typ !== 'las';
+      document.getElementById('fokus-fb')!.innerHTML = `
+        <div class="fokus-fb ${ratt ? 'fokus-fb--ok' : 'fokus-fb--no'}">${rubrik}</div>
+        ${forklaringHTML({ ...q, explanation: data.explanation || undefined, videoId: data.videoId || undefined })}
+        ${kanMer ? `<p class="fokus-mer"><button class="btn-overview-link" id="btn-mer" type="button">Mer av det här nästa runda</button></p>` : ''}
+      `;
+      document.getElementById('fokus-nav')!.innerHTML = `
+        <span class="fokus-nav-status">${svar.filter(s => s.ratt).length} rätt av ${svar.length}</span>
+        <button class="btn btn-primary" id="btn-nasta" type="button">${sista ? 'Visa resultat' : 'Nästa'}</button>
+      `;
+      document.getElementById('fokus-nav')!.classList.add('fokus-nav--sticky');
+      const nasta = document.getElementById('btn-nasta')!;
+      nasta.addEventListener('click', () => { if (idx === platta.length - 1) renderSammanfattning(); else { idx++; sparaRunda(); renderFraga(); window.scrollTo({ top: 0 }); } });
+      document.getElementById('btn-mer')?.addEventListener('click', () => {
+        try { localStorage.setItem(NASTA, rangTyp(q.typ)); } catch {}
+        const b = document.getElementById('btn-mer');
+        if (b) b.replaceWith(Object.assign(document.createElement('span'), { className: 'fokus-nav-status', textContent: `${namn(q.typ)} kommer först i nästa svaghetsrunda.` }));
+      });
+      nasta.focus({ preventScroll: true });
+      renderTex();
+    }
+
+    function renderSammanfattning() {
+      fragaToken++;
+      const antalRatt = svar.filter(s => s.ratt).length;
+      const perTyp = new Map<string, { ratt: number; antal: number }>();
+      for (const s of svar) {
+        const t = perTyp.get(s.fraga.typ) || { ratt: 0, antal: 0 };
+        t.antal++;
+        if (s.ratt) t.ratt++;
+        perTyp.set(s.fraga.typ, t);
+      }
+      const typRader = [...perTyp.entries()].sort((a, b) => a[1].ratt / a[1].antal - b[1].ratt / b[1].antal);
+      const arSnabbkoll = runda!.lage === 'snabbkoll';
+      const arTyp = runda!.lage === 'typ';
+      const allaRatt = antalRatt === svar.length;
+      const andel = antalRatt / Math.max(1, svar.length);
+      // Tonrad efter andel rätt, med rundans faktiska antal.
+      const foreHuvud = arTyp ? runda!.styrkorFore[rangTyp(runda!.val)] : null;
+      const brukarMissa = !!(foreHuvud && !foreHuvud.osaker && foreHuvud.styrka < 0.6);
+      const ton = allaRatt
+        ? `Snyggt! ${antalRatt} av ${svar.length}. Byt typ, det här kan du.`
+        : andel >= 0.7
+          ? `Bra jobbat! ${arTyp ? (brukarMissa ? 'Precis sådana du brukar missa, så det lönar sig. ' : `Bra start på ${esc(namn(runda!.val))}. `) : ''}Kör tio till så ser du om det lossnar.`
+          : 'Inget fel att ha fel, det är så man lär sig. Läs förklaringarna nedan och kör tio till :)';
+      const totalMs = svar.reduce((a, s) => a + s.timeMs, 0);
+      const tempoMs = svar.reduce((a, s) => a + (fokus.tempo[s.fraga.delprov] || 60) * 1000, 0);
+      const tidText = `Du tog ${fmtTid(totalMs)} på ${svar.length} uppgifter, på provet har du cirka ${fmtTid(tempoMs)} (utan tidspress här).`;
+
+      // Styrkan före och efter per rangordningstyp. Förändring visas bara om
+      // den är minst tre punkter; osäkra typer får "N svar till".
+      const rangTyper = [...new Set(svar.map(s => rangTyp(s.fraga.typ)))];
+      const styrkeRader = rangTyper.map(typ => {
+        const fore = runda!.styrkorFore[typ];
+        const efter = styrkorEfter[typ];
+        if (!efter) return '';
+        const efterPct = pct(efter);
+        let text: string;
+        if (!efterPct) {
+          const n = Math.max(1, Math.ceil((MINSTA_EFFEKTIVT - (efter.effektivt || 0)) / KALLVIKT_RUNDA));
+          text = `${pct(fore) || 'inga svar än'} → ${n} svar till så får du en siffra`;
+        } else if (pct(fore)) {
+          const diff = Math.round(efter.styrka * 100) - Math.round(fore!.styrka * 100);
+          text = Math.abs(diff) >= 3 ? `${pct(fore)} → ${efterPct}` : `${efterPct}, oförändrat`;
+        } else {
+          text = `${fore ? 'för lite data' : 'inga svar än'} → ${efterPct} (${efter.antal} svar)`;
+        }
+        return `<button class="fokus-sammanf-rad fokus-start" data-lage="typ" data-val="${esc(typ === 'mek' ? 'mek:2' : typ)}" type="button"><span>${esc(namn(typ))}</span><span class="fokus-sammanf-varde">${text}</span></button>`;
+      }).filter(Boolean).join('');
+
+      // Snabbkollens kvitto: andel rätt per delprov och de typer som gick fel.
+      const perDelprov = new Map<string, { ratt: number; antal: number }>();
+      for (const s of svar) {
+        const t = perDelprov.get(s.fraga.delprov) || { ratt: 0, antal: 0 };
+        t.antal++;
+        if (s.ratt) t.ratt++;
+        perDelprov.set(s.fraga.delprov, t);
+      }
+      const delprovRader = [...perDelprov.entries()].sort((a, b) => a[1].ratt / a[1].antal - b[1].ratt / b[1].antal);
+      const svagastDelprov = delprovRader[0]?.[0];
+      const felTyper = typRader.filter(([, t]) => t.ratt < t.antal).map(([typ]) => typ);
+      const snabbkollHTML = arSnabbkoll ? `
+        <div class="fokus-sammanf-typer">${delprovRader.map(([dp, t]) => `<div class="fokus-sammanf-rad" style="cursor:default;"><span>${esc(fokus.delprovNamn[dp] || dp)}</span><span class="fokus-sammanf-varde">${t.ratt} av ${t.antal}</span></div>`).join('')}</div>
+        <p style="text-align:center; font-size:0.9rem; margin:1rem 0 0.4rem;">Det här ger en grov bild per delprov; ett helt pass på 40 uppgifter ger en bättre.</p>
+        ${felTyper.length ? `<p style="text-align:center; font-size:0.9rem;">Du hade fel på ${esc(felTyper.map(namn).join(', '))}. Börja där.</p><div class="fokus-chips" style="justify-content:center;">${felTyper.map(typ => `<button class="fokus-chip fokus-chip--typ fokus-start" data-lage="typ" data-val="${esc(typ)}" type="button">${esc(namn(typ))}</button>`).join('')}</div>` : ''}
+      ` : '';
+
+      // Högst två knappar: en primär och en sekundär, plus en textlänk.
+      const nasta = (runda!.nastaSvaga || []).find(t => t !== rangTyp(runda!.val || ''));
+      const bytTill = felTyper.find(t => rangTyp(t) !== rangTyp(runda!.val || '')) || nasta;
+      const efterOrd = runda!.val === 'ord' && svar.some(s => s.fraga.delprov === 'ord');
+      const tvaIRad = arTyp && serie(runda!.val) >= 2;
+      const primar = arSnabbkoll
+        ? `<button class="btn btn-primary fokus-start" data-lage="delprov" data-val="${esc(svagastDelprov || 'xyz')}" type="button">Fortsätt med ${esc(fokus.delprovNamn[svagastDelprov || 'xyz'] || svagastDelprov)}</button>`
+        : efterOrd
+          ? `<a class="btn btn-primary" href="/ord">Kör ordträningen</a>`
+          : tvaIRad
+            ? `<button class="btn btn-primary fokus-start" data-lage="svagheter" data-val="" data-forst="${esc(rangTyp(runda!.val))}" type="button">Kör tio till, blandat</button>`
+            : `<button class="btn btn-primary fokus-start" data-lage="${esc(runda!.lage)}" data-val="${esc(runda!.val || '')}" data-fran="${esc(fran)}" type="button">Kör tio till</button>`;
+      const sekundar = fran && runda!.franFinns
+        ? `<a class="btn btn-outline" href="${franUrl()}">Tillbaka till rättningen</a>`
+        : arSnabbkoll
+          ? `<a class="btn btn-outline" href="/extra">Eller gör ett helt pass under tid</a>`
+          : bytTill
+            ? `<button class="btn btn-outline fokus-start" data-lage="typ" data-val="${esc(bytTill)}" type="button">Byt till ${esc(namn(bytTill))}</button>`
+            : '';
+      const serieText = tvaIRad ? `<p style="text-align:center; font-size:0.9rem;">Du har nu ${serie(runda!.val) * 10} ${esc(namn(runda!.val))} i rad, nu blandar jag.</p>` : '';
+      const ordLank = svar.some(s => s.fraga.delprov === 'ord') && !efterOrd
+        ? '<p style="text-align:center; font-size:0.9rem;">Vill du bygga ordförrådet på riktigt? <a href="/ord">Kör ordträningen</a>, den kommer ihåg vilka ord du missar.</p>'
+        : '';
+      const ejSparatText = ejSparat
+        ? '<div class="tip-box warning" style="font-size:0.9rem;">Svaren kunde inte sparas den här gången, så kartan uppdateras inte. Kolla att webbläsaren tillåter kakor.</div>'
+        : '';
+      // Genomgångar för den typ som gick sämst, bara när något blev fel.
+      const svagastTyp = typRader.find(([, t]) => t.ratt < t.antal)?.[0];
+      const rek = svagastTyp ? rekommendationFor(svagastTyp) : null;
+      const rekHTML = rek ? `<div class="fokus-rek">
+          <p class="fokus-rek-label">Vill du ha hjälp med ${esc(namn(svagastTyp!))}?</p>
+          <div class="fokus-rek-lankar">
+            <a href="${esc(rek.strategi.url)}">${esc(rek.strategi.namn)}</a>
+            ${rek.matte.map(m => `<a href="${esc(m.url)}">Matterepetition: ${esc(m.namn)}</a>`).join('')}
+          </div>
+        </div>` : '';
+
+      root.innerHTML = `
+        <div class="pq-result-head">
+          <h2>Klart!</h2>
+          <div class="pq-score">${antalRatt}/${svar.length}</div>
+          <p style="color:var(--color-muted)">rätt · ${esc(rundaRubrik())}</p>
+          <p>${ton}</p>
+          <p style="font-size:0.85rem; color:var(--color-muted);">${tidText}</p>
+        </div>
+        ${ejSparatText}
+        ${arSnabbkoll ? snabbkollHTML : (styrkeRader ? `<div class="fokus-sammanf-typer">${styrkeRader}</div>` : '')}
+        ${serieText}
+        <div class="fokus-knappar">
+          ${primar}
+          ${sekundar}
+          <button class="btn-overview-link" id="btn-valj" type="button">Välj något annat</button>
+        </div>
+        ${rekHTML}
+        ${ordLank}
+        ${fokus.arGast || !fokus.harSession ? '<div class="tip-box" style="font-size:0.9rem;"><strong>Tips:</strong> Utan konto sparas träningen i en månad. <a href="#" onclick="event.preventDefault(); window.openSignupModal();">Skapa ett gratis konto</a> så sparas den för alltid.</div>' : ''}
+        <h3 style="margin:2rem 0 0.5rem;">Uppgifterna i rundan</h3>
+        <p style="font-size:0.85rem; color:var(--color-muted); margin-bottom:0.8rem;">Klicka på en uppgift för att se den och förklaringen igen.</p>
+        <div class="pq-results">${svar.map((s, i) => `<div class="pq-res-wrap">
+          <button class="pq-res ${s.ratt ? 'pq-res--ok' : 'pq-res--no'}" data-toggle="fres-${i}" type="button" aria-expanded="false" aria-controls="fres-${i}">
+            <span class="pq-res-icon" aria-label="${s.ratt ? 'Rätt' : 'Fel'}">${s.ratt ? '✓' : '✗'}</span>
+            <span class="pq-res-num">${i + 1}.</span>
+            <span>${esc(namn(s.fraga.typ))}</span>
+            ${!s.ratt ? `<span class="pq-res-right">Rätt: <b>${LABELS[s.correct]}</b></span>` : ''}
+            <span class="pq-res-chevron" aria-hidden="true">▾</span>
+          </button>
+          <div class="pq-res-detail" id="fres-${i}" style="display:none;">${resultDetailHTML({ ...s.fraga, correct: s.correct, explanation: s.explanation || undefined, videoId: s.videoId || undefined }, delprovFor(s.fraga), s.chosen)}</div>
+        </div>`).join('')}</div>
+      `;
+      root.querySelectorAll('[data-toggle]').forEach(el => {
+        el.addEventListener('click', () => {
+          const detail = document.getElementById(el.getAttribute('data-toggle')!);
+          if (!detail) return;
+          const open = detail.style.display !== 'none';
+          detail.style.display = open ? 'none' : 'block';
+          el.setAttribute('aria-expanded', open ? 'false' : 'true');
+          el.querySelector('.pq-res-chevron')!.textContent = open ? '▾' : '▴';
+          if (!open) renderTex();
+        });
+      });
+      document.getElementById('btn-valj')?.addEventListener('click', tillbaka);
+      runda = null;
+      sparaRunda();
+      bindStart(root);
+      renderTex();
+      window.scrollTo({ top: 0 });
+    }
+
+    function bindStart(scope: ParentNode) {
+      scope.querySelectorAll<HTMLElement>('.fokus-start').forEach(btn => {
+        btn.addEventListener('click', () => {
+          if (btn.dataset.forst) { try { localStorage.setItem(NASTA, btn.dataset.forst); } catch {} }
+          startaRunda(btn.dataset.lage || 'delprov', btn.dataset.val || '', 0, btn.dataset.fran || '');
+        });
+      });
+    }
+    bindStart(valRoot);
+
+    // Direktlänk från rättningen: /trana/fokus?lage=typ&val=xyz:algebra&fran=extra-ht2019-1.
+    // Samma adress vid omladdning återupptar en färsk runda med samma läge och val.
+    const params = new URLSearchParams(window.location.search);
+    const lage = params.get('lage');
+    if (lage && LAGEN.includes(lage)) {
+      if (lasSparad(lage, params.get('val') || '', params.get('fran') || '')) { visaRunda(); renderFraga(); }
+      else startaRunda(lage, params.get('val') || '', Number(params.get('antal') || 0), params.get('fran') || '');
+    } else if (lasSparad()) {
+      visaRunda();
+      renderFraga();
+    }
+    // Bakåt från rundan visar valsidan igen.
+    window.addEventListener('popstate', () => {
+      if (!new URLSearchParams(window.location.search).get('lage')) { runda = null; sparaRunda(); window.location.reload(); }
+    });
+  </script>
+</Base>
+
+<style is:global>
+  .fokus-block { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; box-shadow: var(--shadow); }
+  .fokus-block h2 { margin: 0 0 0.4rem; font-size: 1.15rem; }
+  .fokus-block > p { margin: 0 0 0.9rem; font-size: 0.92rem; color: var(--color-muted); line-height: 1.6; }
+  .fokus-block--svag { border-color: #2563eb; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
+  .fokus-block--svag p { color: #1e3a8a; }
+  .fokus-block--svag .btn { display: block; width: 100%; text-align: center; font-size: 1.05rem; padding: 0.9rem 1rem; }
+  .fokus-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
+  .fokus-chip { font-family: var(--font-sans); font-weight: 700; font-size: 0.95rem; padding: 0.55rem 1rem; border: 2px solid var(--color-border); border-radius: 999px; background: var(--color-surface); cursor: pointer; transition: all 0.12s; color: var(--color-text); min-height: 44px; }
+  .fokus-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
+  .fokus-chip--typ { font-weight: 600; font-size: 0.88rem; padding: 0.6rem 0.9rem; }
+  .fokus-chip-antal { color: var(--color-muted); font-weight: 500; font-size: 0.78rem; margin-left: 0.15rem; }
+  .fokus-typrad { display: flex; gap: 0.8rem; align-items: flex-start; margin-bottom: 0.7rem; }
+  .fokus-typrad-label { flex: 0 0 3rem; font-weight: 800; font-size: 0.8rem; color: var(--color-primary); letter-spacing: 0.06em; padding-top: 0.5rem; }
+  .fokus-sett { text-align: center; font-size: 0.82rem; color: var(--color-muted); margin: -0.5rem 0 1rem; }
+  .fokus-details summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
+  .fokus-details summary::-webkit-details-marker { display: none; }
+  .fokus-details summary h2 { margin: 0; }
+  .fokus-details-hint { font-size: 0.85rem; color: var(--color-primary); font-weight: 600; white-space: nowrap; }
+  .fokus-details[open] .fokus-details-hint { display: none; }
+  .fokus-details[open] summary { margin-bottom: 0.4rem; }
+  .fokus-knappar .btn-overview-link { align-self: center; }
+  .fokus-fb { margin-top: 1rem; padding: 0.8rem 1rem; border-radius: var(--radius); font-size: 0.95rem; }
+  .fokus-fb--ok { background: #ecfdf5; color: #065f46; }
+  .fokus-fb--no { background: #fef2f2; color: #991b1b; }
+  .fokus-efter { display: flex; flex-wrap: wrap; gap: 0.4rem 1.2rem; margin-top: 0.8rem; font-size: 0.82rem; color: var(--color-muted); }
+  .fokus-nav { gap: 0.6rem; }
+  .fokus-nav-status { font-size: 0.85rem; color: var(--color-muted); }
+  .fokus-nav .btn-primary { min-width: 8rem; }
+  .fokus-knappar { display: flex; flex-direction: column; gap: 0.6rem; max-width: 420px; margin: 1.5rem auto; }
+  .fokus-knappar .btn { display: block; text-align: center; }
+  .fokus-rek { max-width: 420px; margin: 0 auto 1.2rem; padding: 0.9rem 1.1rem; background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: var(--radius); }
+  .fokus-rek-label { margin: 0 0 0.4rem; font-weight: 700; font-size: 0.9rem; color: #166534; }
+  .fokus-rek-lankar { display: flex; flex-direction: column; gap: 0.25rem; font-size: 0.9rem; }
+  .fokus-sammanf-typer { display: flex; flex-direction: column; gap: 0.3rem; max-width: 420px; margin: 0 auto; }
+  .fokus-sammanf-rad { display: flex; justify-content: space-between; gap: 1rem; padding: 0.5rem 0.9rem; border: 1px solid var(--color-border); border-radius: var(--radius); background: var(--color-surface); cursor: pointer; font-family: var(--font-sans); font-size: 0.92rem; color: var(--color-text); min-height: 44px; align-items: center; }
+  .fokus-sammanf-rad:hover { border-color: var(--color-primary); }
+  .fokus-sammanf-varde { font-weight: 700; color: var(--color-muted); font-variant-numeric: tabular-nums; text-align: right; }
+  button.pq-res { width: 100%; border: none; font-family: var(--font-sans); font-size: 0.95rem; color: inherit; text-align: left; cursor: pointer; min-height: 44px; }
+  .fokus-avbryt { display: flex; flex-wrap: wrap; align-items: center; gap: 0.6rem; margin: -0.4rem 0 1rem; padding: 0.7rem 1rem; background: #fffbeb; border: 1px solid #fde68a; border-radius: var(--radius); font-size: 0.9rem; }
+  .fokus-mer { margin: 0.6rem 0 0; }
+  @media (max-width: 640px) {
+    .fokus-nav--sticky { position: sticky; bottom: 0; background: var(--color-bg); padding: 0.6rem 0 calc(0.6rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--color-border); z-index: 5; }
+  }
+  @media (max-width: 480px) {
+    .fokus-block { padding: 1rem; }
+    .fokus-typrad { flex-direction: column; gap: 0.3rem; }
+    .fokus-typrad-label { padding-top: 0; }
+    .fokus-sammanf-rad { flex-direction: column; align-items: flex-start; gap: 0.15rem; }
+  }
+</style>

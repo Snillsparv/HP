@@ -1,0 +1,35 @@
+---
+// Styrkekartan: en rad per uppgiftstyp med stapel färgad efter styrka.
+// Varje rad länkar till en träningsrunda på just den typen.
+import type { KartaRad } from '../lib/fokus/karta.js';
+
+interface Props {
+  rader: (KartaRad & { etikett?: string })[];
+}
+const { rader } = Astro.props;
+---
+
+<div class="fokus-karta">
+  {rader.map(r => (
+    <a class="fokus-karta-rad" href={`/trana/fokus?lage=typ&val=${encodeURIComponent(r.typ)}${r.osaker ? '&antal=5' : ''}`}>
+      <span class="fokus-karta-namn">{r.namn}{r.etikett ? <span class="fokus-karta-etikett">{r.etikett}</span> : null}</span>
+      <span class="fokus-karta-stapel" role="img" aria-label={r.nivaText}><span class="fokus-karta-fyll" style={`width:${r.osaker ? 100 : r.pct}%; background:${r.farg};`}></span></span>
+      <span class="fokus-karta-varde">{r.osaker ? <Fragment>{r.varde} · <span class="fokus-karta-testa">testa 5</span></Fragment> : r.varde}</span>
+    </a>
+  ))}
+</div>
+
+<style is:global>
+  .fokus-karta { display: flex; flex-direction: column; gap: 0.35rem; }
+  .fokus-karta-rad { display: grid; grid-template-columns: minmax(7rem, 11rem) 1fr auto; align-items: center; gap: 0.8rem; width: 100%; padding: 0.4rem 0.5rem; border: 1px solid transparent; border-radius: var(--radius); background: none; cursor: pointer; font-family: var(--font-sans); color: var(--color-text); text-align: left; text-decoration: none; }
+  .fokus-karta-rad:hover { border-color: var(--color-border); background: #f8fafc; text-decoration: none; }
+  .fokus-karta-namn { font-size: 0.88rem; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .fokus-karta-stapel { display: block; height: 10px; background: #f1f5f9; border-radius: 999px; overflow: hidden; }
+  .fokus-karta-fyll { display: block; height: 100%; border-radius: 999px; }
+  .fokus-karta-varde { font-size: 0.8rem; color: var(--color-muted); font-variant-numeric: tabular-nums; white-space: nowrap; }
+  .fokus-karta-testa { color: var(--color-primary); font-weight: 600; }
+  .fokus-karta-etikett { display: inline-block; margin-left: 0.4rem; font-size: 0.68rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #2563eb; background: #eff6ff; border-radius: 999px; padding: 0.05rem 0.45rem; vertical-align: middle; }
+  @media (max-width: 480px) {
+    .fokus-karta-rad { grid-template-columns: 1fr; gap: 0.25rem; }
+  }
+</style>

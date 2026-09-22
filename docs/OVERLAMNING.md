@@ -13,7 +13,8 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
 
 ## Arbetssätt
 
-- All utveckling har skett på grenen `claude/vocab-trainer-interface-g0knip`.
+- Utvecklingen sker på en egen arbetsgren per session (Jonas:
+  `claude/vocab-trainer-interface-g0knip`, Jessica: `claude/zen-pascal-jnj2ca`).
   Deploy = pusha grenen, sedan `git checkout main && git merge --ff-only
   <gren> && git push origin main`, tillbaka till grenen. Jonas laddar ibland
   upp filer direkt på GitHub ("Add files via upload"), så hämta `origin/main`
@@ -65,6 +66,51 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
   ElevenLabs ligger utanför repot (på servern och i en lokal fil, inte i git);
   Jonas har rekommenderats att rotera den.
 
+## Fokuserad träning på svagheter (/trana/fokus)
+
+- Uppdrag, design och status: `docs/svaghetstraning/README.md` (designen i
+  `design.md`, kartläggningen av koden i `kartlaggning.md`).
+- Kod: `src/lib/fokus/` (frågebank med stabila id:n `test_id#num`, typer,
+  styrkemodell, urval, historik, rekommendationer), `src/pages/api/fokus/`
+  (`runda` ger frågor utan facit, `svar` rättar på servern och sparar
+  händelsen), sidan `src/pages/trana/fokus.astro`, komponenten
+  `src/components/Styrkekarta.astro`.
+- Gemensam frågekomponent: `src/lib/fragor/render.ts` och
+  `src/styles/fragor.css`, används av `/extra/[id]` och `/trana/fokus`.
+- Databas: tabellen `question_events` (en rad per besvarad uppgift i
+  träningen) skapas vid start i `src/lib/db.ts`. Provresultaten i
+  `test_results` rörs inte utan räknas om till händelser i
+  `src/lib/fokus/historik.ts`. Gäster får en osynlig gästsession vid första
+  rundan (samma som ordträningen); vid inloggning på ett befintligt konto
+  följer provresultat och händelser med (`migrateGuestToUser`).
+- Ingångar: knappen "Träna fler av den här typen" på varje fel fråga i
+  rättningen (extraproven och HT 2021-proven), länkar i analysblocket,
+  styrkekartan på profilen, bannern på Träna-sidan.
+- Test: `node verktyg/fokus/testa-modell.mjs` (modell, typer, urval utan
+  databas) och `HP_SKARM_DIR=/tmp node verktyg/fokus/testa-fokus.mjs`
+  (Playwright mot lokal server på 4321, mobilvy, hela flödet). Playwright
+  finns globalt i webbmiljön; lokalt `npm i -D playwright` om det saknas.
+- Parametrar att vrida på: `RUNDA` (frågor per runda), `TYP_ANDEL` (sju av
+  tio i typläget), `MAX_PER_PASS`, `KONTROLL_DAGAR` och `SNABBKOLL`
+  (snabbkollens sammansättning) i `urval.ts`; `HALVERINGSTID` (20 svar),
+  `HALVERINGSTID_DAGAR` (90), `KALLVIKT_RUNDA` (0,7), `GRUPPTAK` (2),
+  `PRIOR_A`, `PRIOR_B`, `PRIOR_TYP`, `MINSTA_ANTAL` (effektiva svar för att
+  visa procent), `MINSTA_SAKRA_TYPER` (gaten för Mina svagheter),
+  `MAL_STYRKA` och `MAL_STYRKA_SVART` i `styrka.ts`; `SEDD_DAGAR`,
+  `REPETERA_DAGAR` och `OMFORSOK_TIMMAR` i `historik.ts`; `MINSTA_TYP`
+  (golvet för små typer), `VIKT_UTAN_UNDERTYP` (ORD och LÄS) och
+  `ANTAL_PER_PASS` (vikterna) i `fragebank.ts` och `typer.ts`. Poolen är
+  extramaterialet; HT 2021 sparas till stegen (en rad i
+  `src/pages/api/fokus/runda.ts`).
+- Tabeller: `question_events` (händelser med `source` fokus, snabbkoll,
+  overtid eller omforsok, plus `lage`, `runda_id`, `position`) och
+  `fokus_rundor` (en rad per startad runda), båda skapas vid start.
+- Provlöparna skapar en gästsession vid "Starta provet" (som ordträningen)
+  så att resultatet sparas på servern och räknas i träningen även utan
+  konto. Gäster ser "Resultat sparat! Skapa ett gratis konto ..." i stället
+  för "sparat i ditt konto". Svar efter tiden ("Gör klart resten") postas
+  till `/api/fokus/svar` med `lage: 'overtid'`.
+
 ## Idé från Jonas: stjärnmarkera uppgifter i provläget
 
 Jonas vill kunna stjärnmarkera uppgifter under ett pass för att komma tillbaka
@@ -82,11 +128,5 @@ det riktiga provet. Skiss:
 - I rättningen listas stjärnmarkerade uppgifter först ("Uppgifter du ville
   titta mer på"), och de behåller markeringen så att de kan hittas i
   profilens granskningsläge (`?review=1`).
-- Steg 2: låt stjärnorna bli en ingång till fokuserad träning
-  ("Träna fler av den här typen") när det verktyget finns.
-
-## Pågående: fokuserad träning på svagheter
-
-- Se `docs/svaghetstraning/README.md` för uppdrag, status, designriktning och
-  nästa steg. Kartläggningen av koden finns i
-  `docs/svaghetstraning/kartlaggning.md`.
+- Steg 2: låt stjärnorna bli en ingång till fokuserad träning på
+  `/trana/fokus` ("Träna fler av den här typen").

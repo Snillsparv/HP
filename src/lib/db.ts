@@ -142,6 +142,40 @@ await pool.query(`
   CREATE INDEX IF NOT EXISTS word_progress_due_idx ON word_progress (user_id, due_at);
 `);
 
+// Fokuserad träning: en rad per besvarad uppgift, med stabilt fråge-id
+// (test_id#num), delprov, uppgiftstyp och tid. Provresultaten i test_results
+// rörs inte; de läses ihop med den här tabellen när styrkor räknas ut.
+await pool.query(`
+  CREATE TABLE IF NOT EXISTS question_events (
+    id SERIAL PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    question_id TEXT NOT NULL,
+    delprov TEXT NOT NULL,
+    typ TEXT NOT NULL,
+    chosen INTEGER,
+    correct BOOLEAN NOT NULL,
+    time_ms INTEGER,
+    source TEXT NOT NULL DEFAULT 'fokus',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
+  ALTER TABLE question_events ADD COLUMN IF NOT EXISTS lage TEXT;
+  ALTER TABLE question_events ADD COLUMN IF NOT EXISTS runda_id TEXT;
+  ALTER TABLE question_events ADD COLUMN IF NOT EXISTS position INTEGER;
+  CREATE INDEX IF NOT EXISTS question_events_user_idx ON question_events (user_id, created_at);
+  -- En rad per startad runda, för att kunna utvärdera verktyget (hur många
+  -- rundor fullföljs, hur ofta knappen i rättningen används).
+  CREATE TABLE IF NOT EXISTS fokus_rundor (
+    id TEXT PRIMARY KEY,
+    user_id INTEGER NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    lage TEXT NOT NULL,
+    val TEXT,
+    fran TEXT,
+    antal INTEGER NOT NULL,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+  );
+  CREATE INDEX IF NOT EXISTS test_results_user_test_idx ON test_results (user_id, test_id);
+`);
+
 type RelatedWord = { word: string; gloss: string };
 type Related = { root: string; words: RelatedWord[] };
 type MinnesordSeed = { word: string; definition: string; mnemonic: string; status?: string; note?: string; example?: string; etymology?: string; image?: string; related?: Related; traps?: string[] };

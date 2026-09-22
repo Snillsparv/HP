@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+import { golvBreddning } from '../../lib/fokus/fragebank.js';
 ---
 
 <Base title="Verbalt prov HT 2021 – HPAkuten" description="Gör hela den verbala delen av högskoleprovet HT 2021 (utan ELF). 30 uppgifter, 33 minuter.">
@@ -11,7 +12,9 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     </div>
   </div>
 
-  <script define:vars={{ isLoggedIn: !!user }}>
+  <script define:vars={{ isLoggedIn: !!user , golv: golvBreddning() , arGast: !!user?.is_guest }}>
+    window.__arGast = arGast;
+    window.__golv = golv;
     window.__isLoggedIn = isLoggedIn;
   </script>
 
@@ -21,6 +24,21 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     import { getNormering } from '../../lib/normering.js';
     import { analyzeResults, getYrkeForScore } from '../../lib/analysis.js';
     import { generateResultImage } from '../../lib/share-image.js';
+    import { typFor, typNamn, normaliseraDelprov } from '../../lib/fokus/typer.js';
+    import { tranaLankHTML } from '../../lib/fragor/render.js';
+    const golv: Record<string, { kategori: string; antal: number }> = (window as any).__golv || {};
+    const KATEGORI_NAMN: Record<string, string> = { algebra: 'algebra', aritmetik: 'aritmetik', geometri: 'geometri', funktioner: 'funktioner och grafer', procent: 'procent', sannolikhet: 'sannolikhet', statistik: 'statistik', enheter: 'enheter', logik: 'logiskt resonemang' };
+    // Länken från ett fel svar: typen, kategorin över delproven om typen är
+    // för liten, och hela delprovet för ORD och LÄS.
+    function tranaFor(stId: string, q: { num: number; text: string; options: string[]; correct: number; category?: string }) {
+      const dp = normaliseraDelprov(stId);
+      const typ = typFor(dp, q);
+      if (typ === 'ord') return { lage: 'delprov' as const, val: 'ord', namn: 'ORD-uppgifter', fran: 'verbal-ht2021' };
+      if (typ === 'las') return { lage: 'delprov' as const, val: 'las', namn: 'LÄS-texter', fran: 'verbal-ht2021' };
+      const b = golv[typ];
+      if (b) return { lage: 'kategori' as const, val: b.kategori, namn: KATEGORI_NAMN[b.kategori] || b.kategori, fran: 'verbal-ht2021', antal: b.antal };
+      return { lage: 'typ' as const, val: typ, namn: typNamn(typ), fran: 'verbal-ht2021' };
+    }
 
     const subTests = verbalSubTests;
     const root = document.getElementById('prov-root')!;
@@ -131,7 +149,9 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
     }
 
     function saveAreaHTML() {
-      if (saveStatus === 'server') return '<div class="tip-box success"><strong>Resultat sparat i ditt konto!</strong></div>';
+      if (saveStatus === 'server') return (window as any).__arGast
+        ? '<div class="tip-box success"><strong>Resultat sparat!</strong> <a href="/konto/registrera">Skapa ett gratis konto</a> så följer resultatet och din träning med mellan enheter.</div>'
+        : '<div class="tip-box success"><strong>Resultat sparat i ditt konto!</strong></div>';
       if (saveStatus === 'error') return '<div class="tip-box warning"><strong>Kunde inte spara till kontot, men resultatet finns sparat lokalt.</strong></div>';
       if (saveStatus === 'anon') return '<div class="tip-box success"><strong>Resultat sparat!</strong> <a href="/konto/registrera">Skapa ett gratis konto</a> för att spara dina resultat permanent.</div>';
       return '';
@@ -142,23 +162,38 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
       const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
       stored['verbal-ht2021'] = resultData;
       localStorage.setItem('hp-results', JSON.stringify(stored));
-      if ((window as any).__isLoggedIn) {
-        try {
-          await fetch('/api/test/results', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ testId: 'verbal-ht2021', score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
-          });
-          saveStatus = 'server';
-        } catch {
-          saveStatus = 'error';
-        }
-      } else {
-        saveStatus = 'anon';
+      // Postas alltid: med gästsessionen från provstarten sparas resultatet
+      // på servern och räknas i fokuserad träning även utan konto.
+      try {
+        const res = await fetch('/api/test/results', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ testId: 'verbal-ht2021', score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
+        });
+        saveStatus = res.ok ? 'server' : res.status === 401 ? 'anon' : 'error';
+      } catch {
+        saveStatus = (window as any).__isLoggedIn ? 'error' : 'anon';
       }
       // Uppdatera spar-rutan om resultatvyn redan hunnit visas
       const saveArea = document.getElementById('save-area');
       if (saveArea) saveArea.innerHTML = saveAreaHTML();
+    }
+
+    // Svar som gavs efter tiden sparas som händelser i fokuserad träning (de
+    // ingår inte i provresultatet), en gång per fråga.
+    let overtidPostad = false;
+    function postaOvertid() {
+      if (!overtime || overtidPostad) return;
+      overtidPostad = true;
+      allQuestions.forEach((q, i) => {
+        if (timedAnswers[i] === null && answers[i] !== null) {
+          fetch('/api/fokus/svar', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ questionId: `verbal-ht2021#${q.num}`, chosen: answers[i], lage: 'overtid' }),
+          }).catch(() => {});
+        }
+      });
     }
 
     function renderTimeUp() {
@@ -250,7 +285,14 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         const td = document.getElementById('time-display');
         if (td) td.textContent = checked ? '48:00' : '33:00';
       });
+      // En gästsession skapas vid start (en aktiv handling), så att resultatet
+      // sparas på servern och räknas i fokuserad träning även utan konto.
+      const sakraSession = () => {
+        if ((window as any).__isLoggedIn) return;
+        fetch('/api/auth/guest', { method: 'POST' }).then(r => r.json()).then(r => { if (r && r.ok) { (window as any).__isLoggedIn = true; (window as any).__arGast = !!r.guest; } }).catch(() => {});
+      };
       document.getElementById('btn-start')?.addEventListener('click', () => {
+        sakraSession();
         clearProgress();
         const ext = document.getElementById('extended-time') as HTMLInputElement | null;
         if (ext?.checked) totalTime = EXTENDED_TIME;
@@ -260,6 +302,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         render();
       });
       document.getElementById('btn-resume')?.addEventListener('click', () => {
+        sakraSession();
         const prog = getSavedProgress();
         if (prog) {
           prog.answers.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
@@ -271,6 +314,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         render();
       });
       document.getElementById('btn-restart')?.addEventListener('click', () => {
+        sakraSession();
         clearProgress();
         const ext = document.getElementById('extended-time') as HTMLInputElement | null;
         if (ext?.checked) totalTime = EXTENDED_TIME;
@@ -458,6 +502,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         <div class="pq-res-question">${q.text || ''}</div>
         <div class="pq-res-options">${q.options.map((opt, oi) => `<div class="pq-res-opt ${oi === q.correct ? 'pq-res-opt--correct' : ''} ${oi === answers[gi] && oi !== q.correct ? 'pq-res-opt--wrong' : ''}">${labels[oi]}. ${opt}</div>`).join('')}</div>
         ${q.videoId ? `<div style="margin-top:1rem;"><p style="font-weight:600; font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">Förklaring:</p><div class="video-embed"><iframe src="https://player.vimeo.com/video/${q.videoId}?dnt=1&title=0&byline=0&portrait=0" title="Förklaring uppgift ${q.num}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div></div>` : ''}
+        ${ok ? '' : tranaLankHTML(tranaFor(st.id, q))}
       </div>
     </div>`;
           }).join('')}</div>`;
@@ -512,6 +557,7 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
         await persistResult(totalScore, answers, elapsed);
       }
       document.getElementById('save-area')!.innerHTML = saveAreaHTML();
+      postaOvertid();
 
       // Accordion toggle for question details
       root.querySelectorAll('[data-toggle]').forEach(el => {

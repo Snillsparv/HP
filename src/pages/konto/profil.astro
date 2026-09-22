@@ -8,6 +8,11 @@ import { subTests as kvant2Tests } from '../../lib/questions-kvant2-ht2021.js';
 import { verbalSubTests as verbal1Tests } from '../../lib/questions-verbal-ht2021.js';
 import { verbalSubTests2 as verbal2Tests } from '../../lib/questions-verbal2-ht2021.js';
 import { allaPass, provtillfallen, testId as extraTestId, normeradPoang } from '../../lib/extraprov/register.js';
+import { allaTyper, typVikter } from '../../lib/fokus/fragebank.js';
+import { hamtaHandelser, forStyrka } from '../../lib/fokus/historik.js';
+import { beraknaTypStyrkor, svagasteTyper, antalSakraTyper, MINSTA_SAKRA_TYPER } from '../../lib/fokus/styrka.js';
+import { byggKarta } from '../../lib/fokus/karta.js';
+import Styrkekarta from '../../components/Styrkekarta.astro';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 
@@ -111,6 +116,16 @@ for (const p of allaPass) {
 }
 extraResultat.sort((a, b) => b.id.localeCompare(a.id));
 const harStegprov = testOrder.some(id => resultMap.has(id));
+
+// Fokuserad träning: styrka per uppgiftstyp ur prov och träningsrundor.
+const handelser = await hamtaHandelser(user.id);
+const rakneBara = forStyrka(handelser);
+const styrkor = beraknaTypStyrkor(rakneBara);
+const vikter = typVikter();
+const svagaste = antalSakraTyper(styrkor) >= MINSTA_SAKRA_TYPER ? svagasteTyper(styrkor, 3, vikter) : [];
+// Samma ordning som på träningssidan: mest att hämta först, osäkra sist.
+const karta = byggKarta(styrkor, allaTyper(['extra']), vikter);
+const antalRundsvar = rakneBara.length;
 ---
 
 <Base title="Min profil – HPAkuten">
@@ -183,6 +198,25 @@ const harStegprov = testOrder.some(id => resultMap.has(id));
               </div>
             </div>
           )}
+        </Fragment>
+      )}
+
+      <h2 style="margin-top: 2.5rem;">Dina styrkor per uppgiftstyp</h2>
+      {karta.length === 0 ? (
+        <p style="color: var(--color-muted);">När du gjort ett prov eller tränat på <a href="/trana/fokus">fokuserad träning</a> ser du här vilka uppgiftstyper som sitter och vilka som behöver mer.</p>
+      ) : (
+        <Fragment>
+          <p style="color: var(--color-muted); font-size: 0.9rem; margin-bottom: 1rem;">Andel rätt per typ ur {antalRundsvar} svar, där nya svar väger mer än gamla och vanliga typer på provet ligger överst. Klicka på en rad för att träna på just den typen.</p>
+          {svagaste.length > 0 && (
+            <a href="/trana/fokus?lage=svagheter" class="svag-card">
+              <span class="svag-card-label">Mest att hämta just nu</span>
+              <span class="svag-card-typer">{svagaste.map(s => karta.find(k => k.typ === s.typ)?.namn || s.typ).join(' · ')}</span>
+              <span class="btn btn-primary btn-sm" style="margin-top:0.6rem;">Träna på mina svagheter</span>
+            </a>
+          )}
+          <div class="results-chart" style="margin-top: 1rem;">
+            <Styrkekarta rader={karta} />
+          </div>
         </Fragment>
       )}
 
@@ -379,6 +413,24 @@ const harStegprov = testOrder.some(id => resultMap.has(id));
       grid-template-columns: 1fr;
     }
   }
+
+  .svag-card {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 1.2rem;
+    border-radius: var(--radius);
+    border: 2px solid #2563eb;
+    background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+    text-decoration: none;
+    color: inherit;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .svag-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-decoration: none; }
+  .svag-card-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: var(--color-muted); }
+  .svag-card-typer { font-weight: 700; font-size: 1.05rem; margin-top: 0.2rem; }
+  .btn-sm { padding: 0.5rem 1.2rem; font-size: 0.9rem; }
 
   .results-chart {
     margin-top: 1.5rem;

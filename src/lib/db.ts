@@ -65,6 +65,10 @@ await pool.query(`
 await pool.query(`
   ALTER TABLE users ADD COLUMN IF NOT EXISTS is_guest BOOLEAN NOT NULL DEFAULT FALSE;
 `);
+// Simulerade provresultat från adminverktyget på /admin, så att de kan tas bort igen.
+await pool.query(`
+  ALTER TABLE test_results ADD COLUMN IF NOT EXISTS simulerad BOOLEAN NOT NULL DEFAULT FALSE;
+`);
 await pool.query(`
   ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_new_per INTEGER DEFAULT 10;
   ALTER TABLE users ADD COLUMN IF NOT EXISTS learn_review_per INTEGER DEFAULT 100;

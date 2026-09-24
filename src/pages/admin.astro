@@ -199,6 +199,16 @@ function timeAgo(d: string) {
       </div>
 
       <div class="admin-search">
+        <h3>Simulera övningsprov</h3>
+        <p style="font-size:0.85rem; color:var(--color-muted); margin:0 0 0.6rem;">Lägger in tre simulerade provpass i ditt eget konto: ett kvantitativt för tolv dagar sedan, ett verbalt för sex dagar sedan och ett kvantitativt nyss. Sedan öppnas rättningen av det senaste som om du precis lämnat in det, med hjärnkartan före och efter. Tidigare simulerade pass ersätts, och du kan ta bort dem när du vill.</p>
+        <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+          <button id="sim-skapa" class="btn btn-primary btn-sm">Simulera och visa rättningen</button>
+          <button id="sim-ta-bort" class="btn btn-outline btn-sm">Ta bort simulerade pass</button>
+        </div>
+        <p id="sim-status" style="font-size:0.85rem; margin:0.6rem 0 0;" role="status"></p>
+      </div>
+
+      <div class="admin-search">
         <h3>Sök användare</h3>
         <div style="display:flex; gap:0.5rem;">
           <input type="text" id="user-search" placeholder="Namn eller e-post..." style="flex:1; padding:0.6rem 0.8rem; border:1.5px solid var(--color-border); border-radius:var(--radius); font-size:0.95rem; font-family:var(--font-sans);" />
@@ -393,6 +403,30 @@ function timeAgo(d: string) {
   </div>
 
   <script>
+    // Simulerade övningsprov i admins eget konto.
+    {
+      const status = document.getElementById('sim-status')!;
+      async function simulera(atgard: 'skapa' | 'ta-bort') {
+        status.textContent = atgard === 'skapa' ? 'Simulerar…' : 'Tar bort…';
+        try {
+          const res = await fetch('/api/admin/simulera', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ atgard }),
+          });
+          const d = await res.json();
+          if (!res.ok || !d.ok) { status.textContent = `Det gick inte: ${d.error || res.status}`; return; }
+          if (atgard === 'ta-bort') { status.textContent = `Borttaget: ${d.borttagna} simulerade pass.`; return; }
+          status.textContent = 'Klart, öppnar rättningen…';
+          window.location.href = d.lank;
+        } catch {
+          status.textContent = 'Det gick inte att nå servern.';
+        }
+      }
+      document.getElementById('sim-skapa')?.addEventListener('click', () => simulera('skapa'));
+      document.getElementById('sim-ta-bort')?.addEventListener('click', () => simulera('ta-bort'));
+    }
+
     const input = document.getElementById('user-search') as HTMLInputElement;
     const btn = document.getElementById('user-search-btn')!;
     const results = document.getElementById('user-search-results')!;

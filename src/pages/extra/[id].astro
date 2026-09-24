@@ -96,9 +96,31 @@ const titel = `${tillfalleName}: ${pass.name}`;
 
     const urlParams = new URLSearchParams(window.location.search);
     const isReview = urlParams.get('review') === '1';
+    // ?review=1&resultat=<id> öppnar ett bestämt sparat försök och visar
+    // kartan som direkt efter inlämningen, med före och efter.
+    const resultatParam = isReview && /^\d{1,10}$/.test(urlParams.get('resultat') || '') ? Number(urlParams.get('resultat')) : null;
+    let granskaMedFore = false;
     async function loadReview() {
       if (!isReview) return;
       clearProgress();
+      if (resultatParam !== null) {
+        try {
+          const res = await fetch(`/api/test/results?testId=${encodeURIComponent(TEST_ID)}`);
+          const data = await res.json();
+          const rad = (data.results || []).find((r: any) => r.id === resultatParam);
+          const svar = rad ? (typeof rad.answers === 'string' ? JSON.parse(rad.answers) : rad.answers) : null;
+          if (svar?.length) {
+            svar.forEach((a: number | null, i: number) => { if (i < answers.length) answers[i] = a; });
+            submitted = true;
+            started = true;
+            resultSaved = true;
+            timerSeconds = totalTime - (rad.time_seconds || 0);
+            resultatId = rad.id;
+            granskaMedFore = true;
+            return;
+          }
+        } catch {}
+      }
       const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
       const saved = stored[TEST_ID];
       if (saved?.answers) {
@@ -267,7 +289,10 @@ const titel = `${tillfalleName}: ${pass.name}`;
       if (!sektion) return;
       let data: HjarnkartaData | null = null;
       let fore = false;
-      if (isReview && !sparning) {
+      if (isReview && granskaMedFore && resultatId !== null) {
+        data = await hamtaKarta(`/api/fokus/karta?resultat=${resultatId}`);
+        fore = !!data;
+      } else if (isReview && !sparning) {
         data = await hamtaKarta('/api/fokus/karta');
       } else if (saveStatus === 'server' && resultatId !== null) {
         data = await hamtaKarta(`/api/fokus/karta?resultat=${resultatId}`);
@@ -598,7 +623,7 @@ const titel = `${tillfalleName}: ${pass.name}`;
           <strong>Efter tiden:</strong> Ditt sparade resultat räknar de ${answeredInTime} frågor du besvarade inom provtiden (${timedScore}/${allQuestions.length} rätt). Med svaren du gjorde klart efteråt fick du ${totalScore}/${allQuestions.length} rätt. Rättningen nedan visar alla dina svar.
         </div>` : ''}
         <section class="hk-kort res-karta hk-laddar" id="karta-sektion" aria-busy="true">
-          <div class="hk-kort-topp"><h2>${isReview ? 'Din hjärnkarta' : 'Så flyttade passet din karta'}</h2></div>
+          <div class="hk-kort-topp"><h2>${isReview && !granskaMedFore ? 'Din hjärnkarta' : 'Så flyttade passet din karta'}</h2></div>
           <p class="hk-kort-not">Ritar kartan …</p>
         </section>
         ${yrkeHTML(normered)}
@@ -658,7 +683,7 @@ const titel = `${tillfalleName}: ${pass.name}`;
       document.getElementById('btn-retry')?.addEventListener('click', () => {
         answers.fill(null); current = 0; submitted = false; timerSeconds = totalTime; timerPaused = false; started = false;
         overtime = false; resultSaved = false; timedAnswers = []; timedScore = 0; saveStatus = null;
-        resultatId = null; sparning = null; overtidPostad = false; renderOmgang++;
+        resultatId = null; granskaMedFore = false; sparning = null; overtidPostad = false; renderOmgang++;
         render();
       });
 

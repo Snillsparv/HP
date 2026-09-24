@@ -130,3 +130,28 @@ det riktiga provet. Skiss:
   profilens granskningsläge (`?review=1`).
 - Steg 2: låt stjärnorna bli en ingång till fokuserad träning på
   `/trana/fokus` ("Träna fler av den här typen").
+
+## Hjärnkartan (spindeldiagram över delproven)
+
+- Design: `docs/svaghetstraning/hjarnkarta.md`. Kod: `src/lib/fokus/hjarnkarta.ts`
+  (data, regeln för Träna härnäst, före och efter ett pass, Ur det här provet,
+  kallstart), `hjarnkarta-vy.ts` (ren rendering, används både på servern och i
+  klienten, får inte importera frågedata), `hjarnkarta-klient.ts` (arket per
+  delprov och animationerna), `src/components/Hjarnkarta.astro`,
+  `src/styles/hjarnkarta.css` och `src/pages/api/fokus/karta.ts`
+  (`?resultat=<id>` för före och efter i rättningen).
+- Syns på /extra (kompakt kort med två spalter på dator), i rättningen efter
+  varje extrapass (Så flyttade passet din karta, Träna härnäst, Ur det här
+  provet), på /trana/fokus, på profilen och som banner på /trana.
+- Regeln: delprov med minst 4 effektiva svar; pott = uppgifter per pass gånger
+  avståndet till målet (85 %, NOG 75 %, MEK 83 %); störst pott vinner, och
+  inom delprovet väljs en typ om den har minst 8 effektiva svar och ger minst
+  0,5 rätt per pass. Förändringssiffror efter ett pass visas bara när de är
+  säkra (osäkerheten räknas ur svarens vikter).
+- Test: `node verktyg/fokus/testa-hjarnkarta.mjs` (enhetstester) och
+  `testa-fokus.mjs` (Playwright, kopiera till en mapp där playwright kan
+  importeras om det inte hittas från repot).
+- Väntar: osäkerhetsspann på axlarna, hysteres för Träna härnäst, blandade
+  rundor efter tre rundor på samma delprov, minikarta i kvittot efter en runda
+  och samma kort i HT 2021-provens rättning (där finns analysblocket kvar, nu
+  med delprovet i kategorinamnen).

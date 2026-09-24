@@ -239,6 +239,34 @@ export function typVikter(kallor: Kalla[] = ['extra']): Map<string, number> {
   return vikter;
 }
 
+/** Ungefärligt antal uppgifter av typen i ett provpass, som typVikter men
+ * utan halveringen för ORD och LÄS: typens andel av delprovet i banken gånger
+ * delprovets antal i passet. MEK finns både som mek (alla luckor) och mek:1
+ * till mek:3. Används av hjärnkartan, där talet blir "rätt att hämta". */
+const perPassCache = new Map<string, Map<string, number>>();
+
+export function uppgifterPerPassKarta(kallor: Kalla[] = ['extra']): Map<string, number> {
+  const nyckel = kallor.join(',');
+  const cachad = perPassCache.get(nyckel);
+  if (cachad) return cachad;
+  const typer = allaTyper(kallor);
+  const perDelprov = new Map<string, number>();
+  for (const t of typer) perDelprov.set(t.delprov, (perDelprov.get(t.delprov) || 0) + t.antal);
+  const ut = new Map<string, number>();
+  for (const t of typer) {
+    const r = rangTyp(t.typ);
+    const v = (t.antal / (perDelprov.get(t.delprov) || 1)) * ANTAL_PER_PASS[t.delprov];
+    ut.set(r, (ut.get(r) || 0) + v);
+    if (r !== t.typ) ut.set(t.typ, v);
+  }
+  perPassCache.set(nyckel, ut);
+  return ut;
+}
+
+export function uppgifterPerPass(typ: string, kallor: Kalla[] = ['extra']): number {
+  return uppgifterPerPassKarta(kallor).get(typ) ?? 0;
+}
+
 export function finnsTyp(typ: string): boolean {
   return bank.some(q => matcharTyp(q, typ));
 }

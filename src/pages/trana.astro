@@ -2,20 +2,21 @@
 import Base from '../layouts/Base.astro';
 import { getSessionFromCookies } from '../lib/auth.js';
 import { extraStatistik, formatAntal } from '../lib/extraprov/register.js';
-import { allaTyper, typVikter } from '../lib/fokus/fragebank.js';
-import { hamtaHandelser, forStyrka } from '../lib/fokus/historik.js';
-import { beraknaTypStyrkor, svagasteTyper, antalSakraTyper, MINSTA_SAKRA_TYPER } from '../lib/fokus/styrka.js';
+import { hamtaHandelser } from '../lib/fokus/historik.js';
+import { byggHjarnkarta } from '../lib/fokus/hjarnkarta.js';
+import { miniKartaSVG } from '../lib/fokus/hjarnkarta-vy.js';
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const serverStep = user?.train_step || 1;
 const extra = extraStatistik();
 
-// Fokuserad träning: med historik pekar bannern på de typer som ger mest att hämta.
-const rakneBara = user ? forStyrka(await hamtaHandelser(user.id)) : [];
-const styrkorT = beraknaTypStyrkor(rakneBara);
-const svagaste = antalSakraTyper(styrkorT) >= MINSTA_SAKRA_TYPER ? svagasteTyper(styrkorT, 1, typVikter()) : [];
-const typNamnMap = new Map(allaTyper(['extra']).map(t => [t.typ, t.namn]));
-typNamnMap.set('mek', 'MEK');
-const svagaText = svagaste.map(s => typNamnMap.get(s.typ) || s.typ).join(', ');
+// Fokusbannern: med ett säkert delprov på hjärnkartan pekar den på Träna härnäst
+// (blå knapp). Utan svar leder den direkt till ett provpass, och med bara
+// osäkra axlar (efter snabbkollen) till gissningens provpass, båda diskret.
+const karta = byggHjarnkarta(user ? await hamtaHandelser(user.id) : []);
+const harnast = karta.harnast;
+const harFokus = harnast.lage === 'delprov' || harnast.lage === 'typ';
+// Minikartan visar användarens form när det finns svar, annars den grå.
+const miniKarta = miniKartaSVG(56, karta);
 ---
 
 <Base title="Träna på Högskoleprovet – HPAkuten" description="Träna gratis på riktiga HP-uppgifter med timer och rättning. Steg-för-steg-plan med videogenomgångar för högskoleprovet HT 2021.">
@@ -24,23 +25,27 @@ const svagaText = svagaste.map(s => typNamnMap.get(s.typ) || s.typ).join(', ');
       <h1>Träna på Högskoleprovet</h1>
       <p class="page-intro">Följ planen steg för steg och du kommer att vara betydligt mer redo på provdagen.</p>
 
-      {svagaste.length > 0 ? (
-        <a href="/trana/fokus?lage=svagheter" class="ord-banner">
-          <span class="ord-banner-nyhet">Fokus</span>
-          <span><strong>Just nu ger {svagaText} dig mest att hämta.</strong> Tio uppgifter i taget med förklaring direkt efter varje svar.</span>
-          <span class="ord-banner-cta">Träna på mina svagheter →</span>
+      {harFokus ? (
+        <a href={harnast.href} class="ord-banner fokus-banner fokus-banner--aktiv">
+          <span class="banner-mini" set:html={miniKarta} />
+          <span class="banner-text"><span class="fokus-banner-rubrik">Träna härnäst: <b>{harnast.rubrik}</b></span><span class="fokus-banner-pott">{harnast.pottText}</span></span>
+          <span class="ord-banner-cta">{harnast.knapp}</span>
         </a>
       ) : (
-        <a href="/trana/fokus" class="ord-banner">
-          <span class="ord-banner-nyhet">Nyhet</span>
-          <span><strong>Fokusera på dina svagheter!</strong> Träna på ett delprov, en uppgiftstyp eller det du haft fel på: tio uppgifter i taget med förklaring direkt efter varje svar.</span>
-          <span class="ord-banner-cta">Träna →</span>
+        <a href={karta.tom ? '/extra#forsta-pass' : harnast.href} class="ord-banner fokus-banner">
+          <span class="banner-mini" set:html={miniKarta} />
+          {karta.tom ? (
+            <span class="banner-text"><strong>Rita din hjärnkarta.</strong> Gör ett provpass så ritar jag in var dina rätt finns och vad du ska träna härnäst.</span>
+          ) : (
+            <span class="banner-text"><strong>Din hjärnkarta behöver ett helt pass.</strong> {harnast.mening}</span>
+          )}
+          <span class="ord-banner-cta">{karta.tom ? 'Välj ett provpass →' : harnast.knapp}</span>
         </a>
       )}
 
       <a href="/ord" class="ord-banner">
         <span class="ord-banner-nyhet">Ord</span>
-        <span><strong>Ordträningen.</strong> Lär dig över 4000 högskoleprovsord med minnesregler och smart repetition, några ord om dagen räcker.</span>
+        <span class="banner-text"><strong>Ordträningen.</strong> Lär dig över 4000 högskoleprovsord med minnesregler och smart repetition, några ord om dagen räcker.</span>
         <span class="ord-banner-cta">Testa →</span>
       </a>
 
@@ -209,8 +214,8 @@ const svagaText = svagaste.map(s => typNamnMap.get(s.typ) || s.typ).join(', ');
       </div>
 
       <a href="/extra" class="extra-banner">
-        <span class="extra-banner-tag">Extramaterial</span>
-        <span><strong>Vill du träna mer?</strong> {formatAntal(extra.fragor)} uppgifter från {extra.tillfallen} tidigare högskoleprov, med rättning och textförklaringar. Utanför stegen, för dig som har tid över.</span>
+        <span class="extra-banner-tag">Extra</span>
+        <span class="banner-text"><strong>Vill du träna mer?</strong> {formatAntal(extra.fragor)} uppgifter från {extra.tillfallen} tidigare högskoleprov, med rättning och textförklaringar. Utanför stegen, för dig som har tid över.</span>
         <span class="extra-banner-cta">Fler prov →</span>
       </a>
     </div>
@@ -504,8 +509,12 @@ const svagaText = svagaste.map(s => typNamnMap.get(s.typ) || s.typ).join(', ');
 
   .delprov-videos-links {
     display: flex;
+    flex-wrap: wrap;
     justify-content: center;
-    gap: 1rem;
+    gap: 0.6rem 1rem;
+  }
+  @media (max-width: 380px) {
+    .delprov-videos-links { gap: 0.5rem 0.6rem; }
   }
 
   .delprov-video-btn {
@@ -541,19 +550,32 @@ const svagaText = svagaste.map(s => typNamnMap.get(s.typ) || s.typ).join(', ');
     margin-top: 1rem;
   }
 
-  .ord-banner { display: flex; align-items: center; gap: 0.8rem; margin: 0 0 1.6rem; padding: 0.85rem 1.1rem;
-    background: #eff6ff; border: 1.5px solid #bfdbfe; border-radius: 12px; color: inherit; text-decoration: none;
+  /* Bannrarna: grid med en kolumn på 72 px för märket, texten bredvid och
+     knappen till höger. På mobil hamnar knappen på egen rad i full bredd. */
+  .ord-banner, .extra-banner { display: grid; grid-template-columns: 72px 1fr auto; align-items: center; gap: 0.6rem 0.8rem;
+    padding: 0.85rem 1.1rem; border-radius: 12px; color: inherit; text-decoration: none;
     font-size: 0.95rem; line-height: 1.4; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
-  .ord-banner:hover { border-color: #2563eb; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12); text-decoration: none; }
-  .ord-banner-nyhet { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
-    background: #2563eb; color: #fff; padding: 0.25rem 0.6rem; border-radius: 999px; }
-  .ord-banner-cta { flex-shrink: 0; margin-left: auto; color: #2563eb; font-weight: 700; white-space: nowrap; }
-
-  .extra-banner { display: flex; align-items: center; gap: 0.8rem; margin: 2rem 0 0; padding: 0.85rem 1.1rem;
-    background: #f8fafc; border: 1.5px solid var(--color-border); border-radius: 12px; color: inherit; text-decoration: none;
-    font-size: 0.95rem; line-height: 1.4; transition: border-color 0.15s ease, box-shadow 0.15s ease; }
-  .extra-banner:hover { border-color: #2563eb; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12); text-decoration: none; }
-  .extra-banner-tag { flex-shrink: 0; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
-    background: #64748b; color: #fff; padding: 0.25rem 0.6rem; border-radius: 999px; }
-  .extra-banner-cta { flex-shrink: 0; margin-left: auto; color: #2563eb; font-weight: 700; white-space: nowrap; }
+  .ord-banner { margin: 0 0 1.2rem; background: #eff6ff; border: 1.5px solid #bfdbfe; }
+  .extra-banner { margin: 2rem 0 0; background: #f8fafc; border: 1.5px solid var(--color-border); }
+  .ord-banner:hover, .extra-banner:hover { border-color: #2563eb; box-shadow: 0 6px 18px rgba(37, 99, 235, 0.12); text-decoration: none; }
+  .ord-banner-nyhet, .extra-banner-tag { justify-self: start; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.07em; text-transform: uppercase;
+    color: #fff; padding: 0.25rem 0.6rem; border-radius: 999px; }
+  .ord-banner-nyhet { background: #2563eb; }
+  .extra-banner-tag { background: #64748b; }
+  .banner-mini { display: flex; justify-content: center; }
+  .banner-text { min-width: 0; }
+  .fokus-banner-rubrik { display: block; font-size: 1.02rem; }
+  .fokus-banner-rubrik b { font-weight: 800; }
+  .fokus-banner-pott { display: inline-block; white-space: nowrap; margin-top: 0.2rem; font-size: 0.8rem; font-weight: 700; color: #92400e; background: #fef3c7; border-radius: 999px; padding: 0.05rem 0.6rem; }
+  .ord-banner-cta, .extra-banner-cta { color: #2563eb; font-weight: 700; white-space: nowrap; }
+  @media (max-width: 560px) {
+    .ord-banner, .extra-banner { grid-template-columns: 72px 1fr; }
+    .ord-banner-cta, .extra-banner-cta { grid-column: 1 / -1; display: block; text-align: center; white-space: normal;
+      padding: 0.6rem 0.8rem; border-radius: 10px; background: #fff; border: 1.5px solid #bfdbfe; min-height: 44px; }
+    .fokus-banner--aktiv .ord-banner-cta { background: #2563eb; border-color: #2563eb; color: #fff; }
+  }
+  /* Smal telefon: smalare märkeskolumn så att texten får plats. */
+  @media (max-width: 380px) {
+    .ord-banner, .extra-banner { grid-template-columns: 56px 1fr; gap: 0.6rem 0.65rem; padding: 0.75rem 0.85rem; }
+  }
 </style>

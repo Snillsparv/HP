@@ -3,10 +3,26 @@
 // provtillfälle med det senaste först. Ligger utanför stegen på Träna-sidan.
 import Base from '../../layouts/Base.astro';
 import { tillfallenMedPass, antalFragor, antalForklarade, testId, extraStatistik, formatAntal } from '../../lib/extraprov/register.js';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import { hamtaHandelser } from '../../lib/fokus/historik.js';
+import { byggHjarnkarta } from '../../lib/fokus/hjarnkarta.js';
+import Hjarnkarta from '../../components/Hjarnkarta.astro';
+import '../../styles/hjarnkarta.css';
 
 const grupper = tillfallenMedPass();
 const totalt = grupper.reduce((n, g) => n + g.pass.length, 0);
 const stat = extraStatistik();
+
+// Din hjärnkarta, renderad på servern ur användarens (eller gästens) svar.
+// Utan svar blir det kallstartsraden som skrollar till första provpasset.
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+const karta = byggHjarnkarta(user ? await hamtaHandelser(user.id) : []);
+const forstaPass = grupper[0]?.pass[0]?.id;
+// Första passet av varje sort, för länkarna "Välj ett kvantitativt pass" och
+// "Gör ett verbalt provpass" i kartan.
+const allaPass = grupper.flatMap(g => g.pass);
+const forstaKvant = allaPass.find(p => p.kind === 'kvant')?.id;
+const forstaVerbal = allaPass.find(p => p.kind !== 'kvant')?.id;
 ---
 
 <Base title="Fler prov att träna på – HPAkuten" description={`Extramaterial: ${formatAntal(stat.fragor)} uppgifter från ${stat.tillfallen} tidigare högskoleprov, med timer, rättning och textförklaringar till varje uppgift.`}>
@@ -14,6 +30,17 @@ const stat = extraStatistik();
     <div class="container" style="max-width: 800px;">
       <h1>Fler prov att träna på</h1>
       <p class="page-intro">Klar med stegen på <a href="/trana">Träna-sidan</a> och vill träna mer? Här finns fler provpass från tidigare högskoleprov, nyaste först.</p>
+
+      {karta.tom ? (
+        <div class="hk-kallplats">
+          <Hjarnkarta data={karta} storlek="kompakt" />
+        </div>
+      ) : (
+        <section class="hk-kort" aria-labelledby="hk-kort-rubrik">
+          <div class="hk-kort-topp"><h2 id="hk-kort-rubrik">Din hjärnkarta</h2><a href="/trana/fokus">Öppna träningen ›</a></div>
+          <Hjarnkarta data={karta} storlek="kompakt" />
+        </section>
+      )}
 
       <div class="stat-rad">
         <div class="stat-ruta"><strong>{formatAntal(stat.fragor)}</strong><span>uppgifter</span></div>
@@ -37,8 +64,8 @@ const stat = extraStatistik();
               const forklarade = antalForklarade(p);
               const isKvant = p.kind === 'kvant';
               return (
-                <a href={`/extra/${p.id}`} class={`pass-card ${isKvant ? 'pass-card--kvant' : 'pass-card--verbal'}`} data-test-id={testId(p)}>
-                  <div class="pass-card-top">
+                <a href={`/extra/${p.id}`} id={p.id === forstaPass ? 'forsta-pass' : undefined} class={`pass-card ${isKvant ? 'pass-card--kvant' : 'pass-card--verbal'}`} data-test-id={testId(p)}>
+                  <div class="pass-card-top" id={p.id === forstaKvant ? 'forsta-kvant' : p.id === forstaVerbal ? 'forsta-verbal' : undefined}>
                     <span class={`pass-kind ${isKvant ? 'pass-kind--kvant' : 'pass-kind--verbal'}`}>{isKvant ? 'Kvantitativt' : 'Verbalt'}</span>
                     <span class="pass-nr">Provpass {p.passNr}</span>
                   </div>
@@ -86,6 +113,8 @@ const stat = extraStatistik();
 </Base>
 
 <style>
+  .hk-kort, .hk-kallplats { margin: 0 0 1.2rem; }
+  #forsta-pass, #forsta-kvant, #forsta-verbal { scroll-margin-top: 90px; }
   .stat-rad { display: flex; gap: 0.8rem; flex-wrap: wrap; margin: 0 0 1.2rem; }
   .stat-ruta { flex: 1 1 90px; display: flex; flex-direction: column; align-items: center; padding: 0.9rem 0.4rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); }
   .stat-ruta strong { font-size: 1.9rem; font-weight: 800; color: var(--color-primary); line-height: 1.1; }

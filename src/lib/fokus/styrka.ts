@@ -69,6 +69,14 @@ export function malFor(typ: string): number {
   return typ.startsWith('nog') || typ === 'mek:3' ? MAL_STYRKA_SVART : MAL_STYRKA;
 }
 
+/** Målet för ett helt delprov i hjärnkartan. MEK är det viktade snittet av
+ * en, två och tre luckor (4, 4 och 2 uppgifter per pass, målen 85, 85 och 75). */
+export function malDelprov(delprov: string): number {
+  if (delprov === 'nog') return MAL_STYRKA_SVART;
+  if (delprov === 'mek') return 0.83;
+  return MAL_STYRKA;
+}
+
 /** Vikt för det i:te senaste svaret (0 = senast) som gavs för ett antal dagar sedan. */
 export function vikt(i: number, dagar = 0): number {
   return Math.pow(0.5, i / HALVERINGSTID) * Math.pow(0.5, Math.max(0, dagar) / HALVERINGSTID_DAGAR);
@@ -95,6 +103,69 @@ interface Alternativ {
   priorAntal?: number;
 }
 
+/** Vikten för varje svar i en lista som räknas ihop till en styrka (samma
+ * typ eller samma delprov). Listan sorteras nyast först på plats. */
+function viktaLista(lista: Handelse[], nu: Date): { h: Handelse; w: number }[] {
+  lista.sort((x, y) => y.createdAt.getTime() - x.createdAt.getTime());
+  // Grupptak: frågor på samma diagram eller text vid samma tillfälle.
+  const perTillfalle = new Map<string, number>();
+  for (const h of lista) { const t = tillfalle(h); if (t) perTillfalle.set(t, (perTillfalle.get(t) || 0) + 1); }
+  const ut: { h: Handelse; w: number }[] = [];
+  // Svar med samma tidsstämpel (ett helt provpass) får samma vikt: mitten
+  // av gruppens platser, så att frågornas ordning i passet inte spelar roll.
+  let i = 0;
+  while (i < lista.length) {
+    let j = i;
+    while (j + 1 < lista.length && lista[j + 1].createdAt.getTime() === lista[i].createdAt.getTime()) j++;
+    const dagar = (nu.getTime() - lista[i].createdAt.getTime()) / (24 * 3600 * 1000);
+    const w = vikt((i + j) / 2, dagar);
+    for (let k = i; k <= j; k++) {
+      const h = lista[k];
+      const t = tillfalle(h);
+      const tak = t ? Math.min(1, GRUPPTAK / (perTillfalle.get(t) || 1)) : 1;
+      ut.push({ h, w: w * faktor(h) * tak });
+    }
+    i = j + 1;
+  }
+  return ut;
+}
+
+/** Vikten för varje svar i delprovsstyrkan, per delprov och nycklad på
+ * händelseobjektet. Samma vikter som beraknaDelprovStyrkor (omförsök räknas
+ * inte). Används för att räkna osäkerheten i en förändring före och efter
+ * ett pass, där samma svar väger olika mycket i de två skattningarna. */
+export function delprovVikter(handelser: Handelse[], nu = new Date()): Map<string, Map<Handelse, number>> {
+  const perDelprov = new Map<string, Handelse[]>();
+  for (const h of handelser) {
+    if (h.omforsok) continue;
+    const lista = perDelprov.get(h.delprov) || [];
+    lista.push(h);
+    perDelprov.set(h.delprov, lista);
+  }
+  const ut = new Map<string, Map<Handelse, number>>();
+  for (const [dp, lista] of perDelprov) ut.set(dp, new Map(viktaLista(lista, nu).map(x => [x.h, x.w])));
+  return ut;
+}
+
+/** Standardfelet för skillnaden mellan två delprovsstyrkor (före och efter),
+ * räknat ur vikterna: varje svar bidrar med skillnaden i sin normerade vikt i
+ * de två skattningarna. Priorn Beta(2, 2) är fast och ger ingen slump, men
+ * den drar de två skattningarna olika mycket mot mitten; den förskjutningen
+ * är det förväntade värdet av skillnaden när nivån är oförändrad. */
+export function forandringsOsakerhet(fore: Map<Handelse, number> | undefined, efter: Map<Handelse, number> | undefined, v: number): { se: number; forvantad: number } {
+  const a = fore ?? new Map<Handelse, number>();
+  const b = efter ?? new Map<Handelse, number>();
+  let Wa = 0, Wb = 0;
+  for (const w of a.values()) Wa += w;
+  for (const w of b.values()) Wb += w;
+  const na = Wa + PRIOR_A + PRIOR_B, nb = Wb + PRIOR_A + PRIOR_B;
+  let summa = 0;
+  for (const [h, wb] of b) { const d = wb / nb - (a.get(h) ?? 0) / na; summa += d * d; }
+  for (const [h, wa] of a) if (!b.has(h)) { const d = wa / na; summa += d * d; }
+  const forvantad = (Wb * v + PRIOR_A) / nb - (Wa * v + PRIOR_A) / na;
+  return { se: Math.sqrt(v * (1 - v) * summa), forvantad };
+}
+
 /** Styrka per typ. Händelserna behöver inte vara sorterade. Med prior per
  * typ centreras skattningen där (delprovsstyrkan), annars på 50 procent. */
 export function beraknaStyrkor(handelser: Handelse[], alt: Alternativ | Date = {}): Map<string, Styrka> {
@@ -109,30 +180,12 @@ export function beraknaStyrkor(handelser: Handelse[], alt: Alternativ | Date = {
   }
   const resultat = new Map<string, Styrka>();
   for (const [typ, lista] of perTyp) {
-    lista.sort((x, y) => y.createdAt.getTime() - x.createdAt.getTime());
-    // Grupptak: frågor på samma diagram eller text vid samma tillfälle.
-    const perTillfalle = new Map<string, number>();
-    for (const h of lista) { const t = tillfalle(h); if (t) perTillfalle.set(t, (perTillfalle.get(t) || 0) + 1); }
     let viktadRatt = 0;
     let viktadSumma = 0;
     let ratt = 0;
-    // Svar med samma tidsstämpel (ett helt provpass) får samma vikt: mitten
-    // av gruppens platser, så att frågornas ordning i passet inte spelar roll.
-    let i = 0;
-    while (i < lista.length) {
-      let j = i;
-      while (j + 1 < lista.length && lista[j + 1].createdAt.getTime() === lista[i].createdAt.getTime()) j++;
-      const dagar = (nu.getTime() - lista[i].createdAt.getTime()) / (24 * 3600 * 1000);
-      const w = vikt((i + j) / 2, dagar);
-      for (let k = i; k <= j; k++) {
-        const h = lista[k];
-        const t = tillfalle(h);
-        const tak = t ? Math.min(1, GRUPPTAK / (perTillfalle.get(t) || 1)) : 1;
-        const wk = w * faktor(h) * tak;
-        viktadSumma += wk;
-        if (h.correct) { viktadRatt += wk; ratt++; }
-      }
-      i = j + 1;
+    for (const { h, w } of viktaLista(lista, nu)) {
+      viktadSumma += w;
+      if (h.correct) { viktadRatt += w; ratt++; }
     }
     const prior = a.prior?.get(typ);
     const styrka = prior === undefined

@@ -86,6 +86,12 @@ function categoryLabel(cat: string): string {
   return labels[cat] || cat;
 }
 
+/** "XYZ algebra", "KVA algebra": delprovet står med så att samma kategori
+ * i två delprov inte ser ut att stå två gånger. */
+function kategoriEtikett(cat: CategoryResult): string {
+  return `${cat.subTest} ${categoryLabel(cat.category).toLowerCase()}`;
+}
+
 export function analyzeResults(
   questions: AnalysisQuestion[],
   answers: (number | null)[],
@@ -136,7 +142,7 @@ export function analyzeResults(
   }
   for (const cat of sortedCategories) {
     if (cat.rate < 0.5 && weakAreas.length < 3) {
-      weakAreas.push(`${cat.subTest} — ${categoryLabel(cat.category)}`);
+      weakAreas.push(kategoriEtikett(cat));
     }
   }
 
@@ -210,7 +216,7 @@ export function analyzeResults(
         const pct = Math.round(cat.rate * 100);
         catRows += `
           <div class="analysis-bar-row analysis-bar-row--small">
-            <div class="analysis-bar-label">${categoryLabel(cat.category)}</div>
+            <div class="analysis-bar-label">${kategoriEtikett(cat)}</div>
             <div class="analysis-bar-track">
               <div class="analysis-bar-fill" style="--target-width:${pct}%; background:${barColor(pct)};">
                 <span class="analysis-bar-value">${cat.correct}/${cat.total}</span>

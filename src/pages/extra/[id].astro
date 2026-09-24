@@ -6,6 +6,7 @@ import { getSessionFromCookies } from '../../lib/auth.js';
 import { hamtaPass, provtillfallen, antalFragor, antalForklarade, testId } from '../../lib/extraprov/register.js';
 import { golvBreddning } from '../../lib/fokus/fragebank.js';
 import '../../styles/fragor.css';
+import '../../styles/hjarnkarta.css';
 
 const { id } = Astro.params;
 const pass = id ? hamtaPass(id) : undefined;
@@ -42,6 +43,9 @@ const titel = `${tillfalleName}: ${pass.name}`;
     import { generateResultImage } from '../../lib/share-image.js';
     import { laddaKatex, renderTex, questionBodyHTML, lasTextHTML, dtkDiagramHTML, resultDetailHTML, bindZoom, bindFadeIn, bindLasToggle } from '../../lib/fragor/render.js';
     import { typFor, typNamn } from '../../lib/fokus/typer.js';
+    // Hjärnkartan: bara den rena vyn och klienten, ingen frågedata.
+    import { blockHTML, type HjarnkartaData } from '../../lib/fokus/hjarnkarta-vy.js';
+    import { startaHjarnkartor } from '../../lib/fokus/hjarnkarta-klient.js';
     const golv: Record<string, { kategori: string; antal: number }> = (window as any).__golv || {};
     const KATEGORI_NAMN: Record<string, string> = { algebra: 'algebra', aritmetik: 'aritmetik', geometri: 'geometri', funktioner: 'funktioner och grafer', procent: 'procent', sannolikhet: 'sannolikhet', statistik: 'statistik', enheter: 'enheter', logik: 'logiskt resonemang' };
     // Länken från ett fel svar: typen, kategorin över delproven om typen är
@@ -83,6 +87,9 @@ const titel = `${tillfalleName}: ${pass.name}`;
     let timedAnswers: (number | null)[] = [];
     let timedScore = 0;
     let saveStatus: 'server' | 'anon' | 'error' | null = null;
+    // Id:t för det sparade resultatet på servern (för hjärnkartans före och efter).
+    let resultatId: number | null = null;
+    let sparning: Promise<void> | null = null;
     let textOpen = true;
 
     const PROGRESS_KEY = `hp-progress-${TEST_ID}`;
@@ -178,7 +185,13 @@ const titel = `${tillfalleName}: ${pass.name}`;
       return '';
     }
 
-    async function persistResult(score: number, ans: (number | null)[], elapsed: number) {
+    function persistResult(score: number, ans: (number | null)[], elapsed: number): Promise<void> {
+      sparning = sparaResultat(score, ans, elapsed);
+      return sparning;
+    }
+
+    async function sparaResultat(score: number, ans: (number | null)[], elapsed: number) {
+      resultatId = null;
       const resultData = { testId: TEST_ID, score, total: allQuestions.length, answers: [...ans], timeSeconds: elapsed, date: new Date().toISOString() };
       const stored = JSON.parse(localStorage.getItem('hp-results') || '{}');
       stored[TEST_ID] = resultData;
@@ -192,6 +205,10 @@ const titel = `${tillfalleName}: ${pass.name}`;
           body: JSON.stringify({ testId: TEST_ID, score, total: allQuestions.length, answers: ans, timeSeconds: elapsed }),
         });
         saveStatus = res.ok ? 'server' : res.status === 401 ? 'anon' : 'error';
+        if (res.ok) {
+          const d = await res.json().catch(() => null);
+          resultatId = typeof d?.id === 'number' ? d.id : null;
+        }
       } catch {
         saveStatus = (window as any).__isLoggedIn ? 'error' : 'anon';
       }
@@ -202,19 +219,78 @@ const titel = `${tillfalleName}: ${pass.name}`;
     // Svar som gavs efter tiden sparas som händelser i fokuserad träning (de
     // ingår inte i provresultatet), en gång per fråga.
     let overtidPostad = false;
-    function postaOvertid() {
-      if (!overtime || overtidPostad) return;
+    function postaOvertid(): Promise<unknown> {
+      if (!overtime || overtidPostad) return Promise.resolve();
       overtidPostad = true;
+      const anrop: Promise<unknown>[] = [];
       allQuestions.forEach((q, i) => {
         if (timedAnswers[i] === null && answers[i] !== null) {
-          fetch('/api/fokus/svar', {
+          anrop.push(fetch('/api/fokus/svar', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ questionId: `${TEST_ID}#${q.num}`, chosen: answers[i], lage: 'overtid' }),
-          }).catch(() => {});
+          }).catch(() => {}));
         }
       });
+      // Kartan hämtas först när övertidssvaren är sparade, men väntar högst fem sekunder.
+      return Promise.race([Promise.allSettled(anrop), new Promise(r => setTimeout(r, 5000))]);
     }
+
+    // ---------- Hjärnkartan i rättningen ----------
+
+    const escHTML = (v: unknown) => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+
+    /** Det gamla analysblocket som reserv när kartan inte går att hämta. */
+    function visaReserv(sektion: HTMLElement, normered: number) {
+      const { summaryHTML } = analyzeResults(allQuestions, answers, normered);
+      sektion.outerHTML = summaryHTML;
+      // Analysblocket har ett eget yrkeskort.
+      document.getElementById('yrke-kort')?.remove();
+    }
+
+    async function hamtaKarta(url: string): Promise<HjarnkartaData | null> {
+      try {
+        const res = await fetch(url, { headers: { Accept: 'application/json' } });
+        if (!res.ok) return null;
+        const d = await res.json();
+        if (!d || d.tom || d.error || !Array.isArray(d.axlar)) return null;
+        return d as HjarnkartaData;
+      } catch {
+        return null;
+      }
+    }
+
+    /** Fyller kartsektionen: före och efter passet direkt efter rättningen,
+     * utan före i granskningsläget. Reserv: analysblocket. */
+    async function visaKarta(normered: number, omgang: number) {
+      const sektion = document.getElementById('karta-sektion');
+      if (!sektion) return;
+      let data: HjarnkartaData | null = null;
+      let fore = false;
+      if (isReview && !sparning) {
+        data = await hamtaKarta('/api/fokus/karta');
+      } else if (saveStatus === 'server' && resultatId !== null) {
+        data = await hamtaKarta(`/api/fokus/karta?resultat=${resultatId}`);
+        fore = !!data;
+      }
+      // Sidan kan ha ritats om (Gör om provet) medan kartan hämtades.
+      if (omgang !== renderOmgang || !document.body.contains(sektion)) return;
+      if (!data || data.tom) { visaReserv(sektion, normered); return; }
+      const rubrik = fore ? 'Så flyttade passet din karta' : 'Din hjärnkarta';
+      sektion.classList.remove('hk-laddar');
+      sektion.removeAttribute('aria-busy');
+      sektion.innerHTML = `<div class="hk-kort-topp"><h2>${escHTML(rubrik)}</h2>${fore ? '' : '<a href="/trana/fokus">Öppna träningen ›</a>'}</div>`
+        + blockHTML(data, { storlek: 'full', fran: TEST_ID, id: 'hkr', fore });
+      startaHjarnkartor(sektion);
+    }
+
+    function yrkeHTML(normered: number): string {
+      const yrke = normered >= 0.5 ? getYrkeForScore(normered) : null;
+      if (!yrke) return '';
+      return `<div id="yrke-kort" class="res-yrke"><div class="res-yrke-text"><strong>${normered.toFixed(1)}</strong> räcker t.ex. till att bli ${escHTML(yrke.label)}!</div><img src="${escHTML(yrke.image)}" alt="${escHTML(yrke.label)}" loading="lazy" /></div>`;
+    }
+
+    let renderOmgang = 0;
 
     function renderTimeUp() {
       const answered = timedAnswers.filter(a => a !== null).length;
@@ -468,12 +544,14 @@ const titel = `${tillfalleName}: ${pass.name}`;
 
       let resultsHTML = '';
       let totalScore = 0;
+      const rutor: { namn: string; ratt: number; antal: number }[] = [];
       for (const st of subTests) {
         const qs = allQuestions.filter(q => q.subTest.id === st.id);
         const startIdx = allQuestions.indexOf(qs[0]);
         let score = 0;
         qs.forEach((q, i) => { if (answers[startIdx + i] === q.correct) score++; });
         totalScore += score;
+        rutor.push({ namn: st.shortName, ratt: score, antal: qs.length });
         resultsHTML += `
           <h3 style="margin:1.5rem 0 0.5rem;">${st.shortName}: ${score}/${qs.length}</h3>
           <div class="pq-results">${qs.map((q, i) => {
@@ -494,7 +572,9 @@ const titel = `${tillfalleName}: ${pass.name}`;
 
       const officialScore = overtime ? timedScore : totalScore;
       const normered = normera(officialScore, allQuestions.length);
-      const { summaryHTML: analysisHTML } = analyzeResults(allQuestions, answers, normered);
+      const antalFel = allQuestions.length - totalScore;
+      const felText = antalFel === 0 ? 'Alla rätt! Se rättningen' : antalFel === 1 ? 'Gå igenom ditt fel' : `Gå igenom dina ${antalFel} fel`;
+      const omgang = ++renderOmgang;
       const answeredInTime = timedAnswers.filter(a => a !== null).length;
       const forklaringsTips = forklarade === allQuestions.length
         ? '<strong>Klicka på en uppgift nedan</strong> för att se rätt svar och en textförklaring till hur man löser den.'
@@ -503,18 +583,26 @@ const titel = `${tillfalleName}: ${pass.name}`;
           : '<strong>Klicka på en uppgift nedan</strong> för att se rätt svar. Textförklaringar till det här passet kommer.';
 
       root.innerHTML = `
-        <div class="pq-result-head">
-          <h2>Resultat</h2>
-          <div class="pq-normered">${normered.toFixed(1)}</div>
-          <p style="color:var(--color-muted); font-size:0.9rem;">normerad poäng</p>
-          <div class="pq-score" style="font-size:1.5rem; margin-top:0.5rem;">${officialScore}/${allQuestions.length}</div>
-          <p style="color:var(--color-muted)">rätt svar${overtime ? ' inom provtiden' : ''} · tid: ${fmt(elapsed)}</p>
-        </div>
+        <section class="pq-result-head res-kort res-kort--${pass.kind === 'kvant' ? 'kvant' : 'verbal'}">
+          <h2 class="res-namn"><span class="res-pill">${pass.kind === 'kvant' ? 'Kvantitativt' : 'Verbalt'}</span>${escHTML(tillfalleName)}, ${escHTML(pass.name.replace(/ \(.*\)$/, '').toLowerCase())}</h2>
+          <div class="res-tal">
+            <div><b class="pq-normered">${normered.toFixed(1).replace('.', ',')}</b><span>normerad poäng</span></div>
+            <div><b class="res-ratt">${officialScore} av ${allQuestions.length}</b><span>rätt${overtime ? ' inom provtiden' : ''} · tid ${fmt(elapsed)}</span></div>
+          </div>
+          <div class="res-rutor" style="grid-template-columns:repeat(${rutor.length}, 1fr);">
+            ${rutor.map(r => `<div><b>${r.ratt}/${r.antal}</b>${escHTML(r.namn)}</div>`).join('')}
+          </div>
+          <a class="res-felrad" href="#rattning" id="btn-till-fel">${felText} <span aria-hidden="true">↓</span></a>
+        </section>
         ${overtime ? `<div class="tip-box warning" style="margin:1.5rem 0; font-size:0.92rem;">
           <strong>Efter tiden:</strong> Ditt sparade resultat räknar de ${answeredInTime} frågor du besvarade inom provtiden (${timedScore}/${allQuestions.length} rätt). Med svaren du gjorde klart efteråt fick du ${totalScore}/${allQuestions.length} rätt. Rättningen nedan visar alla dina svar.
         </div>` : ''}
-        ${analysisHTML}
-        <div class="tip-box success" style="text-align:center; margin:1.5rem 0; font-size:1rem;">${forklaringsTips}</div>
+        <section class="hk-kort res-karta hk-laddar" id="karta-sektion" aria-busy="true">
+          <div class="hk-kort-topp"><h2>${isReview ? 'Din hjärnkarta' : 'Så flyttade passet din karta'}</h2></div>
+          <p class="hk-kort-not">Ritar kartan …</p>
+        </section>
+        ${yrkeHTML(normered)}
+        <div class="tip-box success" id="rattning" style="text-align:center; margin:1.5rem 0; font-size:1rem;">${forklaringsTips}</div>
         ${resultsHTML}
         <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
         <div class="pq-share" style="text-align:center; margin:1.5rem 0;">
@@ -536,12 +624,22 @@ const titel = `${tillfalleName}: ${pass.name}`;
         </div>
       `;
 
+      document.getElementById('btn-till-fel')?.addEventListener('click', e => {
+        e.preventDefault();
+        const mal = root.querySelector('.pq-res--no') || document.getElementById('rattning');
+        mal?.scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'center' });
+      });
+
       if (!resultSaved) {
         resultSaved = true;
         await persistResult(totalScore, answers, elapsed);
+      } else if (sparning) {
+        await sparning;
       }
+      if (omgang !== renderOmgang) return;
       document.getElementById('save-area')!.innerHTML = saveAreaHTML();
-      postaOvertid();
+      // Kartan ritas när resultatet och övertidssvaren är sparade.
+      postaOvertid().then(() => visaKarta(normered, omgang));
 
       root.querySelectorAll('[data-toggle]').forEach(el => {
         el.addEventListener('click', () => {
@@ -560,6 +658,7 @@ const titel = `${tillfalleName}: ${pass.name}`;
       document.getElementById('btn-retry')?.addEventListener('click', () => {
         answers.fill(null); current = 0; submitted = false; timerSeconds = totalTime; timerPaused = false; started = false;
         overtime = false; resultSaved = false; timedAnswers = []; timedScore = 0; saveStatus = null;
+        resultatId = null; sparning = null; overtidPostad = false; renderOmgang++;
         render();
       });
 
@@ -606,3 +705,29 @@ const titel = `${tillfalleName}: ${pass.name}`;
     loadReview().then(() => render());
   </script>
 </Base>
+
+<style is:global>
+  /* Resultathuvudet i rättningen: poängen, rätt, en ruta per delprov och felraden. */
+  .res-kort { background: var(--color-surface, #fff); border: 1px solid var(--color-border, #e2e8f0); border-radius: 18px; padding: 16px 16px 0; text-align: center; overflow: hidden; margin: 0 0 14px; }
+  .res-kort .res-namn { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; justify-content: center; font-size: 13.5px; font-weight: 700; color: #334155; margin: 0; line-height: 1.4; }
+  .res-pill { display: inline-block; font-size: 11px; font-weight: 800; letter-spacing: .07em; text-transform: uppercase; color: #fff; background: #c2410c; border-radius: 999px; padding: 3px 10px; line-height: 1.4; }
+  .res-kort--verbal .res-pill { background: #2563eb; }
+  .res-tal { display: flex; justify-content: center; gap: 12px 22px; align-items: flex-end; flex-wrap: wrap; margin-top: 10px; }
+  .res-tal > div { display: flex; flex-direction: column; align-items: center; }
+  .res-tal .pq-normered { font-size: 50px; font-weight: 800; color: var(--color-primary, #2563eb); line-height: 1; }
+  .res-tal .res-ratt { font-size: 34px; font-weight: 800; color: var(--color-text, #1a1a2e); line-height: 1; white-space: nowrap; }
+  .res-tal span { font-size: 12.5px; color: var(--color-muted, #64748b); margin-top: 4px; }
+  @media (max-width: 380px) { .res-tal .pq-normered { font-size: 44px; } .res-tal .res-ratt { font-size: 28px; } }
+  .res-rutor { display: grid; gap: 8px; margin-top: 12px; }
+  .res-rutor div { background: #fff7ed; border-radius: 10px; padding: 6px 0; font-size: 12px; color: var(--color-muted, #64748b); font-weight: 600; }
+  .res-kort--verbal .res-rutor div { background: #eff6ff; }
+  .res-rutor b { display: block; font-size: 16px; color: var(--color-text, #1a1a2e); font-weight: 800; }
+  .res-felrad { display: flex; justify-content: space-between; align-items: center; min-height: 48px; margin: 14px -16px 0; padding: 12px 16px; background: #ecfdf5; border-top: 1px solid #a7f3d0; color: #047857 !important; font-weight: 700; font-size: 15px; text-decoration: none !important; }
+  .res-felrad:hover { background: #d1fae5; }
+  .res-karta { margin: 0 0 14px; }
+  .res-karta.hk-laddar { min-height: 380px; }
+  .res-karta .hk-kort-topp + .hk { margin-top: 0; }
+  .res-yrke { background: #eff6ff; border: 1px solid #bfdbfe; border-radius: 12px; padding: 1rem; margin: 0 0 1rem; color: #1e40af; font-size: 0.95rem; text-align: center; }
+  .res-yrke-text { margin-bottom: 0.8rem; }
+  .res-yrke img { width: 100%; max-width: 400px; border-radius: 10px; object-fit: cover; }
+</style>

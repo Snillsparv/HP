@@ -1,53 +1,36 @@
 ---
-// Fokuserad träning på svagheter: tio uppgifter i taget från extramaterialet,
-// per delprov, per uppgiftstyp eller viktat mot det användaren haft svårt för.
-// Utan timer, med rättning och förklaring direkt efter varje svar. Utan
-// historik börjar man med en snabbkoll över de vanligaste typerna.
+// Fokuserad träning: överst Din hjärnkarta med Träna härnäst, sedan Välj
+// själv (ett delprov eller en uppgiftstyp). Tio uppgifter i taget från
+// extramaterialet, utan timer, med rättning och förklaring direkt efter varje
+// svar. Länkarna från kartan och rättningen startar rundan direkt från adressen.
 import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
-import { allaTyper, typVikter, DELPROV, DELPROV_NAMN, DELPROV_LANGT, typNamn } from '../../lib/fokus/fragebank.js';
-import { hamtaHandelser, forStyrka } from '../../lib/fokus/historik.js';
-import { beraknaTypStyrkor, beraknaDelprovStyrkor, svagasteTyper, antalSakraTyper, delprovAttFortsattaMed, MINSTA_SAKRA_TYPER, malFor } from '../../lib/fokus/styrka.js';
-import { byggKarta } from '../../lib/fokus/karta.js';
-import { TEMPO_SEK, ANTAL_PER_PASS } from '../../lib/fokus/typer.js';
+import { allaTyper, DELPROV, DELPROV_NAMN, DELPROV_LANGT, typNamn } from '../../lib/fokus/fragebank.js';
+import { hamtaHandelser } from '../../lib/fokus/historik.js';
+import { byggHjarnkarta } from '../../lib/fokus/hjarnkarta.js';
+import { TEMPO_SEK } from '../../lib/fokus/typer.js';
 import { formatAntal } from '../../lib/extraprov/register.js';
-import Styrkekarta from '../../components/Styrkekarta.astro';
+import Hjarnkarta from '../../components/Hjarnkarta.astro';
 import '../../styles/fragor.css';
+import '../../styles/hjarnkarta.css';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const handelser = user ? await hamtaHandelser(user.id) : [];
-const rakneBara = forStyrka(handelser);
-const styrkor = beraknaTypStyrkor(rakneBara);
+// Din hjärnkarta med Träna härnäst överst. Utan svar: den tomma kartan med
+// ett provpass eller snabbkollen som ingång.
+const hjarnkarta = byggHjarnkarta(handelser);
 const typer = allaTyper(['extra']);
 const totalt = typer.reduce((n, t) => n + t.antal, 0);
 
 // Typrader: delprov som har undertyper (ORD och LÄS har bara sig själva).
-// Typer under golvet ("övrigt") visas inte som chips, bara på kartan.
+// Typer under golvet ("övrigt") visas inte som chips, bara i arket.
 const typrader = DELPROV
   .map(dp => ({ dp, typer: typer.filter(t => t.delprov === dp && t.typ !== dp && !t.typ.endsWith(':ovrigt')) }))
   .filter(r => r.typer.length > 1);
 
-const vikter = typVikter();
-// Gaten: minst tre typer med underlag. Före det: fortsätt med ett delprov
-// (om något är säkert på delprovsnivå), annars snabbkollen.
-const svagaste = antalSakraTyper(styrkor) >= MINSTA_SAKRA_TYPER ? svagasteTyper(styrkor, 3, vikter) : [];
-const harSvagheter = svagaste.length > 0;
-const fortsatt = !harSvagheter ? delprovAttFortsattaMed(beraknaDelprovStyrkor(rakneBara), ANTAL_PER_PASS) : undefined;
-const karta = byggKarta(styrkor, typer, vikter);
 const typNamnMap: Record<string, string> = Object.fromEntries(typer.map(t => [t.typ, t.namn]));
 for (const dp of DELPROV) typNamnMap[dp] = DELPROV_NAMN[dp];
 typNamnMap['mek'] = 'MEK';
-// Raden under den primära knappen: varför den översta typen ligger först.
-let varforText = '';
-if (harSvagheter) {
-  const t = svagaste[0];
-  const dp = t.delprov as keyof typeof ANTAL_PER_PASS;
-  const perPass = Math.round(vikter.get(t.typ) ?? 0);
-  const kategori = (typNamnMap[t.typ] || t.typ).replace(/^\S+ /, '');
-  varforText = t.typ.includes(':') && perPass > 0
-    ? `${typNamnMap[t.typ]} först: ${perPass} av ${ANTAL_PER_PASS[dp]} ${DELPROV_NAMN[dp]}-uppgifter på provet är ${kategori}.`
-    : `${typNamnMap[t.typ] || t.typ} först: ${Math.round(t.styrka * 100)} % rätt hittills, målet är ${Math.round(malFor(t.typ) * 100)}.`;
-}
 ---
 
 <Base title="Fokusera på dina svagheter – HPAkuten" description={`Träna på just de uppgiftstyper du behöver: välj delprov eller typ, eller låt verktyget välja utifrån dina svagheter. ${formatAntal(totalt)} uppgifter från tidigare högskoleprov med förklaring direkt efter varje svar.`}>
@@ -57,53 +40,21 @@ if (harSvagheter) {
         <h1>Fokusera på dina svagheter</h1>
         <p class="page-intro">Tio uppgifter i taget från tidigare högskoleprov, utan timer och med förklaring direkt efter varje svar. Jag väljer, du kör.</p>
 
-        <section class="fokus-block fokus-block--svag">
-          {harSvagheter ? (
-            <Fragment>
-              <h2>Mina svagheter</h2>
-              <p>Mest att hämta just nu: <strong>{svagaste.map(s => typNamnMap[s.typ] || s.typ).join(', ')}</strong>. Jag blandar uppgifter från de typerna med lite annat insprängt, så att det inte blir ren drill.</p>
-              <button class="btn btn-primary fokus-start" data-lage="svagheter" data-val="">Träna på mina svagheter</button>
-              <p style="margin:0.6rem 0 0; font-size:0.85rem;">{varforText}</p>
-            </Fragment>
-          ) : fortsatt ? (
-            <Fragment>
-              <h2>Fortsätt med {DELPROV_NAMN[fortsatt.delprov as keyof typeof DELPROV_NAMN]}</h2>
-              <p>Det delprov som ger dig mest att hämta just nu. När jag har underlag på tre uppgiftstyper kan jag välja typer åt dig.</p>
-              <button class="btn btn-primary fokus-start" data-lage="delprov" data-val={fortsatt.delprov}>Fortsätt med {DELPROV_NAMN[fortsatt.delprov as keyof typeof DELPROV_NAMN]}</button>
-            </Fragment>
-          ) : (
-            <Fragment>
-              <h2>Börja med en snabbkoll</h2>
-              <p>Arton uppgifter över alla delprov, utan timer. Sedan vet jag ungefär var du står. Ett helt pass på 40 uppgifter ger en bättre bild.</p>
-              <button class="btn btn-primary fokus-start" data-lage="snabbkoll" data-val="">Snabbkoll, cirka tio minuter</button>
-            </Fragment>
-          )}
+        <section class="hk-kort fokus-karta-kort" aria-labelledby="fokus-karta-rubrik">
+          <div class="hk-kort-topp"><h2 id="fokus-karta-rubrik">Din hjärnkarta</h2></div>
+          <Hjarnkarta data={hjarnkarta} storlek="full" />
         </section>
 
-        <section class="fokus-block">
-          <h2>Så här ligger du till</h2>
-          {karta.length === 0 ? (
-            <p>Här ser du hur det går per uppgiftstyp när du börjat träna. Både proven och rundorna här räknas.</p>
-          ) : (
-            <Fragment>
-              <p>Andel rätt per uppgiftstyp, där nya svar väger mer än gamla. Jag räknar också hur vanlig typen är på provet, så det som ger mest att hämta ligger överst. Klicka på en rad för att träna på just den typen.</p>
-              <Styrkekarta rader={karta} />
-            </Fragment>
-          )}
-        </section>
-
-        <section class="fokus-block">
-          <h2>Ett delprov</h2>
+        <details class="fokus-block fokus-details">
+          <summary><h2>Välj själv</h2><span class="fokus-details-hint">Delprov eller uppgiftstyp</span></summary>
+          <h3 class="fokus-val-rubrik">Ett delprov</h3>
           <p>Slumpade uppgifter ur alla {formatAntal(totalt)} i extramaterialet.</p>
           <div class="fokus-chips">
             {DELPROV.map(dp => (
               <button class="fokus-chip fokus-start" data-lage="delprov" data-val={dp} title={DELPROV_LANGT[dp]}>{DELPROV_NAMN[dp]}</button>
             ))}
           </div>
-        </section>
-
-        <details class="fokus-block fokus-details">
-          <summary><h2>En uppgiftstyp</h2><span class="fokus-details-hint">Visa alla {typrader.reduce((n, r) => n + r.typer.length, 0)} typer</span></summary>
+          <h3 class="fokus-val-rubrik">En uppgiftstyp</h3>
           <p>Mer specifikt: en kategori inom ett delprov.</p>
           {typrader.map(r => (
             <div class="fokus-typrad">
@@ -307,7 +258,7 @@ if (harSvagheter) {
     }
 
     function tillbaka() {
-      // Laddar om sidan så att styrkekartan visar de nya svaren.
+      // Laddar om sidan så att hjärnkartan visar de nya svaren.
       runda = null;
       sparaRunda();
       window.location.href = window.location.pathname;
@@ -649,9 +600,9 @@ if (harSvagheter) {
   .fokus-block { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1.2rem 1.4rem; margin-bottom: 1.2rem; box-shadow: var(--shadow); }
   .fokus-block h2 { margin: 0 0 0.4rem; font-size: 1.15rem; }
   .fokus-block > p { margin: 0 0 0.9rem; font-size: 0.92rem; color: var(--color-muted); line-height: 1.6; }
-  .fokus-block--svag { border-color: #2563eb; background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); }
-  .fokus-block--svag p { color: #1e3a8a; }
-  .fokus-block--svag .btn { display: block; width: 100%; text-align: center; font-size: 1.05rem; padding: 0.9rem 1rem; }
+  .fokus-karta-kort { margin-bottom: 1.2rem; box-shadow: var(--shadow); }
+  .fokus-block .fokus-val-rubrik { margin: 1rem 0 0.3rem; font-size: 1rem; }
+  .fokus-details > p { margin: 0 0 0.9rem; font-size: 0.92rem; color: var(--color-muted); line-height: 1.6; }
   .fokus-chips { display: flex; flex-wrap: wrap; gap: 0.5rem; }
   .fokus-chip { font-family: var(--font-sans); font-weight: 700; font-size: 0.95rem; padding: 0.55rem 1rem; border: 2px solid var(--color-border); border-radius: 999px; background: var(--color-surface); cursor: pointer; transition: all 0.12s; color: var(--color-text); min-height: 44px; }
   .fokus-chip:hover { border-color: var(--color-primary); color: var(--color-primary); }
@@ -662,9 +613,12 @@ if (harSvagheter) {
   .fokus-sett { text-align: center; font-size: 0.82rem; color: var(--color-muted); margin: -0.5rem 0 1rem; }
   .fokus-details summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 1rem; }
   .fokus-details summary::-webkit-details-marker { display: none; }
-  .fokus-details summary h2 { margin: 0; }
-  .fokus-details-hint { font-size: 0.85rem; color: var(--color-primary); font-weight: 600; white-space: nowrap; }
-  .fokus-details[open] .fokus-details-hint { display: none; }
+  .fokus-details summary { flex-wrap: wrap; row-gap: 0.15rem; }
+  .fokus-details summary h2 { margin: 0; white-space: nowrap; }
+  .fokus-details-hint { display: inline-flex; align-items: center; gap: 0.45rem; font-size: 0.85rem; color: var(--color-muted); font-weight: 600; white-space: nowrap; }
+  /* Chevron som visar att raden fälls ut; den vrids när blocket är öppet. */
+  .fokus-details-hint::after { content: '›'; display: inline-block; font-size: 1.35rem; line-height: 1; color: var(--color-text, #1a1a2e); transform: rotate(90deg); transition: transform 0.15s ease; }
+  .fokus-details[open] .fokus-details-hint::after { transform: rotate(-90deg); }
   .fokus-details[open] summary { margin-bottom: 0.4rem; }
   .fokus-knappar .btn-overview-link { align-self: center; }
   .fokus-fb { margin-top: 1rem; padding: 0.8rem 1rem; border-radius: var(--radius); font-size: 0.95rem; }

@@ -1,0 +1,27 @@
+---
+// Din hjärnkarta: tunt omslag kring vyn i hjarnkarta-vy.ts. Kartan, Träna
+// härnäst (eller kallstarten) renderas på servern med set:html, och datan
+// läggs som JSON i blocket så att klienten kan rita om i rätt bredd och
+// öppna arket per delprov. Sidan som använder komponenten importerar
+// src/styles/hjarnkarta.css.
+import { blockHTML, type HjarnkartaData } from '../lib/fokus/hjarnkarta-vy.js';
+
+interface Props {
+  data: HjarnkartaData;
+  storlek?: 'kompakt' | 'full';
+  /** test_id för rättningen: läggs som &fran= på länkarna till träningen. */
+  fran?: string | null;
+}
+
+const { data, storlek = 'full', fran = null } = Astro.props;
+// Unikt prefix för SVG:ns id:n om flera kartor ligger på samma sida.
+const id = `hk${Math.random().toString(36).slice(2, 8)}`;
+const html = blockHTML(data, { storlek, fran, id });
+---
+
+<Fragment set:html={html} />
+
+<script>
+  import { startaHjarnkartor } from '../lib/fokus/hjarnkarta-klient.js';
+  startaHjarnkartor();
+</script>

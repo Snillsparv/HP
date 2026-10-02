@@ -446,15 +446,66 @@ function timeAgo(d: string) {
         const rows = data.users.map((u: any) => {
           const date = new Date(u.created_at).toLocaleDateString('sv-SE');
           const guestTag = u.is_guest ? ' <span style="font-size:0.75rem; color:#9333ea; font-weight:600;">(gäst)</span>' : '';
-          return `<tr><td>${u.id}</td><td><strong>${u.name}</strong>${guestTag}</td><td style="color:var(--color-muted);">${u.email}</td><td>${u.train_step || 1}</td><td>${date}</td></tr>`;
+          const id = Number(u.id);
+          return `<tr data-rad="${id}"><td>${id}</td><td><strong>${esc(u.name)}</strong>${guestTag}</td><td style="color:var(--color-muted);">${esc(u.email)}</td><td>${Number(u.train_step) || 1}</td><td>${date}</td><td><button type="button" class="radera-btn" data-id="${id}">Radera</button></td></tr>`;
         }).join('');
         results.innerHTML = `<p style="font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">${data.count} träff${data.count === 1 ? '' : 'ar'}</p>
-          <table class="search-result-table"><thead><tr><th>ID</th><th>Namn</th><th>E-post</th><th>Steg</th><th>Registrerad</th></tr></thead><tbody>${rows}</tbody></table>`;
+          <p id="radera-status" role="status" style="font-size:0.85rem; margin:0 0 0.5rem;"></p>
+          <div style="overflow-x:auto;"><table class="search-result-table"><thead><tr><th>ID</th><th>Namn</th><th>E-post</th><th>Steg</th><th>Registrerad</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>`;
       } catch { results.innerHTML = '<p style="color:#ef4444;">Kunde inte nå servern</p>'; }
     }
 
     btn.addEventListener('click', search);
     input.addEventListener('keydown', (e) => { if (e.key === 'Enter') search(); });
+
+    function esc(v: unknown): string {
+      return String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!));
+    }
+
+    async function adminAnrop(body: Record<string, unknown>) {
+      const res = await fetch('/api/admin/users', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const d = await res.json().catch(() => ({}));
+      return { ok: res.ok && d.ok, d };
+    }
+
+    // Radera användare: visa vad som försvinner, kräv att RADERA skrivs in.
+    results.addEventListener('click', async (e) => {
+      const knapp = (e.target as HTMLElement).closest<HTMLButtonElement>('.radera-btn');
+      if (!knapp) return;
+      const id = Number(knapp.dataset.id);
+      const status = document.getElementById('radera-status');
+      const visa = (t: string, fel = false) => { if (status) { status.textContent = t; status.style.color = fel ? '#ef4444' : 'var(--color-success)'; } };
+      knapp.disabled = true;
+      try {
+        const info = await adminAnrop({ atgard: 'info', id });
+        if (!info.ok) { visa(`Kunde inte hämta användaren: ${info.d.error || 'okänt fel'}`, true); return; }
+        const u = info.d.anvandare;
+        if (!info.d.kanRaderas) { visa('Adminkontot kan inte raderas.', true); return; }
+        const delar = [
+          `${u.provresultat} provresultat`,
+          `${u.traningssvar} svar i fokusträningen`,
+          `${u.ordframsteg} ord i ordträningen`,
+          `${u.tradar} forumtrådar${u.andras_svar ? ` (med ${u.andras_svar} svar från andra)` : ''}`,
+          `${u.svar} egna forumsvar`,
+        ];
+        const text = `Radera ${u.name} (${u.email})?\n\nDet här tas bort för gott:\n• ${delar.join('\n• ')}\n\nDet går inte att ångra. Skriv RADERA för att bekräfta.`;
+        const svar = window.prompt(text);
+        if (svar === null) return;
+        if (svar.trim() !== 'RADERA') { visa('Inget raderades: du skrev inte RADERA.', true); return; }
+        const r = await adminAnrop({ atgard: 'radera', id });
+        if (!r.ok) { visa(`Kunde inte radera: ${r.d.error || 'okänt fel'}`, true); return; }
+        results.querySelector(`tr[data-rad="${id}"]`)?.remove();
+        visa(`Raderade ${u.name} (${u.email}).`);
+      } catch {
+        visa('Kunde inte nå servern.', true);
+      } finally {
+        knapp.disabled = false;
+      }
+    });
 
     // Email export
     let exportedEmails = '';
@@ -579,6 +630,9 @@ function timeAgo(d: string) {
     font-size: 1.05rem;
   }
 
+  .radera-btn { background: none; border: 1px solid #fecaca; color: #b91c1c; border-radius: var(--radius); padding: 0.2rem 0.6rem; font-size: 0.8rem; font-family: var(--font-sans); cursor: pointer; white-space: nowrap; }
+  .radera-btn:hover { background: #fef2f2; border-color: #ef4444; }
+  .radera-btn:disabled { opacity: 0.5; cursor: default; }
   .search-result-table {
     width: 100%;
     font-size: 0.85rem;

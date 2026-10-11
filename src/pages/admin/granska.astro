@@ -1,0 +1,94 @@
+---
+// Admin: granska uppgifter med facit och förklaringar. Två vyer:
+// - nya: huvudtestets (HT 2021) uppgifter som har textförklaring i stället för video
+// - urval: ett slumpat urval ur extraproven (seed i adressen, så att ett urval går att återvända till)
+import Base from '../../layouts/Base.astro';
+import { getSessionFromCookies } from '../../lib/auth.js';
+import { nyaHuvudtest, urvalExtra, DELPROV_VAL as DELPROV } from '../../lib/admin/granska.js';
+import '../../styles/fragor.css';
+
+const ADMIN_EMAIL = 'snillsparv@gmail.com';
+const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
+if (!user || user.email !== ADMIN_EMAIL) {
+  return Astro.redirect('/');
+}
+
+const url = Astro.url;
+const vy = url.searchParams.get('vy') === 'urval' ? 'urval' : 'nya';
+const delprovVal = DELPROV.includes(url.searchParams.get('delprov') || '') ? url.searchParams.get('delprov')! : '';
+const antal = Math.min(200, Math.max(5, Number(url.searchParams.get('n')) || 40));
+const seedParam = Number(url.searchParams.get('seed'));
+const seed = Number.isFinite(seedParam) && seedParam > 0 ? Math.floor(seedParam) : Math.floor(Math.random() * 900000) + 100000;
+
+let kort = nyaHuvudtest();
+let totaltIUrval = 0;
+if (vy === 'urval') {
+  const u = urvalExtra(seed, antal, delprovVal);
+  kort = u.kort; totaltIUrval = u.totalt;
+}
+
+const urvalLank = (s: number) => `/admin/granska?vy=urval&seed=${s}&n=${antal}${delprovVal ? `&delprov=${delprovVal}` : ''}`;
+const nyttSeed = Math.floor(Math.random() * 900000) + 100000;
+const namn = (d: string) => d === 'las' ? 'LÄS' : d.toUpperCase();
+---
+<Base title="Granska förklaringar – Admin">
+  <div class="container gr-wrap">
+    <p><a href="/admin">&larr; Admin</a></p>
+    <h1>Granska uppgifter och förklaringar</h1>
+    <div class="gr-tabs">
+      <a href="/admin/granska" class={vy === 'nya' ? 'gr-tab gr-tab--on' : 'gr-tab'}>Huvudtestet: nya textförklaringar</a>
+      <a href={urvalLank(seed)} class={vy === 'urval' ? 'gr-tab gr-tab--on' : 'gr-tab'}>Slumpat urval ur extraproven</a>
+    </div>
+
+    {vy === 'nya' ? (
+      <p class="gr-info">{kort.length} uppgifter i huvudtestet (HT 2021) saknar video och har i stället en textförklaring: kvantitativt prov 2 (XYZ 8, DTK 31 till 40) och hela verbalt prov 2. Rätt svar är markerat i grönt.</p>
+    ) : (
+      <div class="gr-info">
+        <p>{kort.length} slumpade uppgifter av {totaltIUrval} {delprovVal ? `i ${namn(delprovVal)}` : 'i extraproven'}. Urval nummer {seed} (samma adress visar samma urval). Rätt svar är markerat i grönt.</p>
+        <div class="gr-filter">
+          <a class="btn btn-primary btn-sm" href={urvalLank(nyttSeed)}>Slumpa nya</a>
+          <span class="gr-filter-label">Delprov:</span>
+          <a class={!delprovVal ? 'gr-chip gr-chip--on' : 'gr-chip'} href={`/admin/granska?vy=urval&seed=${seed}&n=${antal}`}>Alla</a>
+          {DELPROV.map(d => (
+            <a class={delprovVal === d ? 'gr-chip gr-chip--on' : 'gr-chip'} href={`/admin/granska?vy=urval&seed=${seed}&n=${antal}&delprov=${d}`}>{namn(d)}</a>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {kort.map(k => (
+      <section class="gr-kort">
+        <p class="gr-kalla"><span class="gr-nr">{k.nr}.</span> {k.kalla} · <a href={k.lank}>till provet</a></p>
+        <div class="gr-innehall" set:html={k.html} />
+      </section>
+    ))}
+  </div>
+</Base>
+
+<script>
+  import { laddaKatex, renderTex, bindZoom, bindFadeIn } from '../../lib/fragor/render.js';
+  laddaKatex();
+  renderTex();
+  bindZoom(document);
+  bindFadeIn(document);
+</script>
+
+<style>
+  .gr-wrap { max-width: 760px; padding-top: 1.5rem; padding-bottom: 3rem; }
+  .gr-tabs { display: flex; gap: 0.5rem; flex-wrap: wrap; margin: 1rem 0; }
+  .gr-tab { padding: 0.5rem 0.9rem; border: 1px solid var(--color-border); border-radius: var(--radius); text-decoration: none; color: var(--color-text); font-size: 0.92rem; }
+  .gr-tab--on { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }
+  .gr-info { color: var(--color-muted); font-size: 0.92rem; margin-bottom: 1rem; }
+  .gr-filter { display: flex; flex-wrap: wrap; gap: 0.4rem; align-items: center; margin-top: 0.6rem; }
+  .gr-filter-label { margin-left: 0.6rem; font-size: 0.85rem; }
+  .gr-chip { padding: 0.2rem 0.55rem; border: 1px solid var(--color-border); border-radius: 999px; font-size: 0.8rem; text-decoration: none; color: var(--color-text); }
+  .gr-chip--on { background: #eef2ff; border-color: var(--color-primary); color: var(--color-primary); font-weight: 600; }
+  .gr-kort { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); padding: 1rem 1.1rem; margin-bottom: 1.2rem; }
+  .gr-kalla { font-size: 0.82rem; color: var(--color-muted); margin: 0 0 0.7rem; }
+  .gr-nr { font-weight: 700; color: var(--color-text); }
+  .gr-las { margin: 0.6rem 0; border: 1px solid var(--color-border); border-radius: var(--radius); padding: 0.5rem 0.8rem; background: #fafbfc; }
+  .gr-las summary { cursor: pointer; font-weight: 600; font-size: 0.9rem; }
+  .gr-las-body { font-size: 0.9rem; line-height: 1.6; margin-top: 0.6rem; }
+  .gr-las img { max-width: 100%; margin-top: 0.6rem; }
+  .gr-innehall :global(.dtk-diagram img) { max-width: 100%; }
+</style>

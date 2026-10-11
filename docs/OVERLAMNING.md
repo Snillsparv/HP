@@ -131,6 +131,13 @@ det riktiga provet. Skiss:
 - Steg 2: låt stjärnorna bli en ingång till fokuserad träning på
   `/trana/fokus` ("Träna fler av den här typen").
 
+## Huvudtestet (HT 2021): textförklaringar där video saknas
+
+- Alla 140 svar i huvudtestet är kontrollerade mot UHR:s officiella facit (provpass 1, 2, 4 och 5, 24 oktober 2021). Inga avvikelser.
+- 41 uppgifter saknar video: kvantitativt prov 2 (provpass 4) XYZ 8 och DTK 31 till 40, samt hela verbalt prov 2 (provpass 5). De har textförklaringar i `src/lib/forklaringar-ht2021.ts` (nyckel `delprov-nummer`, t.ex. `dtk2-31`).
+- `questions-kvant2-ht2021.ts` och `questions-verbal2-ht2021.ts` lägger in texten som `explanation` på frågor utan `videoId`. Provsidornas genomgång visar video om den finns, annars texten. Fokuserad träning visar samma text via frågebanken.
+- Spelar Jonas in en video senare räcker det att lägga till `videoId` på frågan: då visas videon i stället för texten.
+
 ## Hjärnkartan (spindeldiagram över delproven)
 
 - Design: `docs/svaghetstraning/hjarnkarta.md`. Kod: `src/lib/fokus/hjarnkarta.ts`

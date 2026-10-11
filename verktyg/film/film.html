@@ -86,75 +86,20 @@
     z-index: 8; background: rgba(255, 255, 255, 0.42); border: 3px solid #fff; opacity: 0;
     box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.32), 0 4px 14px rgba(15, 23, 42, 0.32); }
 
-  /* ---------- Undertext (kinetisk typografi) ---------- */
-  #caps { position: absolute; left: 0; top: 0; width: 540px; height: 300px; z-index: 20; }
-  .chunk { position: absolute; left: 44px; width: 452px; text-align: center; font-size: 41px; font-weight: 800;
-    line-height: 1.13; letter-spacing: -0.03em; color: #0f172a; will-change: transform, opacity; }
-  .chunk .w { display: inline-block; position: relative; will-change: transform, opacity; }
-  .chunk .w.k { color: #2563eb; }
-  .chunk .w.k::after { content: ''; position: absolute; left: -3px; right: -3px; bottom: 3px; height: 13px;
-    background: #fde68a; border-radius: 4px; z-index: -1; transform-origin: 0 50%;
-    transform: scaleX(var(--m, 0)); }
-
   /* ---------- Utfällda kort ---------- */
   #pops { position: absolute; inset: 0; z-index: 10; }
   .pop { position: absolute; left: 0; top: 0; will-change: transform, opacity; transform-origin: 50% 50%; }
   .pop img { display: block; }
   .pop.skugga { box-shadow: 0 28px 60px rgba(15, 23, 42, 0.20), 0 8px 18px rgba(15, 23, 42, 0.10); }
-  .pop.skugga.ram { outline: 1px solid rgba(15, 23, 42, 0.06); }
-  .crop { position: relative; overflow: hidden; background: #fafafa; }
-  .crop img { position: absolute; left: 0; top: 0; width: 390px; }
 
-  .klocka { width: 176px; padding: 16px 18px 16px; background: #fff; border-radius: 20px; text-align: center;
-    border: 1px solid #e2e8f0; }
-  .klocka svg { display: block; margin: 0 auto; }
-  .klocka .v { font-size: 30px; font-weight: 800; color: #2563eb; letter-spacing: -0.02em; margin-top: -86px; height: 86px; line-height: 86px; }
-  .klocka .l { font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: #64748b; text-transform: uppercase; margin-top: 10px; }
-
-  .datum { width: 186px; background: #fff; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; }
-  .datum .m { background: #2563eb; color: #fff; font-size: 13px; font-weight: 800; letter-spacing: 0.16em; padding: 8px 0;
-    border-radius: 20px 20px 0 0; }
-  .datum .d { font-size: 62px; font-weight: 800; letter-spacing: -0.04em; color: #1a1a2e; line-height: 1; padding-top: 12px; }
-  .datum .wd { font-size: 18px; font-weight: 800; color: #64748b; padding: 4px 0 2px; }
-  .datum .hp { font-size: 14px; font-weight: 800; letter-spacing: 0.12em; color: #2563eb; padding: 6px 0 14px; text-transform: uppercase; }
-  .stamp { position: absolute; right: -16px; top: -14px; width: 54px; height: 54px; border-radius: 50%;
-    background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center;
-    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.4); will-change: transform, opacity; }
-
-  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px 9px 10px; border-radius: 999px;
-    font-size: 17px; font-weight: 800; background: #fff; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16); white-space: nowrap; }
-  .badge i { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
-    color: #fff; font-style: normal; font-size: 15px; }
-  .badge.fel { color: #991b1b; } .badge.fel i { background: #ef4444; }
-  .badge.ratt { color: #065f46; } .badge.ratt i { background: #10b981; }
-  .badge.upp { color: #047857; } .badge.upp i { background: #10b981; }
-
-  /* Sajtens statistikruta från /extra. */
-  .statruta { display: flex; flex-direction: column; align-items: center; padding: 14px 22px 12px; background: #fff;
-    border: 1px solid #e2e8f0; border-radius: 12px; min-width: 176px; }
-  .statruta strong { font-size: 40px; font-weight: 800; color: #2563eb; line-height: 1.05; letter-spacing: -0.02em;
-    font-variant-numeric: tabular-nums; }
-  .statruta span { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
-
-  /* Hjärnkartans kort, som på /trana/fokus. */
-  .kartkort { width: 342px; box-shadow: 0 28px 60px rgba(15, 23, 42, 0.20), 0 8px 18px rgba(15, 23, 42, 0.10); }
-  .kartkort .hk-knapp { pointer-events: none; }
-
-  /* Ordträningens ring med ansiktet. */
-  .ringkort { width: 236px; padding: 18px 18px 16px; background: #fff; border-radius: 18px; border: 1px solid #e2e8f0; text-align: center; }
-  .ringkort .ring { position: relative; width: 200px; height: 200px; margin: 0 auto; }
-  .ringkort svg { position: absolute; inset: 0; }
-  .ringkort .fejs { position: absolute; left: 32px; top: 32px; width: 136px; height: 136px; }
-  .ringkort .fejs img { position: absolute; inset: 0; width: 136px; height: 136px; object-fit: contain; }
-  .ringkort .niva { display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 800; letter-spacing: 0.08em;
-    color: #2563eb; background: #eff6ff; border-radius: 999px; padding: 5px 14px; text-transform: uppercase; }
-
-  .polaroid { background: #fff; padding: 10px 10px 34px; border-radius: 6px; }
-  .polaroid img { width: 150px; height: 150px; object-fit: cover; border-radius: 2px; }
-  .polaroid div { position: absolute; left: 0; right: 0; bottom: 9px; text-align: center; font-size: 15px; font-weight: 700; color: #334155; }
+  /* Hjärnkartan som ritas direkt i sidan på /trana/fokus. */
+  .kartlager { position: absolute; left: 0; top: 0; width: 342px; transform-origin: 0 0; z-index: 3; }
+  .kartlager .hk-kort { position: absolute; left: 0; top: 0; width: 342px; height: 452.7px; box-shadow: var(--shadow, 0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06)); }
+  /* Slöja bakom ordkorten. */
+  #sloja { position: absolute; inset: 0; background: rgba(248, 250, 252, 0.86); }
 
   /* Ordkort i ordträningens stil (src/pages/ord.astro). */
-  .ordkort { width: 300px; background: #fff; border: 1px solid #e2e8f0; padding: 14px 16px 16px; }
+  .ordkort { width: 330px; background: #fff; border: 1px solid #e2e8f0; padding: 14px 16px 16px; }
   .ordkort .topp { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
   .ordkort .topp b { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: #1a1a2e; }
   .ordkort .def { font-size: 14.5px; font-weight: 700; color: #1d4ed8; background: #eff6ff; border-radius: 8px; padding: 4px 10px; }
@@ -217,8 +162,7 @@
     </div>
   </div>
 
-  <div id="pops"></div>
-  <div id="caps"></div>
+  <div id="pops"><div id="sloja"></div></div>
   <div id="mark" class="abs"><span class="hp">H</span><span class="hp">P</span><span class="ak">A</span><span class="ak">k</span><span class="ak">u</span><span class="ak">t</span><span class="ak">e</span><span class="ak">n</span><span class="se">.se</span></div>
 
   <div id="ins"></div>
@@ -287,32 +231,16 @@ function put(e, x, y, s = 1, r = 0, o = 1) {
 }
 // Deterministiskt brus för små svävningar.
 const wob = (t, f, ph) => Math.sin(t * f + ph) * 0.6 + Math.sin(t * f * 1.7 + ph * 2.3) * 0.4;
-// Tal med mellanslag som tusentalsavgränsare, som på sajten (3 640).
-const fmt = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
 
 // =====================================================================
-// Tidslinje: ordens starttider ur röstinspelningen (faster-whisper plus
-// energikurvan), i sekunder. Nyckelorden (1) markeras.
+// Tidslinje. Rösten (rost.mp3) bestämmer takten; nyckelorden och deras tider:
+// hpakuten 0.66, timmar 3.86, redo 4.70, gamla prov 6.48, förklaringar 8.20,
+// inte klarade 9.44, fräscha upp 10.44, matten 11.12, öva 12.90, svagaste
+// 13.88, databasen 15.02, täpper 15.88, luckor 16.96, ordhjälpen 20.08,
+// minnestekniker 21.44, komma ihåg 22.52, högskoleprovsord 23.74, liten 26.26,
+// stor 27.56, lycka 29.65, söndag 30.6. Ingen manustext i bild: undertexter
+// läggs på separat.
 // =====================================================================
-const CHUNKS = [
-  { t0: 2.72, words: [['kan', 2.72], ['du', 3.00], ['på', 3.18], ['bara', 3.36], ['ett', 3.58, 1], ['par', 3.70, 1], ['timmar', 3.86, 1]] },
-  { t0: 4.38, words: [['göra', 4.38], ['dig', 4.58], ['redo', 4.70, 1], ['för', 4.96], ['provet', 5.14, 1]] },
-  { t0: 5.66, words: [['genom', 5.66], ['att', 5.88], ['gå', 5.98], ['igenom', 6.12], ['gamla', 6.48, 1], ['prov', 6.88, 1]] },
-  { t0: 7.58, words: [['titta', 7.58], ['på', 7.84], ['mina', 7.98], ['förklaringar', 8.20, 1]] },
-  { t0: 8.72, words: [['till', 8.72], ['uppgifter', 8.86], ['du', 9.28], ['inte', 9.44, 1], ['klarade', 9.68, 1]] },
-  { t0: 10.30, words: [['och', 10.32], ['fräscha', 10.44, 1], ['upp', 10.74, 1], ['matten', 11.12, 1]] },
-  { t0: 12.32, words: [['Genom', 12.32], ['att', 12.58], ['sedan', 12.70], ['öva', 12.90, 1]] },
-  { t0: 13.34, words: [['på', 13.34], ['dina', 13.64], ['svagaste', 13.88, 1], ['punkter', 14.34, 1]] },
-  { t0: 14.84, words: [['i', 14.84], ['databasen', 15.02, 1]] },
-  { t0: 15.88, words: [['täpper', 15.88, 1], ['du', 16.08], ['snabbt', 16.26], ['igen', 16.58, 1], ['dina', 16.78], ['luckor', 16.96, 1]] },
-  { t0: 18.30, words: [['Har', 18.30], ['du', 18.40], ['tid', 18.52, 1], ['över', 18.72, 1]] },
-  { t0: 19.08, words: [['kan', 19.08], ['du', 19.22], ['också', 19.34], ['kika', 19.56], ['på', 19.82], ['ordhjälpen', 20.08, 1]] },
-  { t0: 20.94, words: [['som', 20.94], ['ger', 21.12], ['dig', 21.26], ['minnestekniker', 21.44, 1]] },
-  { t0: 22.32, words: [['för', 22.32], ['att', 22.46], ['komma', 22.52, 1], ['ihåg', 22.68, 1]] },
-  { t0: 23.06, words: [['typiska', 23.06], ['högskoleprovsord', 23.74, 1]] },
-];
-const CAPS_END = 25.2;
-const CAP_Y = 168;
 
 // =====================================================================
 // Bakgrund
@@ -325,45 +253,10 @@ function bakgrund(t) {
 }
 
 // =====================================================================
-// Undertexten: varje ord glider upp när det sägs, nyckelord markeras.
-// =====================================================================
-CHUNKS.forEach((c, i) => {
-  const d = el('div', 'chunk', $('caps'));
-  c.spans = c.words.map(([w, wt, k]) => {
-    const s = el('span', 'w' + (k ? ' k' : ''), d, w);
-    d.appendChild(document.createTextNode(' '));
-    return { s, wt, k };
-  });
-  c.el = d;
-  c.t1 = i + 1 < CHUNKS.length ? CHUNKS[i + 1].t0 : CAPS_END;
-});
-function undertext(t) {
-  for (const c of CHUNKS) {
-    // Det gamla stycket hinner lämna innan nästa stycke dyker upp, så att
-    // två rader aldrig ligger ovanpå varandra.
-    const vis = t >= c.t0 - 0.12 && t < c.t1 - 0.04;
-    if (!vis) { c.el.style.visibility = 'hidden'; continue; }
-    c.el.style.visibility = 'visible';
-    const h = c.el.offsetHeight;
-    const ut = E.inQuad(P(t, c.t1 - 0.2, c.t1 - 0.05));
-    c.el.style.transform = `translateY(${(CAP_Y - h / 2 - 22 * ut).toFixed(2)}px)`;
-    c.el.style.opacity = (1 - ut).toFixed(3);
-    for (const w of c.spans) {
-      const p = P(t, w.wt - 0.04, w.wt + 0.2);
-      const e = E.outCubic(p);
-      w.s.style.opacity = e.toFixed(3);
-      w.s.style.transform = `translateY(${(18 * (1 - e)).toFixed(2)}px) scale(${(0.92 + 0.08 * E.outBack(p)).toFixed(4)})`;
-      if (w.k) w.s.style.setProperty('--m', E.outCubic(P(t, w.wt + 0.05, w.wt + 0.35)).toFixed(3));
-    }
-  }
-}
-
-// =====================================================================
 // Telefonen och dess skärmar
 // =====================================================================
 const SW = 300, SH = 650, STATUS = 38, K = SW / 390;   // sajtens CSS-px -> skärmens px
 const PHONE_W = 322, PHONE_H = 672;
-const VY = (SH - STATUS) / K;                          // synlig sidhöjd i sajtens px
 const SKARMAR = {};
 function skarm(id, bilder, opt = {}) {
   const e = el('div', 'scr', $('screens'));
@@ -384,7 +277,11 @@ function skarm(id, bilder, opt = {}) {
     mask.style.width = (112 * K) + 'px'; mask.style.height = (42 * K) + 'px';
   }
   const dim = el('div', 'dim', e);
-  SKARMAR[id] = { id, e, page, imgs, hdr, dim, mask, markor };
+  // Vid dragspelet ligger den gamla bilden över den nya; markeringar och
+  // annat som ritas i sidan ligger alltid överst.
+  if (opt.vik) imgs[0].style.zIndex = 1;
+  markor.forEach(m => { m.d.style.zIndex = 3; });
+  SKARMAR[id] = { id, e, page, imgs, hdr, dim, mask, markor, vik: opt.vik };
   return SKARMAR[id];
 }
 // scroll i sajtens CSS-px; x i skärmens px; mix tonar in bild nr 2, 3 ...
@@ -398,7 +295,17 @@ function visa(id, scroll = 0, x = 0, dim = 0, mix = 0, blur = 0) {
   s.e.style.visibility = 'inherit';
   s.e.style.transform = `translateX(${x.toFixed(2)}px)`;
   s.page.style.transform = `translateY(${(STATUS - scroll * K).toFixed(2)}px)`;
-  s.imgs.forEach((b, i) => { b.style.opacity = i === 0 ? 1 : clamp(mix - (i - 1)).toFixed(3); });
+  if (s.vik && s.imgs.length === 2) {
+    // Som ett dragspel: det nya blocket (vik.h högt) fälls ut vid vik.y och
+    // allt under glider ned, i stället för att två sidor tonas över varandra.
+    const [a, b] = s.imgs, p = clamp(mix);
+    const grans = (s.vik.y + s.vik.h * p) * K;
+    b.style.opacity = p > 0 ? 1 : 0;
+    b.style.clipPath = p > 0 && p < 1 ? `inset(0 0 calc(100% - ${grans.toFixed(2)}px) 0)` : 'none';
+    a.style.opacity = p < 1 ? 1 : 0;
+    a.style.clipPath = p > 0 ? `inset(${(s.vik.y * K).toFixed(2)}px 0 0 0)` : 'none';
+    a.style.transform = `translateY(${(s.vik.h * p * K).toFixed(2)}px)`;
+  } else s.imgs.forEach((b, i) => { b.style.opacity = i === 0 ? 1 : clamp(mix - (i - 1)).toFixed(3); });
   s.dim.style.opacity = dim.toFixed(3);
 }
 function dolj() { for (const s of Object.values(SKARMAR)) { s.e.style.visibility = 'hidden'; s.e.style.zIndex = 0; s.e.style.boxShadow = 'none'; s.page.style.filter = 'none'; } }
@@ -444,33 +351,61 @@ function telefon(b) {
 // Var en punkt på skärmen hamnar på ytan, när telefonen inte lutar.
 const skarmTillYta = (px, py, x, y, s) => [x + s * (px - SW / 2), y + s * (py + 11 - PHONE_H / 2)];
 
-// Telefonens poser genom filmen. Varje pose nås vid t, rörelsen tar dur.
-const POSER = [
-  { t: 3.22, x: 270, y: 600, s: 1.00, ry: -9, rx: 5 },
-  { t: 6.05, x: 270, y: 604, s: 1.00, ry: 8, rx: 4, dur: 0.7 },
-  { t: 7.95, x: 262, y: 604, s: 1.00, ry: -8, rx: 4, dur: 0.7 },
-  { t: 8.75, x: 214, y: 622, s: 0.92, ry: 6, rx: 4, dur: 0.6 },
-  { t: 10.45, x: 300, y: 610, s: 0.96, ry: -7, rx: 4, dur: 0.7 },
-  { t: 12.45, x: 270, y: 604, s: 1.00, ry: 8, rx: 4, dur: 0.7 },
-  { t: 13.25, x: 318, y: 700, s: 0.82, ry: -18, rx: 7, dur: 0.6 },
-  { t: 15.2, x: 270, y: 604, s: 1.00, ry: 7, rx: 4, dur: 0.5 },
-  { t: 16.65, x: 270, y: 760, s: 0.8, ry: 10, rx: 8, dur: 0.55 },
-  { t: 18.35, x: 270, y: 604, s: 1.00, ry: -8, rx: 4, dur: 0.7 },
-  { t: 21.5, x: 214, y: 640, s: 0.92, ry: 12, rx: 5, dur: 0.55 },
-  { t: 23.3, x: 270, y: 740, s: 0.84, ry: -6, rx: 7, dur: 0.6 },
-];
-function pose(t) {
+// Kameran. Telefonen syns i början och slutet; däremellan är skärmen
+// inzoomad så att sajten fyller bilden (helskärm). FS är skalan där skärmens
+// bredd fyller bilden och statusraden hamnar precis ovanför bildkanten.
+const FS_S = 1.81;
+const SKARM_TOPP = STATUS, SKARM_BOTTEN = 646;
+// Telefonens läge så att skärmpunkten (px, py) hamnar i (cx, cy) vid skalan s,
+// begränsat så att skärmen alltid täcker hela bilden.
+function sikta(px, py, s, cx = 270, cy = 480) {
+  let x = cx - s * (px - SW / 2), y = cy - s * (py + 11 - PHONE_H / 2);
+  x = clamp(x, 540 - s * SW / 2, s * SW / 2);
+  y = clamp(y, 960 - s * (SKARM_BOTTEN + 11 - PHONE_H / 2), -s * (SKARM_TOPP + 11 - PHONE_H / 2));
+  return { x, y, s, ry: 0, rx: 0 };
+}
+const FS = sikta(SW / 2, SKARM_TOPP, FS_S, 270, 0);
+// Inzoomning med sidhuvudet kvar överst: skärmens topp i bildens överkant.
+function siktaTopp(px, s) {
+  const x = clamp(270 - s * (px - SW / 2), 540 - s * SW / 2, s * SW / 2);
+  return { x, y: -s * (SKARM_TOPP + 11 - PHONE_H / 2), s, ry: 0, rx: 0 };
+}
+const TELEFON = { x: 270, y: 600, s: 1, ry: -9, rx: 5 };
+// Sajtens koordinater (CSS-px) till skärmens, för en sida som är scrollad sc.
+const skarmPt = (x, y, sc) => [x * K, STATUS + (y - sc) * K];
+
+function skapaKamera() {
+  // Hjärnkartans mitt på /trana/fokus (scrollad 200) och minnesregeln (scrollad 560).
+  // Kartkortet och minnesregeln fyller bildens bredd.
+  const karta = siktaTopp(skarmPt(195, 0, 0)[0], 1.92);
+  const regel = siktaTopp(skarmPt(195, 0, 0)[0], 2.0);
+  return [
+    { t: 3.0, ...TELEFON },
+    { t: 3.85, ...TELEFON },
+    { t: 4.65, ...FS },
+    { t: 12.95, ...FS },
+    { t: 13.65, ...karta },
+    { t: 14.15, ...karta },
+    { t: 14.45, ...FS },
+    { t: 16.6, ...FS },
+    { t: 17.15, ...karta },
+    { t: 17.55, ...karta },
+    { t: 17.85, ...FS },
+    { t: 21.45, ...FS },
+    { t: 22.25, ...regel },
+    { t: 24.35, ...regel },
+    { t: 24.9, x: 270, y: 600, s: 0.95, ry: -6, rx: 5 },
+  ];
+}
+const KAMERA = skapaKamera();
+function kamera(t) {
   let i = 0;
-  // i är den senast nådda posen; rörelsen mot nästa sker under dess dur.
-  while (i + 1 < POSER.length && t >= POSER[i + 1].t) i++;
-  const a = POSER[i], b = POSER[i + 1];
-  if (!b || t <= a.t) return { ...a, svang: 0 };
-  const d = b.dur || 0.7;
-  const p = E.inOutCubic(P(t, b.t - d, b.t));
+  while (i + 1 < KAMERA.length && t >= KAMERA[i + 1].t) i++;
+  const a = KAMERA[i], b = KAMERA[i + 1];
+  if (!b || t <= a.t) return { ...a };
+  const p = E.inOutCubic(P(t, a.t, b.t));
   const o = {};
   for (const k of ['x', 'y', 's', 'ry', 'rx']) o[k] = lerp(a[k], b[k], p);
-  o.svang = Math.sin(Math.PI * p) * Math.min(1, Math.abs(b.ry - a.ry) / 18);
-  o.svangP = p;
   return o;
 }
 
@@ -478,23 +413,6 @@ function pose(t) {
 // Utfällda kort
 // =====================================================================
 const pop = (cls, html) => el('div', 'pop ' + (cls || ''), $('pops'), html);
-function popBild(src, bredd, radie, cls = '') {
-  const e = pop('skugga ' + cls);
-  const i = el('img', '', e); i.src = 'bilder/' + src + '.png'; i.style.width = bredd + 'px';
-  e.style.borderRadius = radie + 'px';
-  i.style.borderRadius = radie + 'px';
-  return e;
-}
-// Ett utsnitt av en helsidesbild (sajtens px), som ett eget kort.
-function popUtsnitt(src, x, y, w, h, radie, bg = '#fafafa') {
-  const e = pop('skugga');
-  const c = el('div', 'crop', e);
-  c.style.width = w + 'px'; c.style.height = h + 'px'; c.style.borderRadius = radie + 'px'; c.style.background = bg;
-  e.style.borderRadius = radie + 'px';
-  const i = el('img', '', c); i.src = 'bilder/' + src + '.png';
-  i.style.transform = `translate(${-x}px, ${-y}px)`;
-  return e;
-}
 // In med fjäder från en startpunkt. Ut: kortet krymper tillbaka dit det kom
 // ifrån (in i telefonen) och förblir täckande tills det är litet, så att det
 // aldrig blir dubbelexponerat över skärmen. Med opt.flyg flyger det i stället
@@ -528,126 +446,66 @@ const L = {
   startaPasset: [127, 1041],
   rad9: [195, 2380],
   matteA: [120, 739],
+  kartkort: { x: 24, y: 337, w: 342, h: 452.7 },
   mekKnapp: [195, 745],
   mekRatt: [195, 505],
-  sett: { x: 24, y: 195, w: 342, h: 22 },
   ordGo: [195, 1100],
   visaRegel: [119, 971],
 };
 skarm('hem', ['hem'], { loggmask: true });
 skarm('extra', ['extra']);
-skarm('ratt', ['rattning', 'rattning-9']);
-skarm('matte', ['matte', 'matte-svar']);
+// vik: där det nya blocket fälls ut (sajtens px) och hur högt det är,
+// uppmätt ur skärmbilderna (sidorna är lika ovanför och förskjutna under).
+skarm('ratt', ['rattning', 'rattning-9'], { vik: { y: 2400, h: 669 } });
+skarm('matte', ['matte', 'matte-svar'], { vik: { y: 922, h: 157 } });
 skarm('fokus', ['fokus']);
-skarm('fraga', ['fokus-fraga', 'fokus-fraga-svar'], { markor: [{ x: 28, y: 193, w: 246, h: 26 }] });
-skarm('kvitto', ['fokus-kvitto']);
+skarm('fraga', ['fokus-fraga', 'fokus-fraga-svar'], { markor: [{ x: 28, y: 193, w: 246, h: 26 }], vik: { y: 656, h: 325 } });
 skarm('ord', ['ord']);
-skarm('ordkort', ['ord-kort', 'ord-kort-regel']);
+skarm('ordkort', ['ord-kort', 'ord-kort-regel'], { vik: { y: 1010, h: 116 } });
 
-// =====================================================================
-// Korten till scenerna
-// =====================================================================
-// "ett par timmar": en klocka som fylls till två timmar.
-const kKlocka = pop('skugga klocka', `
-  <svg width="86" height="86" viewBox="0 0 86 86"><circle cx="43" cy="43" r="36" fill="none" stroke="#e2e8f0" stroke-width="9"/>
-  <circle id="klockBage" cx="43" cy="43" r="36" fill="none" stroke="#2563eb" stroke-width="9" stroke-linecap="round"
-    transform="rotate(-90 43 43)" stroke-dasharray="226.2" stroke-dashoffset="226.2"/></svg>
-  <div class="v" id="klockTal">1 h</div><div class="l">räcker långt</div>`);
-kKlocka.style.borderRadius = '20px';
-// "redo för provet": provdagen, söndag 18 oktober (src/lib/provdatum.ts).
-const kDatum = pop('skugga datum', `<div class="m">OKTOBER</div><div class="d">18</div><div class="wd">söndag</div><div class="hp">Högskoleprovet</div>
-  <div class="stamp" id="stamp"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`);
-kDatum.style.borderRadius = '20px';
-
-// Gamla prov: fyra passkort ur listan som en solfjäder.
-const kPass = [
-  popUtsnitt('extra', 24, 1343, 342, 260, 12),
-  popUtsnitt('extra', 24, 1105, 342, 222, 12),
-  popUtsnitt('extra', 24, 829, 342, 260, 12),
-];
-// Förklaringar till fråga 9.
-const kForklaring = popBild('rattning-9-forklaring', 330, 10);
-const kAlternativ = popBild('rattning-9-alternativ', 270, 12);
-const bFel = pop('', `<div class="badge fel"><i>✗</i>Ditt svar: A</div>`);
-const bRatt = pop('', `<div class="badge ratt"><i>✓</i>Rätt svar: D</div>`);
-// Matten: Jonas genomgång och förklaringen till Pythagoras.
-const kVideo = popBild('matte-video', 330, 14);
-const kMatteFb = popBild('matte-forklaring', 330, 12);
-// Databasen: statistikrutan från /extra som räknar upp.
-const kStat = pop('skugga', `<div class="statruta"><strong id="statTal">0</strong><span>uppgifter</span></div>`);
-kStat.style.borderRadius = '12px';
-kStat.style.zIndex = 2;
-// Frågan ur databasen: "520 uppgifter av den här sorten finns", med markering.
-const kFragaTopp = popUtsnitt('fokus-fraga', 14, 96, 362, 240, 16);
-const fragaMark = el('div', 'mark2', kFragaTopp.querySelector('.crop'));
-Object.assign(fragaMark.style, { left: '14px', top: '98px', width: '246px', height: '27px', transformOrigin: '0 50%' });
-const kKvitto = popBild('fokus-kvitto-kort', 300, 16);
-const bUpp = pop('', `<div class="badge upp"><i>↑</i>MEK 35 % → 60 %</div>`);
-
-// Hjärnkartan, ritad av sajtens egen kod med riktig data från den lokala servern.
-function kartkort(id) {
-  const e = pop('kartkort');
-  e.innerHTML = `<section class="hk-kort fokus-karta-kort"><div class="hk-kort-topp"><h2>Din hjärnkarta</h2></div><div class="kk-inre"></div></section>`;
-  e.style.borderRadius = '18px';
-  return e;
-}
+// Hjärnkartan ritas av sajtens egen kod direkt ovanpå skärmbildens kort, så
+// att den kan lysa upp MEK och växa när luckan fylls. Riktig data från den
+// lokala servern: före och efter en MEK-runda med tio rätt.
 const KOPT = { storlek: 'full', bredd: 326, stilla: true };
-const kKartaA = kartkort('a');
-kKartaA.querySelector('.kk-inre').innerHTML = HK.blockHTML(FILMDATA.kartaFore, { ...KOPT, id: 'hka' })
-  .replace(/<script[\s\S]*?<\/script>/, '');
-const kKartaB = kartkort('b');
-const kkB = kKartaB.querySelector('.kk-inre');
-let senastB = '';
-function ritaKartaB(v, vinnare) {
+const kartLager = el('div', 'kartlager', SKARMAR.fokus.page);
+kartLager.style.transform = `translate(${(L.kartkort.x * K).toFixed(2)}px, ${(L.kartkort.y * K).toFixed(2)}px) scale(${K})`;
+const kortHTML = (data, id) => `<section class="hk-kort fokus-karta-kort"><div class="hk-kort-topp"><h2>Din hjärnkarta</h2></div>${HK.blockHTML(data, { ...KOPT, id }).replace(/<script[\s\S]*?<\/script>/, '')}</section>`;
+kartLager.innerHTML = kortHTML(FILMDATA.kartaFore, 'hka') + kortHTML(FILMDATA.kartaEfter, 'hkb');
+const [kortFore, kortEfter] = kartLager.querySelectorAll('.hk-kort');
+let senastKarta = '';
+// Kartan före rundan, men med MEK på v (andel rätt).
+function ritaMek(v) {
   const d = JSON.parse(JSON.stringify(FILMDATA.kartaFore));
   const mek = d.axlar.find(a => a.delprov === 'mek');
   mek.styrka = v;
   mek.visadPct = Math.round(v * 20) * 5;
-  d.vinnare = vinnare;
-  const nyckel = mek.visadPct + vinnare + v.toFixed(3);
-  if (nyckel === senastB) return;
-  senastB = nyckel;
-  // Samma omslag som blockHTML ger karta A, annars saknas sajtens stilvariabler.
-  kkB.innerHTML = '<div class="hk hk-block-full hk-med-karta">' + HK.ritaKarta(d, { ...KOPT, id: 'hkb' }) + '</div>';
+  const nyckel = v.toFixed(3);
+  if (nyckel === senastKarta) return;
+  senastKarta = nyckel;
+  kortFore.querySelector('.hk-karta').outerHTML = HK.ritaKarta(d, { ...KOPT, id: 'hka' });
 }
 // Pulsringen runt vinnarpunkten (sajtens hk-puls, 1,6 s).
 function puls(t, root) {
   root.querySelectorAll('.hk-puls').forEach(c => {
     const f = ((t / 1.6) % 1 + 1) % 1;
-    const e = E.outCubic(f);
     c.style.transformBox = 'fill-box';
     c.style.transformOrigin = 'center';
-    c.style.transform = `scale(${(0.6 + 1.3 * e).toFixed(3)})`;
+    c.style.transform = `scale(${(0.6 + 1.3 * E.outCubic(f)).toFixed(3)})`;
     c.style.opacity = (0.9 * (1 - f)).toFixed(3);
   });
 }
-// Strålkastare på MEK-etiketten när "svagaste punkter" sägs.
+// MEK lyser upp när "svagaste punkter" sägs.
 function framhav(t, root, t0, t1) {
   const p = E.outCubic(P(t, t0, t0 + 0.3)) * (1 - P(t, t1, t1 + 0.3));
   root.querySelectorAll('.hk-etk').forEach(b => {
-    const mek = b.dataset.dp === 'mek' || b.classList.contains('hk-vinnare');
+    const mek = b.dataset.dp === 'mek';
     b.style.transformOrigin = 'center';
     b.style.boxShadow = mek && p > 0 ? `0 0 0 ${(4 * p).toFixed(1)}px rgba(245,158,11,${(0.35 * p).toFixed(2)}), 0 0 ${(22 * p).toFixed(0)}px rgba(245,158,11,${(0.55 * p).toFixed(2)})` : '';
-    b.style.scale = mek ? (1 + 0.14 * p * (1 + 0.2 * Math.sin((t - t0) * 9))).toFixed(3) : '1';
-    b.style.opacity = mek ? '1' : (1 - 0.45 * p).toFixed(3);
+    b.style.scale = mek ? (1 + 0.06 * p).toFixed(3) : '1';
+    b.style.opacity = mek ? '1' : (1 - 0.4 * p).toFixed(3);
   });
 }
 
-// Ordträningen: ringen med ansiktet som växer, som i appens startvy.
-const kRing = pop('skugga ringkort', `<div class="ring"><svg width="200" height="200" viewBox="0 0 200 200">
-  <circle cx="100" cy="100" r="88" fill="none" stroke="#e2e8f0" stroke-width="12"/>
-  <circle id="ringBage" cx="100" cy="100" r="88" fill="none" stroke="#2563eb" stroke-width="12" stroke-linecap="round"
-    transform="rotate(-90 100 100)" stroke-dasharray="552.9" stroke-dashoffset="552.9"/></svg>
-  <div class="fejs">${[1, 2, 3, 4].map(n => `<img src="../../public/ordfejs/${n}.webp" alt="">`).join('')}</div></div>
-  <div class="niva" id="ringNiva">Nivå 1 av 10</div>`);
-kRing.style.borderRadius = '18px';
-const kRegel = popBild('ord-regel', 330, 12);
-const kOrdBild = popBild('ord-bild', 140, 12);
-kRegel.style.zIndex = 2; kOrdBild.style.zIndex = 2;
-const kKnut = pop('skugga polaroid', `<img src="../../public/jonas_knut.webp" alt=""><div>Knut på fingret!</div>`);
-kKnut.style.borderRadius = '6px';
-// Ordet i appen: NYTT ORD, parlör, fickordbok (utsnitt av skärmbilden).
-const kOrdHuvud = popUtsnitt('ord-kort', 96, 396, 198, 144, 16, '#fff');
 // Typiska högskoleprovsord med sina minnesregler, ordagrant ur
 // src/lib/minnesord-seed.json och i ordträningens stil (versaler blir krokar).
 const ORDKORT = [
@@ -659,8 +517,6 @@ const krokar = s => s.replace(/[A-ZÅÄÖ]{2,}/g, m => `<span class="hook">${m}<
 const kOrdlista = ORDKORT.map(([w, d, m]) => pop('skugga ordkort', `<div class="topp"><b>${w}</b><span class="def">${d}</span></div>
   <div class="mnemo"><div class="lbl">Minnesregel</div><div>${krokar(m)}</div></div>`));
 kOrdlista.forEach(e => { e.style.borderRadius = '16px'; });
-const kOrdStat = pop('skugga', `<div class="statruta"><strong id="ordTal">0</strong><span>ord med minnesregel</span></div>`);
-kOrdStat.style.borderRadius = '12px';
 
 // =====================================================================
 // SEEK: hela bildrutan som en funktion av tiden
@@ -670,7 +526,6 @@ const S0 = 400 / (L.hero.w * K);                  // telefonens skala i början 
 const INTRO_Y = 282;                              // intro-Jonas överkant
 function SEEK(t) {
   bakgrund(t);
-  undertext(t);
   dolj();
   $('tap').style.opacity = 0;
   intro(t);
@@ -738,203 +593,130 @@ function intro(t) {
 function telefonen(t) {
   if (t < ZOOM0 || t > 25.7) { telefon({ o: 0 }); return; }
   const z = zoom(t);
-  const po = pose(t);
+  const k = kamera(t);
   // Lutningen börjar först efter att ordmärket har landat i loggan.
   const lugn = E.inOutCubic(P(t, ZOOM1, ZOOM1 + 0.6));
+  // Svävningen bara när telefonen syns, aldrig i helskärm.
+  const sv = lugn * (1 - clamp((k.s - 1) / 0.5));
   const b = {
-    x: lerp(z.x, po.x, lugn), y: lerp(z.y, po.y, lugn), s: z.zp < 1 ? z.s : po.s,
-    ry: po.ry * lugn + lugn * 2.5 * wob(t, 0.7, 1), rx: po.rx * lugn + lugn * 1.2 * wob(t, 0.6, 2),
-    rz: lugn * 0.7 * wob(t, 0.5, 3), o: P(t, ZOOM0, ZOOM0 + 0.12), svang: po.svang, svangP: po.svangP,
+    x: lerp(z.x, k.x, lugn), y: lerp(z.y, k.y, lugn), s: z.zp < 1 ? z.s : k.s,
+    ry: k.ry * lugn + sv * 2.5 * wob(t, 0.7, 1), rx: k.rx * lugn + sv * 1.2 * wob(t, 0.6, 2),
+    rz: sv * 0.7 * wob(t, 0.5, 3), o: P(t, ZOOM0, ZOOM0 + 0.12), svang: 0,
   };
-  b.y += lugn * 3.5 * wob(t, 0.9, 0.5);
+  b.y += sv * 3.5 * wob(t, 0.9, 0.5);
   // Liten insats: telefonen sjunker ut ur bild.
-  const ut = E.inCubic(P(t, 24.8, 25.55));
+  const ut = E.inCubic(P(t, 24.9, 25.6));
   b.y += 820 * ut; b.rx += 14 * ut;
   telefon(b);
 }
 
 // ---------------- Skärminnehållet ----------------
+// En sak i taget: sidan scrollar lugnt, ett tryck, ett svar, sedan nästa sida.
 // Scrollkurvorna per skärm (sajtens px). Hastigheten ger rörelseoskärpa.
-const RAD9 = L.rad9[1] - 150;
 const SCROLL = {
-  hem: t => 880 * E.inOutCubic(P(t, 3.3, 4.7)),
-  extra: t => 650 * E.inOutCubic(P(t, 6.05, 6.8)),
-  ratt: t => RAD9 * E.inOutSine(P(t, 7.74, 8.1)) + 240 * E.inOutCubic(P(t, 8.45, 9.0)),
-  matte: t => 170 + 180 * E.inOutCubic(P(t, 10.6, 11.2)),
-  ord: t => 230 + 300 * E.inOutCubic(P(t, 19.25, 19.7)),
-  ordkort: t => 300 + 260 * E.inOutCubic(P(t, 20.55, 21.1)),
+  hem: t => 560 * E.inOutCubic(P(t, 4.75, 5.3)),
+  extra: t => 640 * E.inOutCubic(P(t, 6.3, 6.95)),
+  ratt: t => 1840 + 560 * E.inOutCubic(P(t, 8.32, 9.2)),
+  matte: t => 260 + 160 * E.inOutCubic(P(t, 11.05, 11.55)),
+  fokus: t => 200 * E.inOutCubic(P(t, 12.45, 12.95)),
+  ord: t => 530 * E.inOutCubic(P(t, 19.05, 19.65)),
+  ordkort: t => 300 + 400 * E.inOutCubic(P(t, 20.7, 21.12)),
 };
 // Lodrät oskärpa som en kamera med 180 graders slutare (1/120 s vid 60 bilder/s).
 function oskarpa(id, t) {
   const h = 1 / 240;
   const v = Math.abs(SCROLL[id](t + h) - SCROLL[id](t - h)) / (2 * h) * K;   // skärmens px/s
-  return Math.min(10, v / 120 / 4);
+  return Math.min(6, v / 120 / 6);
+}
+// Navigering tillbaka: den gamla sidan glider ut åt höger, den förra in från vänster.
+function tillbaka(t, t0, dur, fran, till) {
+  const p = E.inOutCubic(P(t, t0, t0 + dur));
+  visa(till.id, till.scroll || 0, -SW * 0.28 * (1 - p), 0.14 * (1 - p), till.mix || 0);
+  visa(fran.id, fran.scroll || 0, SW * p, 0, fran.mix || 0);
+  SKARMAR[fran.id].e.style.boxShadow = p > 0 ? `-12px 0 26px rgba(15,23,42,${(0.16 * p).toFixed(3)})` : 'none';
+  SKARMAR[fran.id].e.style.zIndex = 2;
+  SKARMAR[till.id].e.style.zIndex = 1;
 }
 function skarmar(t) {
   const hem = SKARMAR.hem;
   if (hem.mask) hem.mask.style.opacity = t < ZOOM1 ? 1 : 0;
   const sc = id => SCROLL[id](t);
   if (t < 5.6) {
-    // Startsidan: Jonas överst, sedan ned till nyheten om fler prov.
+    // Startsidan: Jonas i helskärm, sedan ned till nyheten om fler prov.
     visa('hem', sc('hem'), 0, 0, 0, oskarpa('hem', t));
-    tryckSajt(t, 5.5, L.tillProven[0], L.tillProven[1], sc('hem'));
-  } else if (t < 7.4) {
-    // Listan över gamla prov, ned till hösten 2025.
-    if (t < 6.05) navigera(t, 5.58, 0.47, { id: 'hem', scroll: 880 }, { id: 'extra', scroll: 0 });
-    else {
-      visa('extra', sc('extra'), 0, 0, 0, oskarpa('extra', t));
-      tryckSajt(t, 7.22, L.startaPasset[0], L.startaPasset[1], sc('extra'));
-    }
+    tryckSajt(t, 5.48, L.tillProven[0], L.tillProven[1], sc('hem'));
+  } else if (t < 7.3) {
+    // Gamla prov: listan, ned till passkorten, tryck på Starta passet.
+    if (t < 6.05) navigera(t, 5.58, 0.47, { id: 'hem', scroll: 560 }, { id: 'extra', scroll: 0 });
+    else visa('extra', sc('extra'), 0, 0, 0, oskarpa('extra', t));
+    tryckSajt(t, 7.18, L.startaPasset[0], L.startaPasset[1], sc('extra'));
   } else if (t < 10.06) {
-    // Rättningen: ned till fråga 9, tryck när scrollen har stannat, förklaringen fälls ut.
-    const oppen = P(t, 8.22, 8.31);
-    if (t < 7.74) navigera(t, 7.3, 0.44, { id: 'extra', scroll: 650 }, { id: 'ratt', scroll: 0 });
+    // Rättningen: den röda fråga 9, tryck, förklaringen fälls ut.
+    const oppen = E.outCubic(P(t, 8.12, 8.42));
+    if (t < 7.74) navigera(t, 7.3, 0.44, { id: 'extra', scroll: 640 }, { id: 'ratt', scroll: 1840 });
     else visa('ratt', sc('ratt'), 0, 0, oppen, oskarpa('ratt', t));
-    tryckSajt(t, 8.2, L.rad9[0], L.rad9[1], sc('ratt'));
+    tryckSajt(t, 8.1, L.rad9[0], L.rad9[1], sc('ratt'));
   } else if (t < 11.95) {
     // Matterepetitionen: Pythagoras, tryck på 5, grön förklaring.
-    const svar = P(t, 10.9, 10.98);
-    if (t < 10.48) navigera(t, 10.06, 0.42, { id: 'ratt', scroll: RAD9 + 240, mix: 1 }, { id: 'matte', scroll: 170 });
+    const svar = E.outCubic(P(t, 10.88, 11.18));
+    if (t < 10.48) navigera(t, 10.06, 0.42, { id: 'ratt', scroll: 2400, mix: 1 }, { id: 'matte', scroll: 260 });
     else visa('matte', sc('matte'), 0, 0, svar, oskarpa('matte', t));
-    tryckSajt(t, 10.88, L.matteA[0], L.matteA[1], sc('matte'));
+    tryckSajt(t, 10.86, L.matteA[0], L.matteA[1], sc('matte'));
   } else if (t < 14.84) {
-    // Fokusera på dina svagheter: hjärnkartan.
-    if (t < 12.42) navigera(t, 11.95, 0.47, { id: 'matte', scroll: 350, mix: 1 }, { id: 'fokus', scroll: 0 });
-    else visa('fokus', 0, 0, 0.18 * E.outCubic(P(t, 12.75, 13.2)) * (1 - P(t, 14.5, 14.84)));
-  } else if (t < 17.9) {
-    // En MEK-runda ur databasen, rätt svar, sedan kvittot.
-    const svar = P(t, 15.88, 15.96);
-    const dim = 0.16 * E.outCubic(P(t, 16.4, 16.8)) * (1 - P(t, 17.5, 17.9));
-    if (t < 15.27) navigera(t, 14.84, 0.42, { id: 'fokus', scroll: 0 }, { id: 'fraga', scroll: 0 });
-    else if (t < 16.02) visa('fraga', 0, 0, 0, svar);
-    else if (t < 16.49) navigera(t, 16.02, 0.47, { id: 'fraga', scroll: 0, mix: 1 }, { id: 'kvitto', scroll: 430 });
-    else visa('kvitto', 430, 0, dim);
+    // Hjärnkartan; kameran går nära och MEK lyser upp, sedan Kör 10 MEK-uppgifter.
+    if (t < 12.42) navigera(t, 11.95, 0.47, { id: 'matte', scroll: 420, mix: 1 }, { id: 'fokus', scroll: 0 });
+    else visa('fokus', sc('fokus'), 0, 0, 0, oskarpa('fokus', t));
+    tryckSajt(t, 14.62, L.mekKnapp[0], L.mekKnapp[1], 200);
+  } else if (t < 16.25) {
+    // En MEK-uppgift ur databasen: 520 av den sorten, rätt svar.
+    const svar = E.outCubic(P(t, 15.88, 16.18));
+    if (t < 15.27) navigera(t, 14.84, 0.43, { id: 'fokus', scroll: 200 }, { id: 'fraga', scroll: 0 });
+    else visa('fraga', 0, 0, 0, svar);
     const m = SKARMAR.fraga.markor[0];
-    m.d.style.opacity = (E.outCubic(P(t, 15.2, 15.45)) * (1 - P(t, 15.8, 16.0))).toFixed(3);
+    m.d.style.opacity = (E.outCubic(P(t, 15.25, 15.5)) * (1 - P(t, 15.8, 16.0))).toFixed(3);
     m.d.style.transformOrigin = '0 50%';
-    m.d.style.transform = `scaleX(${E.outCubic(P(t, 15.2, 15.55)).toFixed(3)})`;
+    m.d.style.transform = `scaleX(${E.outCubic(P(t, 15.25, 15.6)).toFixed(3)})`;
     tryckSajt(t, 15.86, L.mekRatt[0], L.mekRatt[1], 0);
+  } else if (t < 17.9) {
+    // Tillbaka till kartan, där MEK-luckan fylls.
+    if (t < 16.68) tillbaka(t, 16.25, 0.43, { id: 'fraga', scroll: 0, mix: 1 }, { id: 'fokus', scroll: 200 });
+    else visa('fokus', 200);
   } else if (t < 19.95) {
-    // Ordträningen: ringen med ansiktet och Starta passet.
-    if (t < 18.37) navigera(t, 17.9, 0.47, { id: 'kvitto', scroll: 430 }, { id: 'ord', scroll: 230 });
+    // Ordträningen: ringen med ansiktet, ned till Starta passet.
+    if (t < 18.37) navigera(t, 17.9, 0.47, { id: 'fokus', scroll: 200 }, { id: 'ord', scroll: 0 });
     else visa('ord', sc('ord'), 0, 0, 0, oskarpa('ord', t));
-    tryckSajt(t, 19.86, L.ordGo[0], L.ordGo[1], 530);
+    tryckSajt(t, 19.84, L.ordGo[0], L.ordGo[1], 530);
   } else {
-    // Ett nytt ord: parlör, och minnesregeln fälls ut.
-    const regel = P(t, 21.26, 21.34);
+    // Ett nytt ord, parlör, och minnesregeln; kameran går nära regeln.
+    const regel = E.outCubic(P(t, 21.26, 21.56));
     if (t < 20.42) navigera(t, 19.95, 0.47, { id: 'ord', scroll: 530 }, { id: 'ordkort', scroll: 300 });
-    else visa('ordkort', sc('ordkort'), 0, 0.12 * E.outCubic(P(t, 21.6, 22.0)), regel, oskarpa('ordkort', t));
+    else visa('ordkort', sc('ordkort'), 0, 0, regel, oskarpa('ordkort', t));
     tryckSajt(t, 21.24, L.visaRegel[0], L.visaRegel[1], sc('ordkort'));
+  }
+  // Hjärnkartan i sidan: puls, MEK lyser, sedan växer MEK och nästa lucka visas.
+  if (t >= 11.95 && t < 18.4) {
+    const g = E.inOutCubic(P(t, 16.75, 17.35));
+    ritaMek(lerp(FILMDATA.mekFore, FILMDATA.mekEfter, g));
+    const byt = E.inOutCubic(P(t, 17.4, 17.62));
+    kortEfter.style.opacity = byt.toFixed(3);
+    kortFore.style.opacity = (1 - byt).toFixed(3);
+    puls(t, kartLager);
+    framhav(t, kortFore, 13.85, 14.3);
+    const gl = Math.sin(Math.PI * g);
+    kortFore.querySelectorAll('.hk-form polygon, .hk-form path').forEach(f => { f.style.filter = gl > 0.01 ? `drop-shadow(0 0 5px rgba(16,185,129,${(0.6 * gl).toFixed(2)}))` : ''; });
   }
 }
 
 // ---------------- Korten ----------------
+// Bara ett utfällt ögonblick: tre typiska högskoleprovsord med minnesregler.
 function kort(t) {
-  // Ett par timmar.
-  fall(t, kKlocka, 3.5, 4.62, [270, 560], [122, 452], { r0: -8, r: -5 });
-  {
-    const p = E.inOutCubic(P(t, 3.62, 4.4));
-    $('klockBage').setAttribute('stroke-dashoffset', (226.2 * (1 - p * 0.999)).toFixed(2));
-    $('klockTal').textContent = (p < 0.5 ? 1 : 2) + ' h';
-    // Påståendet syns först när klockan står på två timmar.
-    kKlocka.querySelector('.l').style.opacity = E.outCubic(P(t, 4.02, 4.18)).toFixed(3);
-  }
-  // Redo för provet.
-  fall(t, kDatum, 4.62, 5.45, [270, 560], [380, 452], { r0: 8, r: 4, flyg: [240, 0] });
-  {
-    const sp = E.spring(P(t, 5.12, 5.55));
-    $('stamp').style.transform = `scale(${sp.toFixed(3)}) rotate(${(-30 * (1 - sp)).toFixed(2)}deg)`;
-    $('stamp').style.opacity = P(t, 5.12, 5.2).toFixed(3);
-  }
-  // Gamla prov: korten fälls ut som en solfjäder (sist ritad hamnar överst).
-  const FAN = [[11, 100, 500], [-11, -100, 492], [-1.5, 4, 430]];
-  kPass.forEach((e, i) => {
-    const [r, dx, y] = FAN[i];
-    fall(t, e, 6.3 + i * 0.1, 7.05, [270, 640], [270 + dx, y], { s: i === 2 ? 0.86 : 0.66, s0: 0.4, r0: 0, r, dur: 0.65 });
-  });
-  // Förklaringar.
-  fall(t, kForklaring, 8.26, 9.96, [230, 680], [300, 640], { s: 1.0, r0: 6, r: 2.5, flyg: [460, 40] });
-  fall(t, kAlternativ, 9.28, 10.0, [230, 520], [186, 386], { s: 1.05, r0: -6, r: -2.5, flyg: [-460, -20] });
-  fall(t, bFel, 9.44, 10.02, [300, 330], [400, 318], { r0: 10, r: 4, dur: 0.45, flyg: [420, 0] });
-  fall(t, bRatt, 9.62, 10.06, [300, 460], [400, 452], { r0: -10, r: -3, dur: 0.45, flyg: [420, 0] });
-  // Matten.
-  fall(t, kVideo, 10.44, 10.98, [300, 560], [232, 372], { s: 1.12, r0: -6, r: -2.5, flyg: [-460, -20] });
-  fall(t, kMatteFb, 11.06, 11.62, [300, 700], [262, 330], { s: 1.18, r0: 6, r: 2 });
-  // Svagaste punkter: hjärnkartan fälls ut ur telefonen.
-  // Kameran går nära MEK när "svagaste punkter" sägs och backar före trycket.
-  const narA = E.inOutCubic(P(t, 13.8, 14.25)) * (1 - E.inOutCubic(P(t, 14.3, 14.56)));
-  if (fall(t, kKartaA, 12.78, 14.66, [300, 600], [262 + 70 * narA, 498 + 46 * narA], { s: 1.18 * (1 + 0.2 * narA), s0: 0.35, r0: -3, r: -1.2 })) {
-    puls(t, kKartaA);
-    framhav(t, kKartaA, 13.86, 14.86);
-  }
-  tryckKort(t, 14.62, kKartaA, L.mekKnapp, 1.18, -1.2, [262, 498]);
-  // Databasen: 3 640 uppgifter.
-  if (fall(t, kFragaTopp, 15.22, 15.72, [300, 640], [282, 482], { s: 1.12, s0: 0.35, r0: 5, r: 2, flyg: [460, 10] })) {
-    fragaMark.style.transform = `scaleX(${E.outCubic(P(t, 15.42, 15.75)).toFixed(3)})`;
-  }
-  if (fall(t, kStat, 15.14, 15.95, [270, 520], [134, 300], { s: 1.05, r0: -8, r: -4 })) {
-    $('statTal').textContent = fmt(3640 * E.outQuart(P(t, 15.16, 15.55)));
-  }
-  // Täpper igen luckorna: kvittot och kartan där MEK växer.
-  // Först kvittot från rundan, sedan kartan där MEK-luckan fylls.
-  fall(t, kKvitto, 15.98, 16.46, [250, 660], [270, 440], { s: 1.08, r0: -6, r: -2, flyg: [-520, -20] });
-  if (fall(t, kKartaB, 16.58, 17.52, [330, 700], [270, 520], { s: 1.12, s0: 0.5, r0: 6, r: 1.5 })) {
-    const g = E.inOutCubic(P(t, 16.66, 17.3));
-    const v = lerp(FILMDATA.mekFore, FILMDATA.mekEfter, g);
-    // MEK förblir markerad hela takten; märket berättar förändringen.
-    ritaKartaB(v, 'mek');
-    puls(t, kKartaB);
-    const gl = Math.sin(Math.PI * g);
-    kKartaB.querySelectorAll('.hk-form polygon, .hk-form path').forEach(f => { f.style.filter = gl > 0.01 ? `drop-shadow(0 0 6px rgba(16,185,129,${(0.55 * gl).toFixed(2)}))` : ''; });
-  }
-  fall(t, bUpp, 17.02, 17.52, [270, 640], [270, 742], { r0: 6, r: -2, dur: 0.45 });
-  // Har du tid över: ringen med ansiktet fylls.
-  if (fall(t, kRing, 18.4, 19.3, [272, 600], [272, 536], { s: 1.0, s0: 0.75, r0: -4, r: -2 })) {
-    const p = E.inOutCubic(P(t, 18.55, 19.2));
-    // Ringen är andelen påbörjade ord som i appen: nivå 4 är 220 av 4 136.
-    $('ringBage').setAttribute('stroke-dashoffset', (552.9 * (1 - (220 / 4136) * p)).toFixed(2));
-    const niva = Math.min(4, 1 + Math.floor(p * 3.999));
-    $('ringNiva').textContent = `Nivå ${niva} av 10`;
-    kRing.querySelectorAll('.fejs img').forEach((im, i) => {
-      const s = i + 1 === niva ? 1 : 0;
-      im.style.opacity = s;
-      const pop = E.spring(P(t, 18.55 + (i / 3.999) * 0.65, 18.55 + (i / 3.999) * 0.65 + 0.4));
-      im.style.transform = `scale(${(0.7 + 0.3 * pop).toFixed(3)})`;
-    });
-  }
-  // Ordhjälpen: ordet fälls ut ur appen.
-  fall(t, kOrdHuvud, 20.1, 21.08, [270, 560], [372, 420], { s: 1.15, r0: 8, r: 3, flyg: [160, 0] });
-  // Minnestekniker: minnesregeln och bilden fälls ut.
-  fall(t, kRegel, 21.42, 22.48, [240, 700], [292, 470], { s: 1.1, r0: 6, r: 2 });
-  fall(t, kOrdBild, 21.6, 22.54, [240, 640], [384, 610], { s: 1.0, r0: 10, r: 6 });
-  fall(t, kKnut, 22.44, 22.92, [240, 600], [120, 640], { s: 1.0, r0: -14, r: -7, flyg: [-160, 160] });
-  // Typiska högskoleprovsord: tre ordkort i en trappa och antalet ord.
-  const OTRAPPA = [[-3, -30, 330], [2.5, 26, 486], [-2, -20, 632]];
+  const sl = E.outCubic(P(t, 22.95, 23.25)) * (1 - E.inCubic(P(t, 24.3, 24.55)));
+  $('sloja').style.opacity = sl.toFixed(3);
+  syns($('sloja'), sl > 0.001);
   kOrdlista.forEach((e, i) => {
-    const [r, dx, y] = OTRAPPA[i];
-    const sida = i % 2 ? 1 : -1;
-    fall(t, e, 23.06 + i * 0.16, 24.46 + i * 0.06, [270 + sida * 260, y + 30], [270 + dx, y], { s: 0.92, s0: 0.6, r0: sida * 10, r, dur: 0.6, flyg: [0, 180] });
+    fall(t, e, 23.06 + i * 0.4, 24.3, [270, 300 + i * 180 + 60], [270, 300 + i * 180], { s: 1.15, s0: 0.85, r0: 0, r: 0, dur: 0.6, flyt: false, flyg: [0, 40] });
   });
-  if (fall(t, kOrdStat, 23.9, 24.66, [270, 900], [270, 742], { s: 0.9, r0: 0, r: -1.5, flyg: [0, 140] })) {
-    $('ordTal').textContent = fmt(4136 * E.outQuart(P(t, 23.9, 24.25)));
-  }
 }
-// Ett tryck på en knapp i ett utfällt kort (sajtens px inom kortet).
-function tryckKort(t, t0, kortEl, [sx, sy], s, r, [cx, cy]) {
-  const e = $('tapKort');
-  if (t < t0 - 0.28 || t > t0 + 0.45) { e.style.visibility = 'hidden'; return; }
-  const w = kortEl.offsetWidth, h = kortEl.offsetHeight;
-  // Knappens läge i kortet: kortets innehåll börjar 337 px ned på sidan.
-  const dx = (sx - 24 - w / 2) * s, dy = (sy - 337 - h / 2) * s;
-  const rad = r * Math.PI / 180;
-  const x = cx + dx * Math.cos(rad) - dy * Math.sin(rad), y = cy + dx * Math.sin(rad) + dy * Math.cos(rad);
-  const inn = E.outCubic(P(t, t0 - 0.28, t0 - 0.06)), ut = E.outCubic(P(t, t0, t0 + 0.45));
-  const sk = lerp(0.55, 1, inn) * 1.3 + 1.1 * ut;
-  e.style.visibility = 'visible';
-  e.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${sk.toFixed(3)})`;
-  e.style.opacity = (inn * (1 - ut)).toFixed(3);
-}
-const tapKort = el('div', 'tap', $('pops')); tapKort.id = 'tapKort'; tapKort.style.zIndex = 50;
 
 // ---------------- Även en liten insats gör en stor skillnad ----------------
 // Små kort ur filmen svävar runt texten: alla små insatser. De dras ihop på

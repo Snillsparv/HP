@@ -19,6 +19,6 @@ import { readFileSync, writeFileSync } from 'node:fs';
 const fore = JSON.parse(readFileSync(join(HERE, 'bilder/karta-fore.json'), 'utf8'));
 const efter = JSON.parse(readFileSync(join(HERE, 'bilder/karta-efter.json'), 'utf8'));
 const mek = d => d.axlar.find(a => a.delprov === 'mek').styrka;
-const data = { kartaFore: fore, mekFore: mek(fore), mekEfter: mek(efter), vinnareEfter: efter.vinnare };
+const data = { kartaFore: fore, kartaEfter: efter, mekFore: mek(fore), mekEfter: mek(efter) };
 writeFileSync(join(HERE, 'data.js'), '// Genererad av bygg-karta.mjs ur bilder/karta-*.json.\nwindow.FILMDATA = ' + JSON.stringify(data) + ';\n');
-console.log('data.js skriven: MEK', data.mekFore.toFixed(3), '->', data.mekEfter.toFixed(3), 'vinnare efter', data.vinnareEfter);
+console.log('data.js skriven: MEK', data.mekFore.toFixed(3), '->', data.mekEfter.toFixed(3), 'vinnare efter', efter.vinnare);

@@ -1,4 +1,5 @@
 // Verbal question data for HT 2021 — Provpass 5 (Verbal 2, utan ELF)
+import { forklaringarHT2021 } from './forklaringar-ht2021.js';
 
 export interface VQuestion {
   num: number;
@@ -6,6 +7,8 @@ export interface VQuestion {
   options: string[];
   correct: number;
   category?: string;
+  /** Textförklaring (HTML), passet saknar videoförklaringar. */
+  explanation?: string;
   word?: string;
   images?: string[];
   textTitle?: string;
@@ -70,3 +73,9 @@ export const verbalSubTests2: VSubTest[] = [
     ]
   }
 ];
+
+// Passet har inga videoförklaringar: alla uppgifter får en textförklaring.
+for (const st of verbalSubTests2) for (const q of st.questions) {
+  const e = forklaringarHT2021[`${st.id}-${q.num}`];
+  if (e) q.explanation = e;
+}

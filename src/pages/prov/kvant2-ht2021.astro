@@ -528,7 +528,7 @@ import { golvBreddning } from '../../lib/fokus/fragebank.js';
       <div class="pq-res-detail" id="res-${q.num}" style="display:none;">
         <div class="pq-res-question">${q.text || ''}${st.type === 'kva' && q.q1 ? `<div class="kva-pair"><div class="kva-row"><span class="kva-label"><i>Kvantitet I:</i></span><span>${q.q1}</span></div><div class="kva-row"><span class="kva-label"><i>Kvantitet II:</i></span><span>${q.q2}</span></div></div>` : ''}${st.type === 'nog' && q.s1 ? `<div class="nog-statements"><div class="nog-stmt"><span class="nog-stmt-num">(1)</span><span>${q.s1}</span></div><div class="nog-stmt"><span class="nog-stmt-num">(2)</span><span>${q.s2}</span></div></div>` : ''}</div>
         <div class="pq-res-options">${q.options.map((opt, oi) => `<div class="pq-res-opt ${oi === q.correct ? 'pq-res-opt--correct' : ''} ${oi === answers[gi] && oi !== q.correct ? 'pq-res-opt--wrong' : ''}">${labels[oi]}. ${opt}</div>`).join('')}</div>
-        ${q.videoId ? `<div class="pq-res-video" style="margin-top:1rem;"><p style="font-weight:600; font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">Förklaring:</p><div class="video-embed"><iframe src="https://player.vimeo.com/video/${q.videoId}?dnt=1&title=0&byline=0&portrait=0" title="Förklaring uppgift ${q.num}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div></div>` : ''}
+        ${q.videoId ? `<div class="pq-res-video" style="margin-top:1rem;"><p style="font-weight:600; font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">Förklaring:</p><div class="video-embed"><iframe src="https://player.vimeo.com/video/${q.videoId}?dnt=1&title=0&byline=0&portrait=0" title="Förklaring uppgift ${q.num}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div></div>` : q.explanation ? `<div class="pq-res-expl"><p class="pq-res-expl-label">Förklaring</p>${q.explanation}</div>` : ''}
                 ${ok ? '' : tranaLankHTML(tranaFor(st.id, q))}
       </div>
     </div>`;
@@ -570,7 +570,7 @@ import { golvBreddning } from '../../lib/fokus/fragebank.js';
         ${comparisonHTML}
         ${analysisHTML}
         <div class="tip-box" style="text-align:center; margin:1.5rem 0; font-size:0.95rem;">
-          <strong>Förklaringsvideor till det här provet kommer snart!</strong> Klicka på en uppgift nedan för att se rätt svar.
+          Klicka på en uppgift nedan för att se rätt svar och förklaringen.
         </div>
         ${resultsHTML}
         <div id="save-area" style="margin-top:2rem; text-align:center;"></div>
@@ -674,6 +674,10 @@ import { golvBreddning } from '../../lib/fokus/fragebank.js';
 </Base>
 
 <style is:global>
+  .pq-res-expl { margin-top: 1rem; padding: 0.9rem 1.1rem; background: #fff; border: 1px solid var(--color-border); border-left: 4px solid var(--color-primary); border-radius: var(--radius); font-size: 0.93rem; line-height: 1.65; }
+  .pq-res-expl p { margin: 0 0 0.6rem; }
+  .pq-res-expl p:last-child { margin-bottom: 0; }
+  .pq-res-expl-label { font-weight: 700; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.06em; color: var(--color-primary); margin-bottom: 0.4rem !important; }
   .prov-top-bar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem; padding: 0.6rem 1rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); }
   .prov-section-tag { font-weight: 700; font-size: 0.85rem; color: var(--color-primary); text-transform: uppercase; letter-spacing: 0.06em; }
   .prov-timer-bar { display: flex; align-items: center; gap: 0.5rem; font-size: 1.1rem; font-weight: 700; font-variant-numeric: tabular-nums; }

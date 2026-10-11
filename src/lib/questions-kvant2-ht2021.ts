@@ -1,4 +1,6 @@
 // Shared question data for HT 2021 quantitative subtests — Provpass 4 (Kvantitativ 2)
+import { forklaringarHT2021 } from './forklaringar-ht2021.js';
+
 export const tex = (latex: string) => `<span class="tex">${latex}</span>`;
 
 const stdKvaOpts = [
@@ -23,6 +25,8 @@ export interface Question {
   correct: number;
   category?: string;
   videoId?: string;
+  /** Textförklaring (HTML) för uppgifter som saknar video. */
+  explanation?: string;
   q1?: string;
   q2?: string;
   s1?: string;
@@ -107,3 +111,9 @@ export const subTests: SubTest[] = [
     ]
   }
 ];
+
+// Uppgifter utan video får en textförklaring i stället.
+for (const st of subTests) for (const q of st.questions) {
+  const e = forklaringarHT2021[`${st.id}-${q.num}`];
+  if (e && !q.videoId) q.explanation = e;
+}

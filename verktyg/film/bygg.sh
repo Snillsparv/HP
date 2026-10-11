@@ -29,12 +29,15 @@ fi
 # Ljudet: rösten normaliserad, effekterna (ljud.py) under.
 [ -f ljud.wav ] || python3 ljud.py
 LJUD=(-i "$ROST")
-FILTER="[1:a]loudnorm=I=-13:TP=-2:LRA=9,aresample=48000[rost]"
+# Högpass först: rösten har en liten DC-förskjutning som annars ger ett klick
+# när filmen slutar eller loopar.
+FILTER="[1:a]highpass=f=30,loudnorm=I=-13:TP=-2:LRA=9,aresample=48000[rost]"
+SLUT=$(node -e "console.log(($LANGD - 0.03).toFixed(3))")
 if [ -f ljud.wav ]; then
   LJUD+=(-i ljud.wav)
-  FILTER="$FILTER;[2:a]aresample=48000,volume=1.0[fx];[rost][fx]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.8:level=false[a]"
+  FILTER="$FILTER;[2:a]aresample=48000,volume=1.0[fx];[rost][fx]amix=inputs=2:duration=first:normalize=0,alimiter=limit=0.8:level=false,afade=t=out:st=$SLUT:d=0.03[a]"
 else
-  FILTER="$FILTER;[rost]alimiter=limit=0.8:level=false[a]"
+  FILTER="$FILTER;[rost]alimiter=limit=0.8:level=false,afade=t=out:st=$SLUT:d=0.03[a]"
 fi
 
 ffmpeg -hide_banner -loglevel error -y -framerate "$FPS" -i "$RUTOR/f%05d.png" "${LJUD[@]}" \

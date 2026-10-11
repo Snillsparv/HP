@@ -128,15 +128,16 @@ for i, t0 in enumerate([0.62, 0.96, 1.16, 1.28, 1.36, 1.50, 1.58, 1.66]):
 H.append((0.95, pop(520, 0.14, -30), 0))
 H.append((1.82, pop(760, 0.1, -29), 0.3))
 H.append((2.12, svep(0.9, 300, 2200, -25, 1.2), 0))
-# Kameran går in i helskärm, ut från minnesregeln och till sist ut till telefonen.
+# Kameran går in i helskärm och till sist ut till telefonen. Ordkorten lämnar
+# och planen syns.
 H.append((3.85, svep(0.8, 300, 1800, -31, 1.2), 0))
-H.append((24.0, svep(0.55, 1800, 600, -33, 1.2), 0))
-H.append((27.4, svep(0.7, 1600, 400, -32, 1.2), 0))
+H.append((24.5, svep(0.4, 2000, 700, -33, 1.2), 0))
+H.append((27.5, svep(0.6, 1600, 400, -32, 1.2), 0))
 # Tryck på skärmen.
 for t0 in [7.18, 8.1, 10.86, 14.62, 15.86, 19.84, 21.34]:
     H.append((t0, tryck(), 0))
 # Sidbyten (och ett steg tillbaka till kartan).
-for t0 in [5.58, 7.3, 10.06, 11.95, 14.84, 16.25, 17.9, 19.95, 24.15]:
+for t0 in [5.58, 7.3, 10.06, 11.95, 14.84, 16.25, 17.9, 19.95]:
     H.append((t0 + 0.02, svep(0.36, 900, 3400, -31), 0.15))
 # Rätt svar, kartan som växer och ordkorten.
 H.append((10.9, pling(), 0))
@@ -145,12 +146,12 @@ H.append((16.78, stigande(), 0))
 for i, t0 in enumerate([23.06, 23.51]):
     H.append((t0, pop(580 + 90 * i), -0.15 + 0.3 * i))
 # Planen: ett mjukt klick när sidan stannar på varje steg.
-for i, t0 in enumerate([25.98, 26.98, 27.88]):
+for i, t0 in enumerate([26.18, 27.43]):
     H.append((t0, pop(640 + 80 * i, 0.07, -33), 0))
 # Steg 5 pulserar, växer ut ur telefonen och fyller bilden med blått.
 H.append((28.12, pop(820, 0.1, -29), 0))
-H.append((28.32, svep(0.5, 400, 2600, -26, 1.3), 0))
-H.append((28.78, duns(-17), 0))
+H.append((28.27, svep(0.5, 400, 2600, -26, 1.3), 0))
+H.append((28.6, duns(-17), 0))
 # Slutet.
 H.append((28.95, svep(0.7, 350, 2400, -28, 1.2), 0))
 H.append((29.62, glitter(), 0))

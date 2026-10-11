@@ -310,7 +310,7 @@ function visa(id, scroll = 0, x = 0, dim = 0, mix = 0, blur = 0) {
   } else s.imgs.forEach((b, i) => { b.style.opacity = i === 0 ? 1 : clamp(mix - (i - 1)).toFixed(3); });
   s.dim.style.opacity = dim.toFixed(3);
 }
-function dolj() { for (const s of Object.values(SKARMAR)) { s.e.style.visibility = 'hidden'; s.e.style.zIndex = 0; s.e.style.boxShadow = 'none'; s.page.style.filter = 'none'; } }
+function dolj() { for (const s of Object.values(SKARMAR)) { s.e.style.visibility = 'hidden'; s.e.style.zIndex = 0; s.e.style.opacity = 1; s.e.style.boxShadow = 'none'; s.page.style.filter = 'none'; } }
 // Navigering som i iOS: den nya sidan skjuts in från höger.
 function navigera(t, t0, dur, fran, till) {
   const p = E.inOutCubic(P(t, t0, t0 + dur));
@@ -395,8 +395,8 @@ function skapaKamera() {
     { t: 22.25, ...regel },
     { t: 24.0, ...regel },
     { t: 24.55, ...FS },
-    { t: 27.4, ...FS },
-    { t: 28.05, ...SLUTTELEFON },
+    { t: 27.5, ...FS },
+    { t: 28.1, ...SLUTTELEFON },
   ];
 }
 const KAMERA = skapaKamera();
@@ -620,10 +620,11 @@ function skarmPaYtan(px, py, b) {
 // ---------------- Skärminnehållet ----------------
 // En sak i taget: sidan scrollar lugnt, ett tryck, ett svar, sedan nästa sida.
 // Scrollkurvorna per skärm (sajtens px). Hastigheten ger rörelseoskärpa.
-// Planen på startsidan (sajtens px, ur fanga.mjs): rubriken och steg 1, steg 2
-// och 3, steg 4 och 4b, sist steg 5 och lyckönskningen. Varje rad är en
-// förflyttning [start, slut, från, till]; däremellan står sidan still.
-const PLAN = [[25.45, 26.0, 2516, 2859], [26.4, 27.0, 2859, 3374], [27.3, 27.9, 3374, 3712]];
+// Planen på startsidan (sajtens px, ur fanga.mjs) i tre stopp: rubriken med
+// steg 1 och 2, steg 3 och 4, sist 4b, steg 5 och lyckönskningen. Varje rad är
+// en förflyttning [start, slut, från, till]; däremellan står sidan still. Det
+// sista stoppet slutar så att planens bakgrund når skärmens nederkant (4416).
+const PLAN = [[25.55, 26.2, 2516, 3168], [26.8, 27.45, 3168, 3615]];
 function planScroll(t) {
   let sc = PLAN[0][2];
   for (const [a, b, fran, till] of PLAN) if (t >= a) sc = lerp(fran, till, E.inOutCubic(P(t, a, b)));
@@ -702,9 +703,15 @@ function skarmar(t) {
     if (t < 20.42) navigera(t, 19.95, 0.47, { id: 'ord', scroll: 530 }, { id: 'ordkort', scroll: 300 });
     else visa('ordkort', sc('ordkort'), 0, 0, regel, oskarpa('ordkort', t));
   } else {
-    // Tillbaka till startsidan, under ordkorten, och planen ett steg i taget.
-    if (t < 24.62) navigera(t, 24.15, 0.47, { id: 'ordkort', scroll: 630, mix: 1 }, { id: 'hem', scroll: sc('hem') });
-    else visa('hem', sc('hem'), 0, 0, 0, oskarpa('hem', t));
+    // Startsidans plan, ett steg i taget. Under slöjan tonar ordkortet bort
+    // ovanpå den, så att inget mer rör sig bakom korten.
+    visa('hem', sc('hem'), 0, 0, 0, oskarpa('hem', t));
+    const kvar = 1 - E.inOutCubic(P(t, 24.2, 24.5));
+    if (kvar > 0) {
+      visa('ordkort', 630, 0, 0, 1);
+      SKARMAR.ordkort.e.style.zIndex = 2;
+      SKARMAR.ordkort.e.style.opacity = kvar.toFixed(3);
+    }
   }
   // Trycken ligger utanför grenarna, så att ringen tonar ut färdigt även när
   // sidan byts. Varje tryck syns bara kring sin egen tid.
@@ -726,11 +733,11 @@ function skarmar(t) {
 // ---------------- Korten ----------------
 // Bara ett utfällt ögonblick: två typiska högskoleprovsord med minnesregler.
 function kort(t) {
-  const sl = E.outCubic(P(t, 22.95, 23.25)) * (1 - E.inCubic(P(t, 24.65, 24.88)));
+  const sl = E.outCubic(P(t, 22.95, 23.25)) * (1 - E.inOutCubic(P(t, 24.66, 24.9)));
   $('sloja').style.opacity = sl.toFixed(3);
   syns($('sloja'), sl > 0.001);
   kOrdlista.forEach((e, i) => {
-    fall(t, e, 23.06 + i * 0.45, 24.5, [270, 380 + i * 210 + 60], [270, 380 + i * 210], { s: 1.15, s0: 0.85, r0: 0, r: 0, dur: 0.6, flyt: false, flyg: [0, 40] });
+    fall(t, e, 23.06 + i * 0.45, 24.4, [270, 380 + i * 210 + 60], [270, 380 + i * 210], { s: 1.15, s0: 0.85, r0: 0, r: 0, dur: 0.6, flyt: false, flyg: [0, 40] });
   });
 }
 
@@ -759,7 +766,7 @@ function femman(t) {
   insCirkelEl.style.transform = `translate(${lerp(bx, 270, g).toFixed(2)}px, ${lerp(by, 480, g).toFixed(2)}px) rotate(${(b.rz * (1 - g)).toFixed(3)}deg) scale(${r.toFixed(4)})`;
   insCirkelEl.style.opacity = P(t, FEM_IN, FEM_IN + 0.06).toFixed(3);
   // Siffran försvinner när bollen börjar växa; glansen från förr tonar in.
-  insFem.style.opacity = (1 - P(t, FEM_VAX, FEM_VAX + 0.14)).toFixed(3);
+  insFem.style.opacity = (1 - P(t, FEM_VAX + 0.14, FEM_VAX + 0.24)).toFixed(3);
   insGlans.style.opacity = E.outCubic(P(t, FEM_VAX + 0.1, FEM_FULL)).toFixed(3);
 }
 

@@ -31,7 +31,8 @@ skärmbilder från sajten, och hjärnkartan ritas av sajtens egen kod.
   skärmbilder aldrig lämnar tomma rutor.
 - `ljud.py`: syntetiserar ljudeffekterna till `ljud.wav` (inte i git).
 - `bygg.sh`: renderar i parallella delar och kodar till mp4 med rösten
-  (normaliserad till ungefär -14 LUFS) och effekterna.
+  (högpassfiltrerad mot DC-förskjutning och normaliserad till ungefär
+  -14 LUFS) och effekterna.
 
 ## Bygga om
 

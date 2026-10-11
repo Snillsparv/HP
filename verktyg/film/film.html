@@ -314,7 +314,9 @@ function navigera(t, t0, dur, fran, till) {
   const p = E.inOutCubic(P(t, t0, t0 + dur));
   visa(fran.id, fran.scroll || 0, -SW * 0.28 * p, 0.14 * p, fran.mix || 0);
   visa(till.id, till.scroll || 0, SW * (1 - p), 0, till.mix || 0);
-  SKARMAR[till.id].e.style.boxShadow = p < 1 ? `-12px 0 26px rgba(15,23,42,${(0.16 * (1 - p)).toFixed(3)})` : 'none';
+  // Skuggan tonar in och ut, så att den inte slår på i första bilden.
+  const sk = 0.16 * Math.sin(Math.PI * p);
+  SKARMAR[till.id].e.style.boxShadow = sk > 0.001 ? `-12px 0 26px rgba(15,23,42,${sk.toFixed(3)})` : 'none';
   SKARMAR[till.id].e.style.zIndex = 2;
   SKARMAR[fran.id].e.style.zIndex = 1;
 }
@@ -623,7 +625,8 @@ function tillbaka(t, t0, dur, fran, till) {
   const p = E.inOutCubic(P(t, t0, t0 + dur));
   visa(till.id, till.scroll || 0, -SW * 0.28 * (1 - p), 0.14 * (1 - p), till.mix || 0);
   visa(fran.id, fran.scroll || 0, SW * p, 0, fran.mix || 0);
-  SKARMAR[fran.id].e.style.boxShadow = p > 0 ? `-12px 0 26px rgba(15,23,42,${(0.16 * p).toFixed(3)})` : 'none';
+  const sk = 0.16 * Math.sin(Math.PI * p);
+  SKARMAR[fran.id].e.style.boxShadow = sk > 0.001 ? `-12px 0 26px rgba(15,23,42,${sk.toFixed(3)})` : 'none';
   SKARMAR[fran.id].e.style.zIndex = 2;
   SKARMAR[till.id].e.style.zIndex = 1;
 }

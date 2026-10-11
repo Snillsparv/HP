@@ -11,7 +11,8 @@ skärmbilder från sajten, och hjärnkartan ritas av sajtens egen kod.
   `window.SEEK(t)`; inga CSS-animationer och ingen text ur manuset (den läggs
   på som undertexter). Kamerans nyckelbilder står i `skapaKamera()`: telefonen
   syns i början och i slutet, däremellan är den i helskärm (`FS`) och zoomar
-  bara in på hjärnkartan och ordkortets regel. Skärmarna och deras
+  bara in på ordkortets minnesregel. Telefonen flyttas bara med
+  2D-transformer: med perspektiv ritar Chromium den suddigt. Skärmarna och deras
   scrollkurvor finns i `SCROLL` och `skarmar()`. Block som fälls ut på sajten
   (förklaringen, mattesvaret, frågan, regeln) visas som ett dragspel: det nya
   blocket vecklas ut vid en uppmätt linje (`vik` i `skarm()`) och resten

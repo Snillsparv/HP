@@ -109,12 +109,14 @@
   .ordkort .hook { background: #fef3c7; color: #92400e; font-weight: 800; border-radius: 3px; padding: 0 2px; }
 
 
-  /* ---------- Liten insats, stor skillnad ---------- */
+  /* ---------- Steg 5 blir den blå slutbilden ---------- */
   #ins { position: absolute; left: 0; top: 0; width: 540px; height: 960px; z-index: 25; pointer-events: none; }
+  /* Samma boll som sajtens sista steg (.step-number--final, 48 px), i 100 px. */
   #insCirkel { position: absolute; left: 0; top: 0; width: 100px; height: 100px; margin: -50px 0 0 -50px; border-radius: 50%;
-    background: radial-gradient(circle at 40% 35%, #3b82f6, #2563eb 55%, #1d4ed8); will-change: transform; }
-  .insT { position: absolute; left: 0; top: 0; white-space: nowrap; font-weight: 800; letter-spacing: -0.035em;
-    will-change: transform, opacity; }
+    background: #1d4ed8; will-change: transform; display: flex; align-items: center; justify-content: center; }
+  #insGlans { position: absolute; inset: 0; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #3b82f6, #2563eb 55%, #1d4ed8); }
+  #insFem { position: relative; color: #fff; font-size: 43.3px; font-weight: 800; line-height: 1; }
 
   /* ---------- Slutet ---------- */
   #slut { position: absolute; inset: 0; z-index: 26; pointer-events: none; }
@@ -378,9 +380,12 @@ const TELEFON = { x: 270, y: 490, s: 1 };
 // Sajtens koordinater (CSS-px) till skärmens, för en sida som är scrollad sc.
 const skarmPt = (x, y, sc) => [x * K, STATUS + (y - sc) * K];
 
+// I slutet syns hela telefonen igen, lite större än i början.
+const SLUTTELEFON = { x: 270, y: 480, s: 1.25 };
 function skapaKamera() {
   // Helskärm hela vägen genom sajten. Bara minnesregeln (ordkortet scrollat
-  // 630) får en inzoomning, så att den fyller bildens bredd.
+  // 630) får en inzoomning, så att den fyller bildens bredd. Vid planens
+  // sista steg backar kameran ut till telefonen.
   const regel = siktaTopp(skarmPt(195, 0, 0)[0], 2.0);
   return [
     { t: 3.0, ...TELEFON },
@@ -389,7 +394,9 @@ function skapaKamera() {
     { t: 21.6, ...FS },
     { t: 22.25, ...regel },
     { t: 24.0, ...regel },
-    { t: 24.9, x: 270, y: 600, s: 0.95 },
+    { t: 24.55, ...FS },
+    { t: 27.4, ...FS },
+    { t: 28.05, ...SLUTTELEFON },
   ];
 }
 const KAMERA = skapaKamera();
@@ -525,7 +532,7 @@ function SEEK(t) {
   telefonen(t);
   skarmar(t);
   kort(t);
-  insats(t);
+  femman(t);
   slut(t);
 }
 
@@ -583,8 +590,9 @@ function intro(t) {
 }
 
 // ---------------- Telefonen ----------------
-function telefonen(t) {
-  if (t < ZOOM0 || t > 25.7) { telefon({ o: 0 }); return; }
+// Telefonens läge vid tiden t. Den blå bilden täcker allt efter SLUT_BLA.
+const SLUT_BLA = 28.85;
+function telefonLage(t) {
   const z = zoom(t);
   const k = kamera(t);
   // Kameran tar över först efter att ordmärket har landat i loggan.
@@ -596,17 +604,33 @@ function telefonen(t) {
     rz: sv * 0.7 * wob(t, 0.5, 3), o: P(t, ZOOM0, ZOOM0 + 0.12), svang: 0,
   };
   b.y += sv * 3.5 * wob(t, 0.9, 0.5);
-  // Liten insats: telefonen sjunker ut ur bild.
-  const ut = E.inCubic(P(t, 24.9, 25.6));
-  b.y += 820 * ut; b.s *= 1 - 0.1 * ut; b.rz -= 5 * ut;
-  telefon(b);
+  return b;
+}
+function telefonen(t) {
+  if (t < ZOOM0 || t > SLUT_BLA) { telefon({ o: 0 }); return; }
+  telefon(telefonLage(t));
+}
+// Var en punkt på skärmen hamnar på ytan, med telefonens vridning.
+function skarmPaYtan(px, py, b) {
+  const dx = b.s * (px - SW / 2), dy = b.s * (py + 11 - PHONE_H / 2);
+  const v = b.rz * Math.PI / 180;
+  return [b.x + dx * Math.cos(v) - dy * Math.sin(v), b.y + dx * Math.sin(v) + dy * Math.cos(v)];
 }
 
 // ---------------- Skärminnehållet ----------------
 // En sak i taget: sidan scrollar lugnt, ett tryck, ett svar, sedan nästa sida.
 // Scrollkurvorna per skärm (sajtens px). Hastigheten ger rörelseoskärpa.
+// Planen på startsidan (sajtens px, ur fanga.mjs): rubriken och steg 1, steg 2
+// och 3, steg 4 och 4b, sist steg 5 och lyckönskningen. Varje rad är en
+// förflyttning [start, slut, från, till]; däremellan står sidan still.
+const PLAN = [[25.45, 26.0, 2516, 2859], [26.4, 27.0, 2859, 3374], [27.3, 27.9, 3374, 3712]];
+function planScroll(t) {
+  let sc = PLAN[0][2];
+  for (const [a, b, fran, till] of PLAN) if (t >= a) sc = lerp(fran, till, E.inOutCubic(P(t, a, b)));
+  return sc;
+}
 const SCROLL = {
-  hem: t => 0,
+  hem: t => (t < 20 ? 0 : planScroll(t)),
   extra: t => 700,
   ratt: t => 2250 + 150 * E.inOutCubic(P(t, 8.55, 9.15)),
   matte: t => 260 + 160 * E.inOutCubic(P(t, 11.05, 11.55)),
@@ -672,11 +696,15 @@ function skarmar(t) {
     // Ordträningen: ringen med ansiktet, ned till Starta passet.
     if (t < 18.37) navigera(t, 17.9, 0.47, { id: 'fokus', scroll: 255 }, { id: 'ord', scroll: 0 });
     else visa('ord', sc('ord'), 0, 0, 0, oskarpa('ord', t));
-  } else {
+  } else if (t < 24.15) {
     // Ett nytt ord, parlör, och minnesregeln; kameran går nära regeln.
     const regel = E.outCubic(P(t, 21.36, 21.66));
     if (t < 20.42) navigera(t, 19.95, 0.47, { id: 'ord', scroll: 530 }, { id: 'ordkort', scroll: 300 });
     else visa('ordkort', sc('ordkort'), 0, 0, regel, oskarpa('ordkort', t));
+  } else {
+    // Tillbaka till startsidan, under ordkorten, och planen ett steg i taget.
+    if (t < 24.62) navigera(t, 24.15, 0.47, { id: 'ordkort', scroll: 630, mix: 1 }, { id: 'hem', scroll: sc('hem') });
+    else visa('hem', sc('hem'), 0, 0, 0, oskarpa('hem', t));
   }
   // Trycken ligger utanför grenarna, så att ringen tonar ut färdigt även när
   // sidan byts. Varje tryck syns bara kring sin egen tid.
@@ -706,80 +734,33 @@ function kort(t) {
   });
 }
 
-// ---------------- Även en liten insats gör en stor skillnad ----------------
-// Små kort ur filmen svävar runt texten: alla små insatser. De dras ihop på
-// "gör en" och blåses ut när den blå cirkeln slår ut på STOR.
-const MINI = [['extra-kort', 150, 12], ['rattning-9-forklaring', 150, 10], ['ord-bild', 84, 12], ['matte-forklaring', 150, 12],
-  ['ord-regel', 150, 12], ['fokus-kvitto-kort', 150, 16], ['matte-video', 150, 10], ['fokus-karta', 150, 16]];
-const miniEls = MINI.map(([src, w, r]) => {
-  const e = el('div', 'pop skugga', $('ins'));
-  const i = el('img', '', e); i.src = 'bilder/' + src + '.png'; i.style.width = w + 'px'; i.style.borderRadius = r + 'px';
-  e.style.borderRadius = r + 'px';
-  return e;
-});
+// ---------------- Steg 5 blir den blå slutbilden ----------------
+// Planens stegbollar blir mörkare för varje steg. Den sista (#1d4ed8, 48 px på
+// sajten) läggs exakt över skärmbildens boll, pulserar till och växer sedan ut
+// ur telefonen tills hela bilden är blå. Där tar slutet över.
+const FEMMA = { x: 195, y: 4066, d: 48 };
 const insCirkelEl = el('div', '', $('ins')); insCirkelEl.id = 'insCirkel';
-const insEls = {
-  aven: el('div', 'insT', $('ins'), 'Även en'),
-  liten: el('div', 'insT', $('ins'), 'liten insats'),
-  gor: el('div', 'insT', $('ins'), 'gör en'),
-  stor: el('div', 'insT', $('ins'), 'STOR'),
-  skillnad: el('div', 'insT', $('ins'), 'skillnad'),
-};
-// Lagerordning: den mörka texten under cirkeln, STOR och skillnad över den.
-for (const e of [insCirkelEl, insEls.stor, insEls.skillnad]) $('ins').appendChild(e);
-insEls.aven.style.cssText += 'font-size:58px;color:#0f172a;';
-insEls.liten.style.cssText += 'font-size:58px;color:#2563eb;';
-insEls.gor.style.cssText += 'font-size:58px;color:#0f172a;';
-insEls.stor.style.cssText += 'font-size:168px;color:#fff;letter-spacing:-0.05em;line-height:1;';
-insEls.skillnad.style.cssText += 'font-size:76px;color:#fff;letter-spacing:-0.04em;';
-function insats(t) {
+const insGlans = el('div', '', insCirkelEl); insGlans.id = 'insGlans';
+const insFem = el('span', '', insCirkelEl, '5'); insFem.id = 'insFem';
+const FEM_IN = 28.1, FEM_VAX = 28.3, FEM_FULL = 28.8;
+function femman(t) {
   const ins = $('ins');
-  if (t < 24.9 || t > 32.1) { syns(ins, false); return; }
+  if (t < FEM_IN || t > 32.1) { syns(ins, false); return; }
   syns(ins, true);
-  const ord = (e, t0, x, y, s = 1, o = 1, dy = 22) => {
-    const p = P(t, t0 - 0.06, t0 + 0.3);
-    put(e, x, y + dy * (1 - E.outCubic(p)), s * lerp(0.9, 1, E.outBack(p)), 0, E.outCubic(p) * o);
-  };
-  // Slutet tar över: texten lyfter och tonar bort.
-  const bort = E.inOutCubic(P(t, 28.75, 29.35));
-  const lyft = -150 * bort;
-  // Den lilla pricken under "liten insats" blir en stor blå cirkel.
-  const c = $('insCirkel');
-  const dotIn = E.spring(P(t, 26.62, 26.95));
-  // Pricken sväller på "en" och hela bilden är blå när STOR slår in.
-  const grow = E.inOutQuint(P(t, 27.2, 27.56));
-  const r = lerp(0.18 * dotIn, 12.5, grow) * (1 + 0.25 * Math.sin(Math.PI * P(t, 27.02, 27.2)));
-  const cy = lerp(486, 480, grow);
-  c.style.transform = `translate(270px, ${cy.toFixed(1)}px) scale(${r.toFixed(4)})`;
-  // Minikorten på en ellips runt texten.
-  miniEls.forEach((e, i) => {
-    // Nedersta kortet först, det översta sist när undertexten har gått.
-    const v = Math.PI / 2 + i * (2 * Math.PI / miniEls.length) + 0.18;
-    const inn = E.spring(P(t, 24.95 + i * 0.05, 25.55 + i * 0.05));
-    const ihop = E.inOutCubic(P(t, 26.9, 27.22));
-    const blas = E.outCubic(P(t, 27.22, 27.62));
-    // Korten dras ihop mest lodrätt, så att de inte glider in i texten.
-    const rx = 172 * (1 - 0.04 * ihop) * (1 + 1.4 * blas), ry = 318 * (1 - 0.14 * ihop) * (1 + 1.4 * blas);
-    const ox = 270 + Math.cos(v) * rx + 4 * wob(t, 1.1, i);
-    const oy = 470 + Math.sin(v) * ry + 5 * wob(t, 0.9, i + 3);
-    const x = lerp(270, ox, Math.min(inn, 1.08)), y = lerp(720, oy, Math.min(inn, 1.08));
-    const rot = (i % 2 ? 1 : -1) * (4 + (i * 3) % 5) + 2 * wob(t, 0.7, i);
-    put(e, x, y, lerp(0.3, 0.85, inn) * (1 - 0.1 * ihop), rot, P(t, 24.95 + i * 0.05, 25.1 + i * 0.05) * (1 - blas) * 0.96);
-  });
-  // Före cirkeln: mörk text på ljus bakgrund.
-  const forsta = 1 - P(t, 27.28, 27.48);
-  ord(insEls.aven, 25.62, 270, 372 + lyft, 1, forsta);
-  // Sägs stort och krymper medan "insats" uttalas: en liten insats.
-  const krymp = E.inOutCubic(P(t, 26.52, 26.85));
-  ord(insEls.liten, 26.26, 270, lerp(440, 452, krymp) + lyft, lerp(0.9, 0.26, krymp), forsta);
-  ord(insEls.gor, 27.02, 270, 552 + lyft, 1, forsta);
-  // STOR slår in när cirkeln fyller bilden.
-  const sp = E.spring(P(t, 27.52, 27.95));
-  put(insEls.stor, 270, 424 + lyft, lerp(1.6, 1, sp), 0, (t >= 27.52 ? 1 : 0) * (1 - bort));
-  ord(insEls.skillnad, 27.98, 270, 548 + lyft, 1, 1 - bort, 30);
-  // Lätt skakning i bild när STOR landar.
-  const skak = Math.exp(-14 * Math.max(0, t - 27.56)) * (t > 27.56 ? 1 : 0);
-  ins.style.transform = `translate(${(5 * skak * Math.sin(t * 90)).toFixed(2)}px, ${(4 * skak * Math.cos(t * 77)).toFixed(2)}px)`;
+  // Bollens läge och storlek i bild, så som telefonen står just nu.
+  const b = telefonLage(Math.min(t, SLUT_BLA));
+  const [sx, sy] = skarmPt(FEMMA.x, FEMMA.y, SCROLL.hem(t));
+  const [bx, by] = skarmPaYtan(sx, sy, b);
+  const r0 = FEMMA.d * K * b.s / 100;
+  // En liten puls, sedan växer den och glider mot mitten.
+  const puls = 1 + 0.16 * Math.sin(Math.PI * P(t, FEM_IN + 0.04, FEM_VAX));
+  const g = E.inOutQuint(P(t, FEM_VAX, FEM_FULL));
+  const r = lerp(r0 * puls, 12.5, g);
+  insCirkelEl.style.transform = `translate(${lerp(bx, 270, g).toFixed(2)}px, ${lerp(by, 480, g).toFixed(2)}px) rotate(${(b.rz * (1 - g)).toFixed(3)}deg) scale(${r.toFixed(4)})`;
+  insCirkelEl.style.opacity = P(t, FEM_IN, FEM_IN + 0.06).toFixed(3);
+  // Siffran försvinner när bollen börjar växa; glansen från förr tonar in.
+  insFem.style.opacity = (1 - P(t, FEM_VAX, FEM_VAX + 0.14)).toFixed(3);
+  insGlans.style.opacity = E.outCubic(P(t, FEM_VAX + 0.1, FEM_FULL)).toFixed(3);
 }
 
 // ---------------- Lycka till på söndag! ----------------

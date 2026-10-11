@@ -25,7 +25,9 @@ mkdirSync(out, { recursive: true });
 
 const browser = await chromium.launch({
   executablePath: process.env.HP_CHROMIUM || '/opt/pw-browsers/chromium',
-  args: ['--font-render-hinting=none', '--disable-lcd-text'],
+  // Utan checker-imaging väntar rastreringen på att stora bilder avkodas, i
+  // stället för att lämna tomma rutor när sidan hoppar långt mellan bilderna.
+  args: ['--font-render-hinting=none', '--disable-lcd-text', '--disable-checker-imaging'],
 });
 const page = await browser.newPage({ viewport: { width: 540, height: 960 }, deviceScaleFactor: 2 });
 page.on('console', m => { if (m.type() === 'error') console.error('sidfel:', m.text()); });

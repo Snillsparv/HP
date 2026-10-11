@@ -150,11 +150,18 @@ const JOBB = {
     const p = await oppna(ctx, '/');
     await p.waitForTimeout(800);
     await vimeoOmslag(p);
-    await helsida(p, 'hem', 4200);
+    // Ned till planens sista ruta ("Lycka till!!"), som filmens slut scrollar igenom.
+    const sista = await lage(p, '.steps + .tip-box');
+    await helsida(p, 'hem', Math.ceil(sista.y + sista.h + 140));
     await element(p, '.site-header', 'sidhuvud', 0, true);
     // Lägena som film.html räknar med (L i skriptet).
     lagen.hem = { logo: await lage(p, '.site-logo'), hero: await lage(p, '#hero-img'), tagg: await lage(p, '.hero-tag'),
-      nyhet: await lage(p, '.nyhet-banner') };
+      nyhet: await lage(p, '.nyhet-banner'), visaPlanen: await lage(p, 'a[href="#guide"]'),
+      rubrik: await lage(p, '.steps'), sista,
+      steg: await p.evaluate(() => [...document.querySelectorAll('.steps > .step')].map(e => {
+        const r = e.getBoundingClientRect(), n = e.querySelector('.step-number').getBoundingClientRect();
+        return { y: r.y + scrollY, h: r.height, nr: { x: n.x + n.width / 2, y: n.y + scrollY + n.height / 2 } };
+      })) };
     await ctx.close();
   },
 

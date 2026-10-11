@@ -17,15 +17,18 @@ skärmbilder från sajten, och hjärnkartan ritas av sajtens egen kod.
   (förklaringen, mattesvaret, frågan, regeln) visas som ett dragspel: det nya
   blocket vecklas ut vid en uppmätt linje (`vik` i `skarm()`) och resten
   glider ner. Hjärnkartan ritas live ovanpå skärmbilden (`kortHTML`,
-  `ritaMek`). Ordkorten ligger i `kort()` och slutet i `insats()` och
-  `slut()`. Snabba scrollningar får rörelseoskärpa.
+  `ritaMek`). Ordkorten ligger i `kort()`. I slutet scrollar startsidans
+  plan förbi ett steg i taget (`PLAN`), kameran backar ut till telefonen och
+  steg 5:s boll växer till den blå slutbilden (`femman()`), där `slut()` tar
+  över. Snabba scrollningar får rörelseoskärpa.
 - `bilder/`: skärmbilder fångade med `fanga.mjs` (390 px bred mobilvy, tre
   gånger upplösning), plus Vimeo-omslag och hjärnkartans data som JSON.
 - `fanga.mjs`: fångar bilderna från en lokal server (se nedan).
 - `bygg-karta.mjs`: bygger `hjarnkarta-vy.js` ur `src/lib/fokus/hjarnkarta-vy.ts`
   och `data.js` ur kartdatan. Båda filerna är genererade.
 - `render.mjs`: renderar rutor med Playwright (`probe` för enstaka tider,
-  `full` för alla).
+  `full` för alla). Chromium startas utan checker-imaging, så att stora
+  skärmbilder aldrig lämnar tomma rutor.
 - `ljud.py`: syntetiserar ljudeffekterna till `ljud.wav` (inte i git).
 - `bygg.sh`: renderar i parallella delar och kodar till mp4 med rösten
   (normaliserad till ungefär -14 LUFS) och effekterna.
@@ -44,7 +47,7 @@ HP_DATUM=2026-10-11 HP_KATEX=/sökväg/till/katex/package/dist node verktyg/film
 node verktyg/film/bygg-karta.mjs
 
 # 4. Provbilder, sedan hela filmen (ungefär sju minuter)
-node verktyg/film/render.mjs probe /tmp/prov 1.5 8.6 17.2 30
+node verktyg/film/render.mjs probe /tmp/prov 1.5 8.6 17.2 26.2 30
 verktyg/film/bygg.sh verktyg/film/rost.mp3 film.mp4 /tmp/hp-film-rutor 60 3
 ```
 

@@ -1,0 +1,1091 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="utf-8">
+<title>HPAkuten på ett par timmar</title>
+<link rel="stylesheet" href="../../src/styles/hjarnkarta.css">
+<style>
+  /* Deterministisk film som styrs helt av window.SEEK(t) från render.mjs.
+     Inga CSS-animationer eller övergångar: varje bildruta räknas fram ur t.
+     Ytan är 540 x 960 CSS-px och renderas med dubbel upplösning (1080 x 1920).
+     Skärmbilderna i bilder/ är fångade från den riktiga sajten (fanga.mjs),
+     hjärnkartan ritas med sajtens egen kod (hjarnkarta-vy.js). */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 540px; height: 960px; overflow: hidden; }
+  body {
+    --font-sans: 'Inter', 'Segoe UI', system-ui, sans-serif;
+    font-family: var(--font-sans);
+    color: #1a1a2e;
+    background: #f8fafc;
+    position: relative;
+    -webkit-font-smoothing: antialiased;
+  }
+  .abs { position: absolute; left: 0; top: 0; will-change: transform, opacity; }
+  img { display: block; user-select: none; }
+  /* Sajtens CSS-animationer ersätts av tidsstyrda värden här. */
+  .hk-puls, .hk-vax .hk-form, .hk-vax .hk-topp { animation: none !important; }
+
+  /* ---------- Bakgrund ---------- */
+  #bg { position: absolute; inset: 0; overflow: hidden;
+    background: linear-gradient(172deg, #f8fafc 0%, #eef2ff 58%, #e0e7ff 100%); }
+  #dots { position: absolute; left: -44px; top: -44px; width: 628px; height: 1048px;
+    background-image: radial-gradient(rgba(37, 99, 235, 0.16) 1.15px, transparent 1.35px);
+    background-size: 22px 22px; will-change: transform; }
+  .blob { position: absolute; left: 0; top: 0; border-radius: 50%; will-change: transform; }
+  #blob1 { width: 520px; height: 520px; background: radial-gradient(circle, rgba(37, 99, 235, 0.20), rgba(37, 99, 235, 0) 68%); }
+  #blob2 { width: 460px; height: 460px; background: radial-gradient(circle, rgba(245, 158, 11, 0.16), rgba(245, 158, 11, 0) 68%); }
+  #blob3 { width: 420px; height: 420px; background: radial-gradient(circle, rgba(147, 51, 234, 0.12), rgba(147, 51, 234, 0) 68%); }
+
+  /* ---------- Intro ---------- */
+  #introJonasClip { position: absolute; left: 0; top: 0; width: 540px; overflow: hidden;
+    -webkit-mask-image: linear-gradient(#000 calc(100% - 80px), transparent); mask-image: linear-gradient(#000 calc(100% - 80px), transparent); }
+  #introJonas { position: absolute; left: 0; top: 0; filter: drop-shadow(0 6px 16px rgba(0, 0, 0, 0.12)); }
+  /* Exakt som .hero-tag på startsidan (390 px bred mobilvy), så att den
+     smälter ihop med skärmbilden när telefonen tonar in. */
+  #introTag { position: absolute; left: 0; top: 0; width: 342px; height: 52.4px; font-size: 12px; font-weight: 600;
+    line-height: 20.4px; letter-spacing: 0.96px; text-align: center; text-transform: uppercase; color: #2563eb;
+    border: 1px solid rgba(37, 99, 235, 0.4); border-radius: 50px; padding: 4.8px 12.8px;
+    box-shadow: 0 0 10px rgba(37, 99, 235, 0.2), 0 0 20px rgba(37, 99, 235, 0.1); }
+  #mark { position: absolute; left: 0; top: 0; white-space: nowrap; font-weight: 800; font-size: 20.8px;
+    line-height: 1; transform-origin: 0 0; z-index: 30; }
+  #mark span { display: inline-block; will-change: transform, opacity; }
+  #mark .hp { color: #1a1a2e; }
+  #mark .ak { color: #2563eb; }
+  #mark .se { color: #94a3b8; }
+
+  /* ---------- Telefonen ---------- */
+  #phoneShadow { position: absolute; left: 0; top: 0; width: 300px; height: 80px; border-radius: 50%;
+    background: radial-gradient(ellipse at center, rgba(15, 23, 42, 0.30), rgba(15, 23, 42, 0) 70%); }
+  #phone { position: absolute; left: 0; top: 0; width: 322px; height: 672px; border-radius: 54px;
+    padding: 2px; background: linear-gradient(140deg, #d6dae2 0%, #9aa1ad 35%, #e8ebf0 60%, #868d99 100%);
+    box-shadow: 0 40px 80px rgba(15, 23, 42, 0.22), 0 14px 30px rgba(15, 23, 42, 0.14); will-change: transform; }
+  #bezel { position: absolute; inset: 2px; border-radius: 52px; background: #0a0a0f; padding: 9px; }
+  #screen { position: relative; width: 300px; height: 650px; border-radius: 43px; overflow: hidden;
+    background: #fafafa; isolation: isolate; }
+  .scr { position: absolute; left: 0; top: 0; width: 300px; height: 650px; overflow: hidden; background: #fafafa;
+    will-change: transform, opacity; }
+  .scr .page { position: absolute; left: 0; top: 0; width: 300px; will-change: transform; }
+  .scr .page img { width: 300px; position: absolute; left: 0; top: 0; }
+  .scr .hdr { position: absolute; left: 0; top: 38px; width: 300px; }
+  .scr .mask { position: absolute; background: #fff; }
+  .scr .dim { position: absolute; inset: 0; background: #0f172a; opacity: 0; }
+  .mark2 { position: absolute; border-radius: 4px; background: rgba(253, 230, 138, 0.55); mix-blend-mode: multiply; }
+  #status { position: absolute; left: 0; top: 0; width: 300px; height: 38px; background: #fff; z-index: 5;
+    font-size: 13.5px; font-weight: 650; color: #111; }
+  #status .tid { position: absolute; left: 34px; top: 13px; letter-spacing: -0.01em; }
+  #status svg { position: absolute; top: 15px; }
+  #island { position: absolute; left: 50%; top: 10px; width: 88px; height: 25px; margin-left: -44px;
+    border-radius: 13px; background: #000; z-index: 6; }
+  #homebar { position: absolute; left: 50%; bottom: 7px; width: 108px; height: 4px; margin-left: -54px;
+    border-radius: 3px; background: #111; z-index: 6; opacity: 0.85; }
+  #glare { position: absolute; left: -150px; top: -100px; width: 220px; height: 900px; z-index: 7; pointer-events: none;
+    background: linear-gradient(90deg, rgba(255,255,255,0), rgba(255,255,255,0.28), rgba(255,255,255,0));
+    opacity: 0; }
+  /* Trycket syns både på vit botten och på blå knappar. */
+  .tap { position: absolute; left: 0; top: 0; width: 40px; height: 40px; margin: -20px 0 0 -20px; border-radius: 50%;
+    z-index: 8; background: rgba(255, 255, 255, 0.42); border: 3px solid #fff; opacity: 0;
+    box-shadow: 0 0 0 2px rgba(15, 23, 42, 0.32), 0 4px 14px rgba(15, 23, 42, 0.32); }
+
+  /* ---------- Undertext (kinetisk typografi) ---------- */
+  #caps { position: absolute; left: 0; top: 0; width: 540px; height: 300px; z-index: 20; }
+  .chunk { position: absolute; left: 44px; width: 452px; text-align: center; font-size: 41px; font-weight: 800;
+    line-height: 1.13; letter-spacing: -0.03em; color: #0f172a; will-change: transform, opacity; }
+  .chunk .w { display: inline-block; position: relative; will-change: transform, opacity; }
+  .chunk .w.k { color: #2563eb; }
+  .chunk .w.k::after { content: ''; position: absolute; left: -3px; right: -3px; bottom: 3px; height: 13px;
+    background: #fde68a; border-radius: 4px; z-index: -1; transform-origin: 0 50%;
+    transform: scaleX(var(--m, 0)); }
+
+  /* ---------- Utfällda kort ---------- */
+  #pops { position: absolute; inset: 0; z-index: 10; }
+  .pop { position: absolute; left: 0; top: 0; will-change: transform, opacity; transform-origin: 50% 50%; }
+  .pop img { display: block; }
+  .pop.skugga { box-shadow: 0 28px 60px rgba(15, 23, 42, 0.20), 0 8px 18px rgba(15, 23, 42, 0.10); }
+  .pop.skugga.ram { outline: 1px solid rgba(15, 23, 42, 0.06); }
+  .crop { position: relative; overflow: hidden; background: #fafafa; }
+  .crop img { position: absolute; left: 0; top: 0; width: 390px; }
+
+  .klocka { width: 176px; padding: 16px 18px 16px; background: #fff; border-radius: 20px; text-align: center;
+    border: 1px solid #e2e8f0; }
+  .klocka svg { display: block; margin: 0 auto; }
+  .klocka .v { font-size: 30px; font-weight: 800; color: #2563eb; letter-spacing: -0.02em; margin-top: -86px; height: 86px; line-height: 86px; }
+  .klocka .l { font-size: 14px; font-weight: 700; letter-spacing: 0.12em; color: #64748b; text-transform: uppercase; margin-top: 10px; }
+
+  .datum { width: 186px; background: #fff; border-radius: 20px; text-align: center; border: 1px solid #e2e8f0; }
+  .datum .m { background: #2563eb; color: #fff; font-size: 13px; font-weight: 800; letter-spacing: 0.16em; padding: 8px 0;
+    border-radius: 20px 20px 0 0; }
+  .datum .d { font-size: 62px; font-weight: 800; letter-spacing: -0.04em; color: #1a1a2e; line-height: 1; padding-top: 12px; }
+  .datum .wd { font-size: 18px; font-weight: 800; color: #64748b; padding: 4px 0 2px; }
+  .datum .hp { font-size: 14px; font-weight: 800; letter-spacing: 0.12em; color: #2563eb; padding: 6px 0 14px; text-transform: uppercase; }
+  .stamp { position: absolute; right: -16px; top: -14px; width: 54px; height: 54px; border-radius: 50%;
+    background: #10b981; color: #fff; display: flex; align-items: center; justify-content: center;
+    box-shadow: 0 8px 18px rgba(16, 185, 129, 0.4); will-change: transform, opacity; }
+
+  .badge { display: inline-flex; align-items: center; gap: 8px; padding: 9px 16px 9px 10px; border-radius: 999px;
+    font-size: 17px; font-weight: 800; background: #fff; box-shadow: 0 12px 28px rgba(15, 23, 42, 0.16); white-space: nowrap; }
+  .badge i { width: 26px; height: 26px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center;
+    color: #fff; font-style: normal; font-size: 15px; }
+  .badge.fel { color: #991b1b; } .badge.fel i { background: #ef4444; }
+  .badge.ratt { color: #065f46; } .badge.ratt i { background: #10b981; }
+  .badge.upp { color: #047857; } .badge.upp i { background: #10b981; }
+
+  /* Sajtens statistikruta från /extra. */
+  .statruta { display: flex; flex-direction: column; align-items: center; padding: 14px 22px 12px; background: #fff;
+    border: 1px solid #e2e8f0; border-radius: 12px; min-width: 176px; }
+  .statruta strong { font-size: 40px; font-weight: 800; color: #2563eb; line-height: 1.05; letter-spacing: -0.02em;
+    font-variant-numeric: tabular-nums; }
+  .statruta span { font-size: 13px; font-weight: 600; color: #64748b; text-transform: uppercase; letter-spacing: 0.08em; margin-top: 4px; }
+
+  /* Hjärnkartans kort, som på /trana/fokus. */
+  .kartkort { width: 342px; box-shadow: 0 28px 60px rgba(15, 23, 42, 0.20), 0 8px 18px rgba(15, 23, 42, 0.10); }
+  .kartkort .hk-knapp { pointer-events: none; }
+
+  /* Ordträningens ring med ansiktet. */
+  .ringkort { width: 236px; padding: 18px 18px 16px; background: #fff; border-radius: 18px; border: 1px solid #e2e8f0; text-align: center; }
+  .ringkort .ring { position: relative; width: 200px; height: 200px; margin: 0 auto; }
+  .ringkort svg { position: absolute; inset: 0; }
+  .ringkort .fejs { position: absolute; left: 32px; top: 32px; width: 136px; height: 136px; }
+  .ringkort .fejs img { position: absolute; inset: 0; width: 136px; height: 136px; object-fit: contain; }
+  .ringkort .niva { display: inline-block; margin-top: 12px; font-size: 12.5px; font-weight: 800; letter-spacing: 0.08em;
+    color: #2563eb; background: #eff6ff; border-radius: 999px; padding: 5px 14px; text-transform: uppercase; }
+
+  .polaroid { background: #fff; padding: 10px 10px 34px; border-radius: 6px; }
+  .polaroid img { width: 150px; height: 150px; object-fit: cover; border-radius: 2px; }
+  .polaroid div { position: absolute; left: 0; right: 0; bottom: 9px; text-align: center; font-size: 15px; font-weight: 700; color: #334155; }
+
+  /* Ordkort i ordträningens stil (src/pages/ord.astro). */
+  .ordkort { width: 300px; background: #fff; border: 1px solid #e2e8f0; padding: 14px 16px 16px; }
+  .ordkort .topp { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+  .ordkort .topp b { font-size: 26px; font-weight: 800; letter-spacing: -0.02em; color: #1a1a2e; }
+  .ordkort .def { font-size: 14.5px; font-weight: 700; color: #1d4ed8; background: #eff6ff; border-radius: 8px; padding: 4px 10px; }
+  .ordkort .mnemo { background: #fffbeb; border: 1px solid #fde68a; border-radius: 10px; padding: 9px 12px 10px;
+    font-size: 15.5px; line-height: 1.45; color: #334155; }
+  .ordkort .lbl { font-size: 11px; font-weight: 800; letter-spacing: 0.1em; text-transform: uppercase; color: #b45309; margin-bottom: 3px; }
+  .ordkort .hook { background: #fef3c7; color: #92400e; font-weight: 800; border-radius: 3px; padding: 0 2px; }
+
+
+  /* ---------- Liten insats, stor skillnad ---------- */
+  #ins { position: absolute; left: 0; top: 0; width: 540px; height: 960px; z-index: 25; pointer-events: none; }
+  #insCirkel { position: absolute; left: 0; top: 0; width: 100px; height: 100px; margin: -50px 0 0 -50px; border-radius: 50%;
+    background: radial-gradient(circle at 40% 35%, #3b82f6, #2563eb 55%, #1d4ed8); will-change: transform; }
+  .insT { position: absolute; left: 0; top: 0; white-space: nowrap; font-weight: 800; letter-spacing: -0.035em;
+    will-change: transform, opacity; }
+
+  /* ---------- Slutet ---------- */
+  #slut { position: absolute; inset: 0; z-index: 26; pointer-events: none; }
+  /* Filtret sätts i slut() bara när bilden syns: ett dolt element med
+     SVG-filter ritar annars en svart ruta i hörnet i Chromium. */
+  #slutJonas { position: absolute; left: 0; top: 0; }
+  .cf { position: absolute; left: 0; top: 0; will-change: transform; }
+  .slutT { position: absolute; left: 0; top: 0; white-space: nowrap; font-weight: 800; letter-spacing: -0.04em; color: #fff;
+    will-change: transform, opacity; }
+  /* Samma ordmärke som i introt och i sajtens sidhuvud. */
+  #slutPill { position: absolute; left: 0; top: 0; white-space: nowrap; background: #fff;
+    font-size: 44px; font-weight: 800; letter-spacing: -0.01em; line-height: 1; padding: 16px 40px; border-radius: 999px;
+    box-shadow: 0 16px 36px rgba(15, 23, 42, 0.28); }
+  #slutPill .hp { color: #1a1a2e; } #slutPill .ak { color: #2563eb; } #slutPill .se { color: #94a3b8; }
+</style>
+</head>
+<body>
+  <div id="bg">
+    <div class="blob" id="blob1"></div>
+    <div class="blob" id="blob2"></div>
+    <div class="blob" id="blob3"></div>
+    <div id="dots"></div>
+  </div>
+
+  <!-- Intro: Jonas tittar upp precis som på startsidan. -->
+  <div id="introJonasClip" class="abs"><img id="introJonas" src="../../public/jonas_hp.webp" alt=""></div>
+  <div id="introTag" class="abs">Från Sveriges mest framgångsrika HP-skrivare</div>
+
+  <div id="phoneShadow" class="abs"></div>
+  <div id="phone">
+    <div id="bezel">
+      <div id="screen">
+        <div id="screens"></div>
+        <div id="status">
+          <span class="tid">9:41</span>
+          <svg style="left:210px" width="18" height="11" viewBox="0 0 18 11"><rect x="0" y="7" width="3" height="4" rx="1" fill="#111"/><rect x="5" y="5" width="3" height="6" rx="1" fill="#111"/><rect x="10" y="2.5" width="3" height="8.5" rx="1" fill="#111"/><rect x="15" y="0" width="3" height="11" rx="1" fill="#111"/></svg>
+          <svg style="left:233px" width="16" height="11" viewBox="0 0 16 11"><path d="M8 10.6 5.6 8.1a3.4 3.4 0 0 1 4.8 0L8 10.6Z" fill="#111"/><path d="M3.4 5.9a6.5 6.5 0 0 1 9.2 0l-1.3 1.3a4.7 4.7 0 0 0-6.6 0L3.4 5.9Z" fill="#111"/><path d="M1.2 3.7a9.6 9.6 0 0 1 13.6 0l-1.3 1.3a7.8 7.8 0 0 0-11 0L1.2 3.7Z" fill="#111"/></svg>
+          <svg style="left:255px" width="26" height="12" viewBox="0 0 26 12"><rect x="0.5" y="0.5" width="22" height="11" rx="3.2" fill="none" stroke="#111" stroke-opacity="0.4"/><rect x="2" y="2" width="17" height="8" rx="2" fill="#111"/><rect x="23.6" y="4" width="1.8" height="4" rx="0.9" fill="#111" fill-opacity="0.4"/></svg>
+        </div>
+        <div id="island"></div>
+        <div id="homebar"></div>
+        <div id="glare"></div>
+        <div class="tap" id="tap"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="pops"></div>
+  <div id="caps"></div>
+  <div id="mark" class="abs"><span class="hp">H</span><span class="hp">P</span><span class="ak">A</span><span class="ak">k</span><span class="ak">u</span><span class="ak">t</span><span class="ak">e</span><span class="ak">n</span><span class="se">.se</span></div>
+
+  <div id="ins"></div>
+  <svg aria-hidden="true" width="0" height="0" style="position:absolute;left:0;top:0;width:0;height:0;overflow:hidden">
+    <defs>
+      <filter id="rorelse" x="0" y="-5%" width="100%" height="110%">
+        <feGaussianBlur id="rorelseS" stdDeviation="0 0"/>
+      </filter>
+      <filter id="klister" x="-5%" y="-5%" width="110%" height="110%" color-interpolation-filters="sRGB">
+        <feComponentTransfer in="SourceAlpha" result="hard"><feFuncA type="linear" slope="5" intercept="-2"/></feComponentTransfer>
+        <feMorphology in="hard" operator="dilate" radius="4" result="vidgad"/>
+        <feFlood flood-color="#fff"/>
+        <feComposite in2="vidgad" operator="in" result="kant"/>
+        <feComposite in="SourceGraphic" in2="hard" operator="in" result="ren"/>
+        <feMerge><feMergeNode in="kant"/><feMergeNode in="ren"/></feMerge>
+      </filter>
+    </defs>
+  </svg>
+  <div id="slut">
+    <div id="confetti"></div>
+    <img id="slutJonas" class="abs" src="../../public/jonas_1.webp" alt="">
+    <div id="slutPill" class="abs"><span class="hp">HP</span><span class="ak">Akuten</span><span class="se">.se</span></div>
+  </div>
+
+<script src="hjarnkarta-vy.js"></script>
+<script src="data.js"></script>
+<script>
+'use strict';
+window.DURATION = 32.05;
+
+// =====================================================================
+// Hjälpfunktioner
+// =====================================================================
+const clamp = (v, a = 0, b = 1) => Math.max(a, Math.min(b, v));
+const lerp = (a, b, p) => a + (b - a) * p;
+const P = (t, a, b) => clamp((t - a) / (b - a));
+const E = {
+  inCubic: p => p * p * p,
+  inQuad: p => p * p,
+  outCubic: p => 1 - Math.pow(1 - p, 3),
+  outQuart: p => 1 - Math.pow(1 - p, 4),
+  outQuint: p => 1 - Math.pow(1 - p, 5),
+  outExpo: p => (p >= 1 ? 1 : 1 - Math.pow(2, -10 * p)),
+  inOutCubic: p => (p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2),
+  inOutQuint: p => (p < 0.5 ? 16 * p ** 5 : 1 - Math.pow(-2 * p + 2, 5) / 2),
+  inOutSine: p => -(Math.cos(Math.PI * p) - 1) / 2,
+  outBack: p => { const c = 1.7; return 1 + (c + 1) * Math.pow(p - 1, 3) + c * Math.pow(p - 1, 2); },
+  // Fjäder med ungefär tolv procents översväng som landar i 1 vid p = 1.
+  spring: p => (p >= 1 ? 1 : 1 - Math.exp(-5.2 * p) * Math.cos(7.6 * p)),
+};
+const $ = id => document.getElementById(id);
+const el = (tag, cls, parent, html) => {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (html != null) e.innerHTML = html;
+  (parent || document.body).appendChild(e);
+  return e;
+};
+const syns = (e, on) => { e.style.visibility = on ? 'visible' : 'hidden'; };
+// Placerar ett element med mittpunkten i (x, y).
+function put(e, x, y, s = 1, r = 0, o = 1) {
+  if (o <= 0.001) { e.style.visibility = 'hidden'; return; }
+  e.style.visibility = 'visible';
+  e.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) translate(-50%, -50%) rotate(${r.toFixed(3)}deg) scale(${s.toFixed(4)})`;
+  e.style.opacity = clamp(o).toFixed(3);
+}
+// Deterministiskt brus för små svävningar.
+const wob = (t, f, ph) => Math.sin(t * f + ph) * 0.6 + Math.sin(t * f * 1.7 + ph * 2.3) * 0.4;
+// Tal med mellanslag som tusentalsavgränsare, som på sajten (3 640).
+const fmt = n => Math.round(n).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+
+// =====================================================================
+// Tidslinje: ordens starttider ur röstinspelningen (faster-whisper plus
+// energikurvan), i sekunder. Nyckelorden (1) markeras.
+// =====================================================================
+const CHUNKS = [
+  { t0: 2.72, words: [['kan', 2.72], ['du', 3.00], ['på', 3.18], ['bara', 3.36], ['ett', 3.58, 1], ['par', 3.70, 1], ['timmar', 3.86, 1]] },
+  { t0: 4.38, words: [['göra', 4.38], ['dig', 4.58], ['redo', 4.70, 1], ['för', 4.96], ['provet', 5.14, 1]] },
+  { t0: 5.66, words: [['genom', 5.66], ['att', 5.88], ['gå', 5.98], ['igenom', 6.12], ['gamla', 6.48, 1], ['prov', 6.88, 1]] },
+  { t0: 7.58, words: [['titta', 7.58], ['på', 7.84], ['mina', 7.98], ['förklaringar', 8.20, 1]] },
+  { t0: 8.72, words: [['till', 8.72], ['uppgifter', 8.86], ['du', 9.28], ['inte', 9.44, 1], ['klarade', 9.68, 1]] },
+  { t0: 10.30, words: [['och', 10.32], ['fräscha', 10.44, 1], ['upp', 10.74, 1], ['matten', 11.12, 1]] },
+  { t0: 12.32, words: [['Genom', 12.32], ['att', 12.58], ['sedan', 12.70], ['öva', 12.90, 1]] },
+  { t0: 13.34, words: [['på', 13.34], ['dina', 13.64], ['svagaste', 13.88, 1], ['punkter', 14.34, 1]] },
+  { t0: 14.84, words: [['i', 14.84], ['databasen', 15.02, 1]] },
+  { t0: 15.88, words: [['täpper', 15.88, 1], ['du', 16.08], ['snabbt', 16.26], ['igen', 16.58, 1], ['dina', 16.78], ['luckor', 16.96, 1]] },
+  { t0: 18.30, words: [['Har', 18.30], ['du', 18.40], ['tid', 18.52, 1], ['över', 18.72, 1]] },
+  { t0: 19.08, words: [['kan', 19.08], ['du', 19.22], ['också', 19.34], ['kika', 19.56], ['på', 19.82], ['ordhjälpen', 20.08, 1]] },
+  { t0: 20.94, words: [['som', 20.94], ['ger', 21.12], ['dig', 21.26], ['minnestekniker', 21.44, 1]] },
+  { t0: 22.32, words: [['för', 22.32], ['att', 22.46], ['komma', 22.52, 1], ['ihåg', 22.68, 1]] },
+  { t0: 23.06, words: [['typiska', 23.06], ['högskoleprovsord', 23.74, 1]] },
+];
+const CAPS_END = 25.2;
+const CAP_Y = 168;
+
+// =====================================================================
+// Bakgrund
+// =====================================================================
+function bakgrund(t) {
+  $('blob1').style.transform = `translate(${(-140 + 60 * Math.sin(t * 0.21)).toFixed(1)}px, ${(-120 + 50 * Math.cos(t * 0.17)).toFixed(1)}px)`;
+  $('blob2').style.transform = `translate(${(250 + 50 * Math.cos(t * 0.19)).toFixed(1)}px, ${(560 + 60 * Math.sin(t * 0.23)).toFixed(1)}px)`;
+  $('blob3').style.transform = `translate(${(-160 + 40 * Math.sin(t * 0.15 + 1)).toFixed(1)}px, ${(640 + 40 * Math.cos(t * 0.2)).toFixed(1)}px)`;
+  $('dots').style.transform = `translate(${((t * 6) % 22).toFixed(2)}px, ${((-t * 9) % 22).toFixed(2)}px)`;
+}
+
+// =====================================================================
+// Undertexten: varje ord glider upp när det sägs, nyckelord markeras.
+// =====================================================================
+CHUNKS.forEach((c, i) => {
+  const d = el('div', 'chunk', $('caps'));
+  c.spans = c.words.map(([w, wt, k]) => {
+    const s = el('span', 'w' + (k ? ' k' : ''), d, w);
+    d.appendChild(document.createTextNode(' '));
+    return { s, wt, k };
+  });
+  c.el = d;
+  c.t1 = i + 1 < CHUNKS.length ? CHUNKS[i + 1].t0 : CAPS_END;
+});
+function undertext(t) {
+  for (const c of CHUNKS) {
+    // Det gamla stycket hinner lämna innan nästa stycke dyker upp, så att
+    // två rader aldrig ligger ovanpå varandra.
+    const vis = t >= c.t0 - 0.12 && t < c.t1 - 0.04;
+    if (!vis) { c.el.style.visibility = 'hidden'; continue; }
+    c.el.style.visibility = 'visible';
+    const h = c.el.offsetHeight;
+    const ut = E.inQuad(P(t, c.t1 - 0.2, c.t1 - 0.05));
+    c.el.style.transform = `translateY(${(CAP_Y - h / 2 - 22 * ut).toFixed(2)}px)`;
+    c.el.style.opacity = (1 - ut).toFixed(3);
+    for (const w of c.spans) {
+      const p = P(t, w.wt - 0.04, w.wt + 0.2);
+      const e = E.outCubic(p);
+      w.s.style.opacity = e.toFixed(3);
+      w.s.style.transform = `translateY(${(18 * (1 - e)).toFixed(2)}px) scale(${(0.92 + 0.08 * E.outBack(p)).toFixed(4)})`;
+      if (w.k) w.s.style.setProperty('--m', E.outCubic(P(t, w.wt + 0.05, w.wt + 0.35)).toFixed(3));
+    }
+  }
+}
+
+// =====================================================================
+// Telefonen och dess skärmar
+// =====================================================================
+const SW = 300, SH = 650, STATUS = 38, K = SW / 390;   // sajtens CSS-px -> skärmens px
+const PHONE_W = 322, PHONE_H = 672;
+const VY = (SH - STATUS) / K;                          // synlig sidhöjd i sajtens px
+const SKARMAR = {};
+function skarm(id, bilder, opt = {}) {
+  const e = el('div', 'scr', $('screens'));
+  const page = el('div', 'page', e);
+  const imgs = bilder.map(s => { const i = el('img', '', page); i.src = 'bilder/' + s + '.png'; return i; });
+  const markor = (opt.markor || []).map(m => {
+    const d = el('div', 'mark2', page);
+    d.style.left = (m.x * K) + 'px'; d.style.top = (m.y * K) + 'px';
+    d.style.width = (m.w * K) + 'px'; d.style.height = (m.h * K) + 'px';
+    return { d, ...m };
+  });
+  const hdr = el('img', 'hdr', e); hdr.src = 'bilder/sidhuvud.png';
+  // En vit lapp över loggan medan introns ordmärke flyger dit.
+  let mask = null;
+  if (opt.loggmask) {
+    mask = el('div', 'mask', e);
+    mask.style.left = (20 * K) + 'px'; mask.style.top = (STATUS + 8 * K) + 'px';
+    mask.style.width = (112 * K) + 'px'; mask.style.height = (42 * K) + 'px';
+  }
+  const dim = el('div', 'dim', e);
+  SKARMAR[id] = { id, e, page, imgs, hdr, dim, mask, markor };
+  return SKARMAR[id];
+}
+// scroll i sajtens CSS-px; x i skärmens px; mix tonar in bild nr 2, 3 ...
+function visa(id, scroll = 0, x = 0, dim = 0, mix = 0, blur = 0) {
+  const s = SKARMAR[id];
+  if (blur > 0.3) {
+    $('rorelseS').setAttribute('stdDeviation', '0 ' + blur.toFixed(2));
+    s.page.style.filter = 'url(#rorelse)';
+  } else s.page.style.filter = 'none';
+  // inherit, inte visible: annars syns skärmen fast telefonen är dold.
+  s.e.style.visibility = 'inherit';
+  s.e.style.transform = `translateX(${x.toFixed(2)}px)`;
+  s.page.style.transform = `translateY(${(STATUS - scroll * K).toFixed(2)}px)`;
+  s.imgs.forEach((b, i) => { b.style.opacity = i === 0 ? 1 : clamp(mix - (i - 1)).toFixed(3); });
+  s.dim.style.opacity = dim.toFixed(3);
+}
+function dolj() { for (const s of Object.values(SKARMAR)) { s.e.style.visibility = 'hidden'; s.e.style.zIndex = 0; s.e.style.boxShadow = 'none'; s.page.style.filter = 'none'; } }
+// Navigering som i iOS: den nya sidan skjuts in från höger.
+function navigera(t, t0, dur, fran, till) {
+  const p = E.inOutCubic(P(t, t0, t0 + dur));
+  visa(fran.id, fran.scroll || 0, -SW * 0.28 * p, 0.14 * p, fran.mix || 0);
+  visa(till.id, till.scroll || 0, SW * (1 - p), 0, till.mix || 0);
+  SKARMAR[till.id].e.style.boxShadow = p < 1 ? `-12px 0 26px rgba(15,23,42,${(0.16 * (1 - p)).toFixed(3)})` : 'none';
+  SKARMAR[till.id].e.style.zIndex = 2;
+  SKARMAR[fran.id].e.style.zIndex = 1;
+}
+// Ett tryck: fingret sänks, trycker och släpper en våg. x, y i skärmens px.
+function tryck(t, t0, x, y) {
+  const e = $('tap');
+  if (t < t0 - 0.28 || t > t0 + 0.45) return;
+  const inn = E.outCubic(P(t, t0 - 0.28, t0 - 0.06));
+  const ned = P(t, t0 - 0.06, t0);
+  const ut = E.outCubic(P(t, t0, t0 + 0.45));
+  const s = lerp(0.55, 1, inn) * (1 - 0.2 * ned * (1 - ut)) + 0.9 * ut;
+  e.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${s.toFixed(3)})`;
+  e.style.opacity = (inn * (1 - ut)).toFixed(3);
+}
+// Tryck på en punkt i sajtens koordinater på en sida som är scrollad sc.
+const tryckSajt = (t, t0, x, y, sc) => tryck(t, t0, x * K, STATUS + (y - sc) * K);
+
+function telefon(b) {
+  const ph = $('phone');
+  if (b.o <= 0.001) { ph.style.visibility = 'hidden'; $('phoneShadow').style.visibility = 'hidden'; return; }
+  ph.style.visibility = 'visible';
+  ph.style.transform = `translate(${(b.x - PHONE_W / 2).toFixed(2)}px, ${(b.y - PHONE_H / 2).toFixed(2)}px) perspective(1600px) rotateY(${b.ry.toFixed(3)}deg) rotateX(${b.rx.toFixed(3)}deg) rotateZ(${b.rz.toFixed(3)}deg) scale(${b.s.toFixed(4)})`;
+  ph.style.opacity = b.o.toFixed(3);
+  const sh = $('phoneShadow');
+  sh.style.visibility = 'visible';
+  sh.style.transform = `translate(${(b.x - 150 + b.ry * 2.2).toFixed(2)}px, ${(b.y + PHONE_H * b.s / 2 - 34).toFixed(2)}px) scale(${(b.s * 1.05).toFixed(3)}, ${(b.s * 0.9).toFixed(3)})`;
+  sh.style.opacity = (b.o * 0.9).toFixed(3);
+  // Ett ljusskimmer över glaset vid de stora svängarna.
+  const g = $('glare');
+  const sv = Math.abs(b.svang || 0);
+  g.style.opacity = (0.9 * sv).toFixed(3);
+  g.style.transform = `translateX(${(-60 + 560 * (b.svangP || 0)).toFixed(1)}px) rotate(18deg)`;
+}
+// Var en punkt på skärmen hamnar på ytan, när telefonen inte lutar.
+const skarmTillYta = (px, py, x, y, s) => [x + s * (px - SW / 2), y + s * (py + 11 - PHONE_H / 2)];
+
+// Telefonens poser genom filmen. Varje pose nås vid t, rörelsen tar dur.
+const POSER = [
+  { t: 3.22, x: 270, y: 600, s: 1.00, ry: -9, rx: 5 },
+  { t: 6.05, x: 270, y: 604, s: 1.00, ry: 8, rx: 4, dur: 0.7 },
+  { t: 7.95, x: 262, y: 604, s: 1.00, ry: -8, rx: 4, dur: 0.7 },
+  { t: 8.75, x: 214, y: 622, s: 0.92, ry: 6, rx: 4, dur: 0.6 },
+  { t: 10.45, x: 300, y: 610, s: 0.96, ry: -7, rx: 4, dur: 0.7 },
+  { t: 12.45, x: 270, y: 604, s: 1.00, ry: 8, rx: 4, dur: 0.7 },
+  { t: 13.25, x: 318, y: 700, s: 0.82, ry: -18, rx: 7, dur: 0.6 },
+  { t: 15.2, x: 270, y: 604, s: 1.00, ry: 7, rx: 4, dur: 0.5 },
+  { t: 16.65, x: 270, y: 760, s: 0.8, ry: 10, rx: 8, dur: 0.55 },
+  { t: 18.35, x: 270, y: 604, s: 1.00, ry: -8, rx: 4, dur: 0.7 },
+  { t: 21.5, x: 214, y: 640, s: 0.92, ry: 12, rx: 5, dur: 0.55 },
+  { t: 23.3, x: 270, y: 740, s: 0.84, ry: -6, rx: 7, dur: 0.6 },
+];
+function pose(t) {
+  let i = 0;
+  // i är den senast nådda posen; rörelsen mot nästa sker under dess dur.
+  while (i + 1 < POSER.length && t >= POSER[i + 1].t) i++;
+  const a = POSER[i], b = POSER[i + 1];
+  if (!b || t <= a.t) return { ...a, svang: 0 };
+  const d = b.dur || 0.7;
+  const p = E.inOutCubic(P(t, b.t - d, b.t));
+  const o = {};
+  for (const k of ['x', 'y', 's', 'ry', 'rx']) o[k] = lerp(a[k], b[k], p);
+  o.svang = Math.sin(Math.PI * p) * Math.min(1, Math.abs(b.ry - a.ry) / 18);
+  o.svangP = p;
+  return o;
+}
+
+// =====================================================================
+// Utfällda kort
+// =====================================================================
+const pop = (cls, html) => el('div', 'pop ' + (cls || ''), $('pops'), html);
+function popBild(src, bredd, radie, cls = '') {
+  const e = pop('skugga ' + cls);
+  const i = el('img', '', e); i.src = 'bilder/' + src + '.png'; i.style.width = bredd + 'px';
+  e.style.borderRadius = radie + 'px';
+  i.style.borderRadius = radie + 'px';
+  return e;
+}
+// Ett utsnitt av en helsidesbild (sajtens px), som ett eget kort.
+function popUtsnitt(src, x, y, w, h, radie, bg = '#fafafa') {
+  const e = pop('skugga');
+  const c = el('div', 'crop', e);
+  c.style.width = w + 'px'; c.style.height = h + 'px'; c.style.borderRadius = radie + 'px'; c.style.background = bg;
+  e.style.borderRadius = radie + 'px';
+  const i = el('img', '', c); i.src = 'bilder/' + src + '.png';
+  i.style.transform = `translate(${-x}px, ${-y}px)`;
+  return e;
+}
+// In med fjäder från en startpunkt. Ut: kortet krymper tillbaka dit det kom
+// ifrån (in i telefonen) och förblir täckande tills det är litet, så att det
+// aldrig blir dubbelexponerat över skärmen. Med opt.flyg flyger det i stället
+// ut ur bild längs den vektorn.
+function fall(t, e, inn, ut, fran, till, opt = {}) {
+  const UT = 0.3;
+  if (t < inn || t > ut + UT) { e.style.visibility = 'hidden'; return false; }
+  const p = P(t, inn, inn + (opt.dur || 0.6));
+  const sp = E.spring(p), op = E.outCubic(P(t, inn, inn + 0.05));
+  const q = E.inOutCubic(P(t, ut, ut + UT));
+  const fl = opt.flyt === false ? 0 : 1;
+  let x = lerp(fran[0], till[0], sp) + fl * 2.2 * wob(t, 1.3, inn);
+  let y = lerp(fran[1], till[1], sp) + fl * 3 * wob(t, 1.1, inn + 2);
+  const mal = opt.flyg ? [x + opt.flyg[0], y + opt.flyg[1]] : fran;
+  x = lerp(x, mal[0], q);
+  y = lerp(y, mal[1], q);
+  const s = lerp(opt.s0 != null ? opt.s0 : 0.45, opt.s || 1, sp) * lerp(1, opt.flyg ? 0.9 : 0.3, q);
+  const r = lerp(opt.r0 || 0, opt.r || 0, sp) + fl * 0.5 * wob(t, 0.9, inn + 4);
+  put(e, x, y, s, r, op * (1 - E.inCubic(P(t, ut + UT * (opt.flyg ? 0.5 : 0.6), ut + UT))));
+  return true;
+}
+
+// =====================================================================
+// Skärmarna (riktiga skärmbilder från sajten)
+// =====================================================================
+const L = {
+  logo: { x: 24, y: 12.8, w: 102.3, h: 35.3 },
+  hero: { x: 55, y: 93.9, w: 280, h: 215 },
+  heroTag: { x: 24, y: 324.9, w: 342, h: 52.4 },
+  tillProven: [92, 1187],
+  startaPasset: [127, 1041],
+  rad9: [195, 2380],
+  matteA: [120, 739],
+  mekKnapp: [195, 745],
+  mekRatt: [195, 505],
+  sett: { x: 24, y: 195, w: 342, h: 22 },
+  ordGo: [195, 1100],
+  visaRegel: [119, 971],
+};
+skarm('hem', ['hem'], { loggmask: true });
+skarm('extra', ['extra']);
+skarm('ratt', ['rattning', 'rattning-9']);
+skarm('matte', ['matte', 'matte-svar']);
+skarm('fokus', ['fokus']);
+skarm('fraga', ['fokus-fraga', 'fokus-fraga-svar'], { markor: [{ x: 28, y: 193, w: 246, h: 26 }] });
+skarm('kvitto', ['fokus-kvitto']);
+skarm('ord', ['ord']);
+skarm('ordkort', ['ord-kort', 'ord-kort-regel']);
+
+// =====================================================================
+// Korten till scenerna
+// =====================================================================
+// "ett par timmar": en klocka som fylls till två timmar.
+const kKlocka = pop('skugga klocka', `
+  <svg width="86" height="86" viewBox="0 0 86 86"><circle cx="43" cy="43" r="36" fill="none" stroke="#e2e8f0" stroke-width="9"/>
+  <circle id="klockBage" cx="43" cy="43" r="36" fill="none" stroke="#2563eb" stroke-width="9" stroke-linecap="round"
+    transform="rotate(-90 43 43)" stroke-dasharray="226.2" stroke-dashoffset="226.2"/></svg>
+  <div class="v" id="klockTal">1 h</div><div class="l">räcker långt</div>`);
+kKlocka.style.borderRadius = '20px';
+// "redo för provet": provdagen, söndag 18 oktober (src/lib/provdatum.ts).
+const kDatum = pop('skugga datum', `<div class="m">OKTOBER</div><div class="d">18</div><div class="wd">söndag</div><div class="hp">Högskoleprovet</div>
+  <div class="stamp" id="stamp"><svg width="28" height="28" viewBox="0 0 24 24"><path d="M5 12.5l4.2 4.2L19 7" fill="none" stroke="#fff" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>`);
+kDatum.style.borderRadius = '20px';
+
+// Gamla prov: fyra passkort ur listan som en solfjäder.
+const kPass = [
+  popUtsnitt('extra', 24, 1343, 342, 260, 12),
+  popUtsnitt('extra', 24, 1105, 342, 222, 12),
+  popUtsnitt('extra', 24, 829, 342, 260, 12),
+];
+// Förklaringar till fråga 9.
+const kForklaring = popBild('rattning-9-forklaring', 330, 10);
+const kAlternativ = popBild('rattning-9-alternativ', 270, 12);
+const bFel = pop('', `<div class="badge fel"><i>✗</i>Ditt svar: A</div>`);
+const bRatt = pop('', `<div class="badge ratt"><i>✓</i>Rätt svar: D</div>`);
+// Matten: Jonas genomgång och förklaringen till Pythagoras.
+const kVideo = popBild('matte-video', 330, 14);
+const kMatteFb = popBild('matte-forklaring', 330, 12);
+// Databasen: statistikrutan från /extra som räknar upp.
+const kStat = pop('skugga', `<div class="statruta"><strong id="statTal">0</strong><span>uppgifter</span></div>`);
+kStat.style.borderRadius = '12px';
+kStat.style.zIndex = 2;
+// Frågan ur databasen: "520 uppgifter av den här sorten finns", med markering.
+const kFragaTopp = popUtsnitt('fokus-fraga', 14, 96, 362, 240, 16);
+const fragaMark = el('div', 'mark2', kFragaTopp.querySelector('.crop'));
+Object.assign(fragaMark.style, { left: '14px', top: '98px', width: '246px', height: '27px', transformOrigin: '0 50%' });
+const kKvitto = popBild('fokus-kvitto-kort', 300, 16);
+const bUpp = pop('', `<div class="badge upp"><i>↑</i>MEK 35 % → 60 %</div>`);
+
+// Hjärnkartan, ritad av sajtens egen kod med riktig data från den lokala servern.
+function kartkort(id) {
+  const e = pop('kartkort');
+  e.innerHTML = `<section class="hk-kort fokus-karta-kort"><div class="hk-kort-topp"><h2>Din hjärnkarta</h2></div><div class="kk-inre"></div></section>`;
+  e.style.borderRadius = '18px';
+  return e;
+}
+const KOPT = { storlek: 'full', bredd: 326, stilla: true };
+const kKartaA = kartkort('a');
+kKartaA.querySelector('.kk-inre').innerHTML = HK.blockHTML(FILMDATA.kartaFore, { ...KOPT, id: 'hka' })
+  .replace(/<script[\s\S]*?<\/script>/, '');
+const kKartaB = kartkort('b');
+const kkB = kKartaB.querySelector('.kk-inre');
+let senastB = '';
+function ritaKartaB(v, vinnare) {
+  const d = JSON.parse(JSON.stringify(FILMDATA.kartaFore));
+  const mek = d.axlar.find(a => a.delprov === 'mek');
+  mek.styrka = v;
+  mek.visadPct = Math.round(v * 20) * 5;
+  d.vinnare = vinnare;
+  const nyckel = mek.visadPct + vinnare + v.toFixed(3);
+  if (nyckel === senastB) return;
+  senastB = nyckel;
+  // Samma omslag som blockHTML ger karta A, annars saknas sajtens stilvariabler.
+  kkB.innerHTML = '<div class="hk hk-block-full hk-med-karta">' + HK.ritaKarta(d, { ...KOPT, id: 'hkb' }) + '</div>';
+}
+// Pulsringen runt vinnarpunkten (sajtens hk-puls, 1,6 s).
+function puls(t, root) {
+  root.querySelectorAll('.hk-puls').forEach(c => {
+    const f = ((t / 1.6) % 1 + 1) % 1;
+    const e = E.outCubic(f);
+    c.style.transformBox = 'fill-box';
+    c.style.transformOrigin = 'center';
+    c.style.transform = `scale(${(0.6 + 1.3 * e).toFixed(3)})`;
+    c.style.opacity = (0.9 * (1 - f)).toFixed(3);
+  });
+}
+// Strålkastare på MEK-etiketten när "svagaste punkter" sägs.
+function framhav(t, root, t0, t1) {
+  const p = E.outCubic(P(t, t0, t0 + 0.3)) * (1 - P(t, t1, t1 + 0.3));
+  root.querySelectorAll('.hk-etk').forEach(b => {
+    const mek = b.dataset.dp === 'mek' || b.classList.contains('hk-vinnare');
+    b.style.transformOrigin = 'center';
+    b.style.boxShadow = mek && p > 0 ? `0 0 0 ${(4 * p).toFixed(1)}px rgba(245,158,11,${(0.35 * p).toFixed(2)}), 0 0 ${(22 * p).toFixed(0)}px rgba(245,158,11,${(0.55 * p).toFixed(2)})` : '';
+    b.style.scale = mek ? (1 + 0.14 * p * (1 + 0.2 * Math.sin((t - t0) * 9))).toFixed(3) : '1';
+    b.style.opacity = mek ? '1' : (1 - 0.45 * p).toFixed(3);
+  });
+}
+
+// Ordträningen: ringen med ansiktet som växer, som i appens startvy.
+const kRing = pop('skugga ringkort', `<div class="ring"><svg width="200" height="200" viewBox="0 0 200 200">
+  <circle cx="100" cy="100" r="88" fill="none" stroke="#e2e8f0" stroke-width="12"/>
+  <circle id="ringBage" cx="100" cy="100" r="88" fill="none" stroke="#2563eb" stroke-width="12" stroke-linecap="round"
+    transform="rotate(-90 100 100)" stroke-dasharray="552.9" stroke-dashoffset="552.9"/></svg>
+  <div class="fejs">${[1, 2, 3, 4].map(n => `<img src="../../public/ordfejs/${n}.webp" alt="">`).join('')}</div></div>
+  <div class="niva" id="ringNiva">Nivå 1 av 10</div>`);
+kRing.style.borderRadius = '18px';
+const kRegel = popBild('ord-regel', 330, 12);
+const kOrdBild = popBild('ord-bild', 140, 12);
+kRegel.style.zIndex = 2; kOrdBild.style.zIndex = 2;
+const kKnut = pop('skugga polaroid', `<img src="../../public/jonas_knut.webp" alt=""><div>Knut på fingret!</div>`);
+kKnut.style.borderRadius = '6px';
+// Ordet i appen: NYTT ORD, parlör, fickordbok (utsnitt av skärmbilden).
+const kOrdHuvud = popUtsnitt('ord-kort', 96, 396, 198, 144, 16, '#fff');
+// Typiska högskoleprovsord med sina minnesregler, ordagrant ur
+// src/lib/minnesord-seed.json och i ordträningens stil (versaler blir krokar).
+const ORDKORT = [
+  ['habil', 'duktig', 'Nu när du HAR en BIL så har du blivit väldigt skicklig på att köra.'],
+  ['tillika', 'likaså', 'Du ska TILL ICA, likaså Coop, Hemköp och Mathem.'],
+  ['dogmatisk', 'absolut säker', 'Du är övertygad om att din HUND (DOG) kan mateMATIK.'],
+];
+const krokar = s => s.replace(/[A-ZÅÄÖ]{2,}/g, m => `<span class="hook">${m}</span>`);
+const kOrdlista = ORDKORT.map(([w, d, m]) => pop('skugga ordkort', `<div class="topp"><b>${w}</b><span class="def">${d}</span></div>
+  <div class="mnemo"><div class="lbl">Minnesregel</div><div>${krokar(m)}</div></div>`));
+kOrdlista.forEach(e => { e.style.borderRadius = '16px'; });
+const kOrdStat = pop('skugga', `<div class="statruta"><strong id="ordTal">0</strong><span>ord med minnesregel</span></div>`);
+kOrdStat.style.borderRadius = '12px';
+
+// =====================================================================
+// SEEK: hela bildrutan som en funktion av tiden
+// =====================================================================
+const ZOOM0 = 2.2, ZOOM1 = 2.98;
+const S0 = 400 / (L.hero.w * K);                  // telefonens skala i början av utzoomningen
+const INTRO_Y = 282;                              // intro-Jonas överkant
+function SEEK(t) {
+  bakgrund(t);
+  undertext(t);
+  dolj();
+  $('tap').style.opacity = 0;
+  intro(t);
+  telefonen(t);
+  skarmar(t);
+  kort(t);
+  insats(t);
+  slut(t);
+}
+
+// ---------------- Intro (0 till 3.2) ----------------
+// Telefonen börjar så stor att Jonas på skärmen ligger exakt där intro-Jonas
+// står, och zoomar sedan ut. Ordmärket landar i sajtens logga.
+const heroSkarm = [L.hero.x * K, STATUS + L.hero.y * K];
+const ZX0 = 70 - S0 * (heroSkarm[0] - SW / 2);
+const ZY0 = INTRO_Y - S0 * (heroSkarm[1] + 11 - PHONE_H / 2);
+function zoom(t) {
+  const zp = E.inOutCubic(P(t, ZOOM0, ZOOM1));
+  return { x: lerp(ZX0, 270, zp), y: lerp(ZY0, 600, zp), s: lerp(S0, 1, zp), zp };
+}
+function intro(t) {
+  const SK = S0 * K;
+  const clip = $('introJonasClip'), jon = $('introJonas');
+  const fade = 1 - P(t, ZOOM0 + 0.02, ZOOM0 + 0.16);
+  if (fade <= 0) { syns(clip, false); syns($('introTag'), false); }
+  else {
+    syns(clip, true);
+    // Mjuk nederkant (mask i CSS) som slutar under skrivbordet.
+    clip.style.height = (INTRO_Y + 215 * SK + 80) + 'px';
+    // Samma mått som bilden har på startsidan (280 x 215, lite utsträckt).
+    jon.style.width = (L.hero.w * SK) + 'px';
+    jon.style.height = (L.hero.h * SK) + 'px';
+    // Redan på väg upp i första rutan, som är filmens omslagsbild.
+    const upp = E.outBack(P(t, -0.3, 0.6));
+    jon.style.transform = `translate(70px, ${(INTRO_Y + (1 - upp) * 330).toFixed(2)}px)`;
+    clip.style.opacity = fade;
+    const tg = $('introTag');
+    const tp = E.spring(P(t, 0.95, 1.55));
+    put(tg, 70 + (L.heroTag.x - L.hero.x + L.heroTag.w / 2) * SK, INTRO_Y + (L.heroTag.y - L.hero.y + L.heroTag.h / 2) * SK + (1 - tp) * 20, SK * lerp(0.9, 1, tp), 0, P(t, 0.95, 1.12) * fade);
+  }
+  // Ordmärket.
+  const mk = $('mark');
+  if (t >= ZOOM1) { syns(mk, false); return; }
+  syns(mk, true);
+  const starts = [0.62, 0.96, 1.16, 1.28, 1.36, 1.50, 1.58, 1.66, 1.82];
+  for (let i = 0; i < mk.children.length; i++) {
+    const p = P(t, starts[i], starts[i] + (i === 8 ? 0.26 : 0.42));
+    const e = E.spring(p);
+    const flytt = i === 8 ? `translateX(${(14 * (1 - E.outCubic(p))).toFixed(2)}px)` : `translateY(${(26 * (1 - e)).toFixed(2)}px)`;
+    mk.children[i].style.transform = flytt + ` scale(${lerp(0.7, 1, e).toFixed(3)})`;
+    mk.children[i].style.opacity = (E.outCubic(P(t, starts[i], starts[i] + 0.16)) * (i === 8 ? 1 - P(t, ZOOM0 + 0.28, ZOOM0 + 0.48) : 1)).toFixed(3);
+  }
+  const BIG = 3.1;
+  const z = zoom(t);
+  const [lx, ly] = skarmTillYta(L.logo.x * K, STATUS + (L.logo.y + 7.3) * K, z.x, z.y, z.s);
+  // Ordmärket står överst i introt och glider in i loggan i sidhuvudet,
+  // som då ligger på nästan samma höjd, så det korsar aldrig Jonas.
+  const fly = E.inOutCubic(P(t, ZOOM0 - 0.12, ZOOM0 + 0.42));
+  const bigX = 270 - (mk.offsetWidth * BIG) / 2, bigY = 150;   // hela "HPAkuten.se" centrerat
+  const sNu = lerp(BIG, z.s * K, fly);
+  mk.style.transform = `translate(${lerp(bigX, lx, fly).toFixed(2)}px, ${lerp(bigY, ly, fly).toFixed(2)}px) scale(${sNu.toFixed(4)})`;
+}
+
+// ---------------- Telefonen ----------------
+function telefonen(t) {
+  if (t < ZOOM0 || t > 25.7) { telefon({ o: 0 }); return; }
+  const z = zoom(t);
+  const po = pose(t);
+  // Lutningen börjar först efter att ordmärket har landat i loggan.
+  const lugn = E.inOutCubic(P(t, ZOOM1, ZOOM1 + 0.6));
+  const b = {
+    x: lerp(z.x, po.x, lugn), y: lerp(z.y, po.y, lugn), s: z.zp < 1 ? z.s : po.s,
+    ry: po.ry * lugn + lugn * 2.5 * wob(t, 0.7, 1), rx: po.rx * lugn + lugn * 1.2 * wob(t, 0.6, 2),
+    rz: lugn * 0.7 * wob(t, 0.5, 3), o: P(t, ZOOM0, ZOOM0 + 0.12), svang: po.svang, svangP: po.svangP,
+  };
+  b.y += lugn * 3.5 * wob(t, 0.9, 0.5);
+  // Liten insats: telefonen sjunker ut ur bild.
+  const ut = E.inCubic(P(t, 24.8, 25.55));
+  b.y += 820 * ut; b.rx += 14 * ut;
+  telefon(b);
+}
+
+// ---------------- Skärminnehållet ----------------
+// Scrollkurvorna per skärm (sajtens px). Hastigheten ger rörelseoskärpa.
+const RAD9 = L.rad9[1] - 150;
+const SCROLL = {
+  hem: t => 880 * E.inOutCubic(P(t, 3.3, 4.7)),
+  extra: t => 650 * E.inOutCubic(P(t, 6.05, 6.8)),
+  ratt: t => RAD9 * E.inOutSine(P(t, 7.74, 8.1)) + 240 * E.inOutCubic(P(t, 8.45, 9.0)),
+  matte: t => 170 + 180 * E.inOutCubic(P(t, 10.6, 11.2)),
+  ord: t => 230 + 300 * E.inOutCubic(P(t, 19.25, 19.7)),
+  ordkort: t => 300 + 260 * E.inOutCubic(P(t, 20.55, 21.1)),
+};
+// Lodrät oskärpa som en kamera med 180 graders slutare (1/120 s vid 60 bilder/s).
+function oskarpa(id, t) {
+  const h = 1 / 240;
+  const v = Math.abs(SCROLL[id](t + h) - SCROLL[id](t - h)) / (2 * h) * K;   // skärmens px/s
+  return Math.min(10, v / 120 / 4);
+}
+function skarmar(t) {
+  const hem = SKARMAR.hem;
+  if (hem.mask) hem.mask.style.opacity = t < ZOOM1 ? 1 : 0;
+  const sc = id => SCROLL[id](t);
+  if (t < 5.6) {
+    // Startsidan: Jonas överst, sedan ned till nyheten om fler prov.
+    visa('hem', sc('hem'), 0, 0, 0, oskarpa('hem', t));
+    tryckSajt(t, 5.5, L.tillProven[0], L.tillProven[1], sc('hem'));
+  } else if (t < 7.4) {
+    // Listan över gamla prov, ned till hösten 2025.
+    if (t < 6.05) navigera(t, 5.58, 0.47, { id: 'hem', scroll: 880 }, { id: 'extra', scroll: 0 });
+    else {
+      visa('extra', sc('extra'), 0, 0, 0, oskarpa('extra', t));
+      tryckSajt(t, 7.22, L.startaPasset[0], L.startaPasset[1], sc('extra'));
+    }
+  } else if (t < 10.06) {
+    // Rättningen: ned till fråga 9, tryck när scrollen har stannat, förklaringen fälls ut.
+    const oppen = P(t, 8.22, 8.31);
+    if (t < 7.74) navigera(t, 7.3, 0.44, { id: 'extra', scroll: 650 }, { id: 'ratt', scroll: 0 });
+    else visa('ratt', sc('ratt'), 0, 0, oppen, oskarpa('ratt', t));
+    tryckSajt(t, 8.2, L.rad9[0], L.rad9[1], sc('ratt'));
+  } else if (t < 11.95) {
+    // Matterepetitionen: Pythagoras, tryck på 5, grön förklaring.
+    const svar = P(t, 10.9, 10.98);
+    if (t < 10.48) navigera(t, 10.06, 0.42, { id: 'ratt', scroll: RAD9 + 240, mix: 1 }, { id: 'matte', scroll: 170 });
+    else visa('matte', sc('matte'), 0, 0, svar, oskarpa('matte', t));
+    tryckSajt(t, 10.88, L.matteA[0], L.matteA[1], sc('matte'));
+  } else if (t < 14.84) {
+    // Fokusera på dina svagheter: hjärnkartan.
+    if (t < 12.42) navigera(t, 11.95, 0.47, { id: 'matte', scroll: 350, mix: 1 }, { id: 'fokus', scroll: 0 });
+    else visa('fokus', 0, 0, 0.18 * E.outCubic(P(t, 12.75, 13.2)) * (1 - P(t, 14.5, 14.84)));
+  } else if (t < 17.9) {
+    // En MEK-runda ur databasen, rätt svar, sedan kvittot.
+    const svar = P(t, 15.88, 15.96);
+    const dim = 0.16 * E.outCubic(P(t, 16.4, 16.8)) * (1 - P(t, 17.5, 17.9));
+    if (t < 15.27) navigera(t, 14.84, 0.42, { id: 'fokus', scroll: 0 }, { id: 'fraga', scroll: 0 });
+    else if (t < 16.02) visa('fraga', 0, 0, 0, svar);
+    else if (t < 16.49) navigera(t, 16.02, 0.47, { id: 'fraga', scroll: 0, mix: 1 }, { id: 'kvitto', scroll: 430 });
+    else visa('kvitto', 430, 0, dim);
+    const m = SKARMAR.fraga.markor[0];
+    m.d.style.opacity = (E.outCubic(P(t, 15.2, 15.45)) * (1 - P(t, 15.8, 16.0))).toFixed(3);
+    m.d.style.transformOrigin = '0 50%';
+    m.d.style.transform = `scaleX(${E.outCubic(P(t, 15.2, 15.55)).toFixed(3)})`;
+    tryckSajt(t, 15.86, L.mekRatt[0], L.mekRatt[1], 0);
+  } else if (t < 19.95) {
+    // Ordträningen: ringen med ansiktet och Starta passet.
+    if (t < 18.37) navigera(t, 17.9, 0.47, { id: 'kvitto', scroll: 430 }, { id: 'ord', scroll: 230 });
+    else visa('ord', sc('ord'), 0, 0, 0, oskarpa('ord', t));
+    tryckSajt(t, 19.86, L.ordGo[0], L.ordGo[1], 530);
+  } else {
+    // Ett nytt ord: parlör, och minnesregeln fälls ut.
+    const regel = P(t, 21.26, 21.34);
+    if (t < 20.42) navigera(t, 19.95, 0.47, { id: 'ord', scroll: 530 }, { id: 'ordkort', scroll: 300 });
+    else visa('ordkort', sc('ordkort'), 0, 0.12 * E.outCubic(P(t, 21.6, 22.0)), regel, oskarpa('ordkort', t));
+    tryckSajt(t, 21.24, L.visaRegel[0], L.visaRegel[1], sc('ordkort'));
+  }
+}
+
+// ---------------- Korten ----------------
+function kort(t) {
+  // Ett par timmar.
+  fall(t, kKlocka, 3.5, 4.62, [270, 560], [122, 452], { r0: -8, r: -5 });
+  {
+    const p = E.inOutCubic(P(t, 3.62, 4.4));
+    $('klockBage').setAttribute('stroke-dashoffset', (226.2 * (1 - p * 0.999)).toFixed(2));
+    $('klockTal').textContent = (p < 0.5 ? 1 : 2) + ' h';
+    // Påståendet syns först när klockan står på två timmar.
+    kKlocka.querySelector('.l').style.opacity = E.outCubic(P(t, 4.02, 4.18)).toFixed(3);
+  }
+  // Redo för provet.
+  fall(t, kDatum, 4.62, 5.45, [270, 560], [380, 452], { r0: 8, r: 4, flyg: [240, 0] });
+  {
+    const sp = E.spring(P(t, 5.12, 5.55));
+    $('stamp').style.transform = `scale(${sp.toFixed(3)}) rotate(${(-30 * (1 - sp)).toFixed(2)}deg)`;
+    $('stamp').style.opacity = P(t, 5.12, 5.2).toFixed(3);
+  }
+  // Gamla prov: korten fälls ut som en solfjäder (sist ritad hamnar överst).
+  const FAN = [[11, 100, 500], [-11, -100, 492], [-1.5, 4, 430]];
+  kPass.forEach((e, i) => {
+    const [r, dx, y] = FAN[i];
+    fall(t, e, 6.3 + i * 0.1, 7.05, [270, 640], [270 + dx, y], { s: i === 2 ? 0.86 : 0.66, s0: 0.4, r0: 0, r, dur: 0.65 });
+  });
+  // Förklaringar.
+  fall(t, kForklaring, 8.26, 9.96, [230, 680], [300, 640], { s: 1.0, r0: 6, r: 2.5, flyg: [460, 40] });
+  fall(t, kAlternativ, 9.28, 10.0, [230, 520], [186, 386], { s: 1.05, r0: -6, r: -2.5, flyg: [-460, -20] });
+  fall(t, bFel, 9.44, 10.02, [300, 330], [400, 318], { r0: 10, r: 4, dur: 0.45, flyg: [420, 0] });
+  fall(t, bRatt, 9.62, 10.06, [300, 460], [400, 452], { r0: -10, r: -3, dur: 0.45, flyg: [420, 0] });
+  // Matten.
+  fall(t, kVideo, 10.44, 10.98, [300, 560], [232, 372], { s: 1.12, r0: -6, r: -2.5, flyg: [-460, -20] });
+  fall(t, kMatteFb, 11.06, 11.62, [300, 700], [262, 330], { s: 1.18, r0: 6, r: 2 });
+  // Svagaste punkter: hjärnkartan fälls ut ur telefonen.
+  // Kameran går nära MEK när "svagaste punkter" sägs och backar före trycket.
+  const narA = E.inOutCubic(P(t, 13.8, 14.25)) * (1 - E.inOutCubic(P(t, 14.3, 14.56)));
+  if (fall(t, kKartaA, 12.78, 14.66, [300, 600], [262 + 70 * narA, 498 + 46 * narA], { s: 1.18 * (1 + 0.2 * narA), s0: 0.35, r0: -3, r: -1.2 })) {
+    puls(t, kKartaA);
+    framhav(t, kKartaA, 13.86, 14.86);
+  }
+  tryckKort(t, 14.62, kKartaA, L.mekKnapp, 1.18, -1.2, [262, 498]);
+  // Databasen: 3 640 uppgifter.
+  if (fall(t, kFragaTopp, 15.22, 15.72, [300, 640], [282, 482], { s: 1.12, s0: 0.35, r0: 5, r: 2, flyg: [460, 10] })) {
+    fragaMark.style.transform = `scaleX(${E.outCubic(P(t, 15.42, 15.75)).toFixed(3)})`;
+  }
+  if (fall(t, kStat, 15.14, 15.95, [270, 520], [134, 300], { s: 1.05, r0: -8, r: -4 })) {
+    $('statTal').textContent = fmt(3640 * E.outQuart(P(t, 15.16, 15.55)));
+  }
+  // Täpper igen luckorna: kvittot och kartan där MEK växer.
+  // Först kvittot från rundan, sedan kartan där MEK-luckan fylls.
+  fall(t, kKvitto, 15.98, 16.46, [250, 660], [270, 440], { s: 1.08, r0: -6, r: -2, flyg: [-520, -20] });
+  if (fall(t, kKartaB, 16.58, 17.52, [330, 700], [270, 520], { s: 1.12, s0: 0.5, r0: 6, r: 1.5 })) {
+    const g = E.inOutCubic(P(t, 16.66, 17.3));
+    const v = lerp(FILMDATA.mekFore, FILMDATA.mekEfter, g);
+    // MEK förblir markerad hela takten; märket berättar förändringen.
+    ritaKartaB(v, 'mek');
+    puls(t, kKartaB);
+    const gl = Math.sin(Math.PI * g);
+    kKartaB.querySelectorAll('.hk-form polygon, .hk-form path').forEach(f => { f.style.filter = gl > 0.01 ? `drop-shadow(0 0 6px rgba(16,185,129,${(0.55 * gl).toFixed(2)}))` : ''; });
+  }
+  fall(t, bUpp, 17.02, 17.52, [270, 640], [270, 742], { r0: 6, r: -2, dur: 0.45 });
+  // Har du tid över: ringen med ansiktet fylls.
+  if (fall(t, kRing, 18.4, 19.3, [272, 600], [272, 536], { s: 1.0, s0: 0.75, r0: -4, r: -2 })) {
+    const p = E.inOutCubic(P(t, 18.55, 19.2));
+    // Ringen är andelen påbörjade ord som i appen: nivå 4 är 220 av 4 136.
+    $('ringBage').setAttribute('stroke-dashoffset', (552.9 * (1 - (220 / 4136) * p)).toFixed(2));
+    const niva = Math.min(4, 1 + Math.floor(p * 3.999));
+    $('ringNiva').textContent = `Nivå ${niva} av 10`;
+    kRing.querySelectorAll('.fejs img').forEach((im, i) => {
+      const s = i + 1 === niva ? 1 : 0;
+      im.style.opacity = s;
+      const pop = E.spring(P(t, 18.55 + (i / 3.999) * 0.65, 18.55 + (i / 3.999) * 0.65 + 0.4));
+      im.style.transform = `scale(${(0.7 + 0.3 * pop).toFixed(3)})`;
+    });
+  }
+  // Ordhjälpen: ordet fälls ut ur appen.
+  fall(t, kOrdHuvud, 20.1, 21.08, [270, 560], [372, 420], { s: 1.15, r0: 8, r: 3, flyg: [160, 0] });
+  // Minnestekniker: minnesregeln och bilden fälls ut.
+  fall(t, kRegel, 21.42, 22.48, [240, 700], [292, 470], { s: 1.1, r0: 6, r: 2 });
+  fall(t, kOrdBild, 21.6, 22.54, [240, 640], [384, 610], { s: 1.0, r0: 10, r: 6 });
+  fall(t, kKnut, 22.44, 22.92, [240, 600], [120, 640], { s: 1.0, r0: -14, r: -7, flyg: [-160, 160] });
+  // Typiska högskoleprovsord: tre ordkort i en trappa och antalet ord.
+  const OTRAPPA = [[-3, -30, 330], [2.5, 26, 486], [-2, -20, 632]];
+  kOrdlista.forEach((e, i) => {
+    const [r, dx, y] = OTRAPPA[i];
+    const sida = i % 2 ? 1 : -1;
+    fall(t, e, 23.06 + i * 0.16, 24.46 + i * 0.06, [270 + sida * 260, y + 30], [270 + dx, y], { s: 0.92, s0: 0.6, r0: sida * 10, r, dur: 0.6, flyg: [0, 180] });
+  });
+  if (fall(t, kOrdStat, 23.9, 24.66, [270, 900], [270, 742], { s: 0.9, r0: 0, r: -1.5, flyg: [0, 140] })) {
+    $('ordTal').textContent = fmt(4136 * E.outQuart(P(t, 23.9, 24.25)));
+  }
+}
+// Ett tryck på en knapp i ett utfällt kort (sajtens px inom kortet).
+function tryckKort(t, t0, kortEl, [sx, sy], s, r, [cx, cy]) {
+  const e = $('tapKort');
+  if (t < t0 - 0.28 || t > t0 + 0.45) { e.style.visibility = 'hidden'; return; }
+  const w = kortEl.offsetWidth, h = kortEl.offsetHeight;
+  // Knappens läge i kortet: kortets innehåll börjar 337 px ned på sidan.
+  const dx = (sx - 24 - w / 2) * s, dy = (sy - 337 - h / 2) * s;
+  const rad = r * Math.PI / 180;
+  const x = cx + dx * Math.cos(rad) - dy * Math.sin(rad), y = cy + dx * Math.sin(rad) + dy * Math.cos(rad);
+  const inn = E.outCubic(P(t, t0 - 0.28, t0 - 0.06)), ut = E.outCubic(P(t, t0, t0 + 0.45));
+  const sk = lerp(0.55, 1, inn) * 1.3 + 1.1 * ut;
+  e.style.visibility = 'visible';
+  e.style.transform = `translate(${x.toFixed(2)}px, ${y.toFixed(2)}px) scale(${sk.toFixed(3)})`;
+  e.style.opacity = (inn * (1 - ut)).toFixed(3);
+}
+const tapKort = el('div', 'tap', $('pops')); tapKort.id = 'tapKort'; tapKort.style.zIndex = 50;
+
+// ---------------- Även en liten insats gör en stor skillnad ----------------
+// Små kort ur filmen svävar runt texten: alla små insatser. De dras ihop på
+// "gör en" och blåses ut när den blå cirkeln slår ut på STOR.
+const MINI = [['extra-kort', 150, 12], ['rattning-9-forklaring', 150, 10], ['ord-bild', 84, 12], ['matte-forklaring', 150, 12],
+  ['ord-regel', 150, 12], ['fokus-kvitto-kort', 150, 16], ['matte-video', 150, 10], ['fokus-karta', 150, 16]];
+const miniEls = MINI.map(([src, w, r]) => {
+  const e = el('div', 'pop skugga', $('ins'));
+  const i = el('img', '', e); i.src = 'bilder/' + src + '.png'; i.style.width = w + 'px'; i.style.borderRadius = r + 'px';
+  e.style.borderRadius = r + 'px';
+  return e;
+});
+const insCirkelEl = el('div', '', $('ins')); insCirkelEl.id = 'insCirkel';
+const insEls = {
+  aven: el('div', 'insT', $('ins'), 'Även en'),
+  liten: el('div', 'insT', $('ins'), 'liten insats'),
+  gor: el('div', 'insT', $('ins'), 'gör en'),
+  stor: el('div', 'insT', $('ins'), 'STOR'),
+  skillnad: el('div', 'insT', $('ins'), 'skillnad'),
+};
+// Lagerordning: den mörka texten under cirkeln, STOR och skillnad över den.
+for (const e of [insCirkelEl, insEls.stor, insEls.skillnad]) $('ins').appendChild(e);
+insEls.aven.style.cssText += 'font-size:58px;color:#0f172a;';
+insEls.liten.style.cssText += 'font-size:58px;color:#2563eb;';
+insEls.gor.style.cssText += 'font-size:58px;color:#0f172a;';
+insEls.stor.style.cssText += 'font-size:168px;color:#fff;letter-spacing:-0.05em;line-height:1;';
+insEls.skillnad.style.cssText += 'font-size:76px;color:#fff;letter-spacing:-0.04em;';
+function insats(t) {
+  const ins = $('ins');
+  if (t < 24.9 || t > 32.1) { syns(ins, false); return; }
+  syns(ins, true);
+  const ord = (e, t0, x, y, s = 1, o = 1, dy = 22) => {
+    const p = P(t, t0 - 0.06, t0 + 0.3);
+    put(e, x, y + dy * (1 - E.outCubic(p)), s * lerp(0.9, 1, E.outBack(p)), 0, E.outCubic(p) * o);
+  };
+  // Slutet tar över: texten lyfter och tonar bort.
+  const bort = E.inOutCubic(P(t, 28.75, 29.35));
+  const lyft = -150 * bort;
+  // Den lilla pricken under "liten insats" blir en stor blå cirkel.
+  const c = $('insCirkel');
+  const dotIn = E.spring(P(t, 26.62, 26.95));
+  // Pricken sväller på "en" och hela bilden är blå när STOR slår in.
+  const grow = E.inOutQuint(P(t, 27.2, 27.56));
+  const r = lerp(0.18 * dotIn, 12.5, grow) * (1 + 0.25 * Math.sin(Math.PI * P(t, 27.02, 27.2)));
+  const cy = lerp(486, 480, grow);
+  c.style.transform = `translate(270px, ${cy.toFixed(1)}px) scale(${r.toFixed(4)})`;
+  // Minikorten på en ellips runt texten.
+  miniEls.forEach((e, i) => {
+    // Nedersta kortet först, det översta sist när undertexten har gått.
+    const v = Math.PI / 2 + i * (2 * Math.PI / miniEls.length) + 0.18;
+    const inn = E.spring(P(t, 24.95 + i * 0.05, 25.55 + i * 0.05));
+    const ihop = E.inOutCubic(P(t, 26.9, 27.22));
+    const blas = E.outCubic(P(t, 27.22, 27.62));
+    // Korten dras ihop mest lodrätt, så att de inte glider in i texten.
+    const rx = 172 * (1 - 0.04 * ihop) * (1 + 1.4 * blas), ry = 318 * (1 - 0.14 * ihop) * (1 + 1.4 * blas);
+    const ox = 270 + Math.cos(v) * rx + 4 * wob(t, 1.1, i);
+    const oy = 470 + Math.sin(v) * ry + 5 * wob(t, 0.9, i + 3);
+    const x = lerp(270, ox, Math.min(inn, 1.08)), y = lerp(720, oy, Math.min(inn, 1.08));
+    const rot = (i % 2 ? 1 : -1) * (4 + (i * 3) % 5) + 2 * wob(t, 0.7, i);
+    put(e, x, y, lerp(0.3, 0.85, inn) * (1 - 0.1 * ihop), rot, P(t, 24.95 + i * 0.05, 25.1 + i * 0.05) * (1 - blas) * 0.96);
+  });
+  // Före cirkeln: mörk text på ljus bakgrund.
+  const forsta = 1 - P(t, 27.28, 27.48);
+  ord(insEls.aven, 25.62, 270, 372 + lyft, 1, forsta);
+  // Sägs stort och krymper medan "insats" uttalas: en liten insats.
+  const krymp = E.inOutCubic(P(t, 26.52, 26.85));
+  ord(insEls.liten, 26.26, 270, lerp(440, 452, krymp) + lyft, lerp(0.9, 0.26, krymp), forsta);
+  ord(insEls.gor, 27.02, 270, 552 + lyft, 1, forsta);
+  // STOR slår in när cirkeln fyller bilden.
+  const sp = E.spring(P(t, 27.52, 27.95));
+  put(insEls.stor, 270, 424 + lyft, lerp(1.6, 1, sp), 0, (t >= 27.52 ? 1 : 0) * (1 - bort));
+  ord(insEls.skillnad, 27.98, 270, 548 + lyft, 1, 1 - bort, 30);
+  // Lätt skakning i bild när STOR landar.
+  const skak = Math.exp(-14 * Math.max(0, t - 27.56)) * (t > 27.56 ? 1 : 0);
+  ins.style.transform = `translate(${(5 * skak * Math.sin(t * 90)).toFixed(2)}px, ${(4 * skak * Math.cos(t * 77)).toFixed(2)}px)`;
+}
+
+// ---------------- Lycka till på söndag! ----------------
+const slutEls = {
+  lycka: el('div', 'slutT', $('slut'), 'Lycka till'),
+  sondag: el('div', 'slutT', $('slut'), 'på söndag!'),
+};
+slutEls.lycka.style.fontSize = '66px';
+slutEls.sondag.style.cssText += 'font-size:66px;color:#fde68a;';
+const CF_FARG = ['#fde68a', '#ffffff', '#f59e0b', '#93c5fd', '#34d399', '#f472b6', '#fbbf24'];
+const confetti = [];
+// Andra skuren: från länken när den landar.
+for (let i = 0; i < 34; i++) {
+  const e = el('div', 'cf', $('confetti'));
+  e.style.width = (6 + (i * 5) % 5) + 'px'; e.style.height = (9 + (i * 3) % 7) + 'px';
+  e.style.background = CF_FARG[(i + 3) % CF_FARG.length];
+  e.style.borderRadius = i % 3 === 0 ? '50%' : '2px';
+  const v = (i / 34) * 2 * Math.PI;
+  const fart = 260 + ((i * 41) % 220);
+  confetti.push({ e, x0: 270, y0: 382, vx: Math.cos(v) * fart, vy: Math.sin(v) * fart - 260,
+    rot: (i * 53) % 360, vr: 300 + (i * 29) % 300, t0: 30.76 });
+}
+for (let i = 0; i < 90; i++) {
+  const e = el('div', 'cf', $('confetti'));
+  const w = 7 + (i * 7) % 6, h = 11 + (i * 5) % 8;
+  e.style.width = w + 'px'; e.style.height = h + 'px';
+  e.style.background = CF_FARG[i % CF_FARG.length];
+  e.style.borderRadius = i % 3 === 0 ? '50%' : '2px';
+  const sida = i % 2 ? 1 : -1;
+  const vinkel = (-62 - ((i * 37) % 50)) * Math.PI / 180;
+  const fart = 520 + ((i * 53) % 420);
+  confetti.push({ e, x0: sida > 0 ? 560 : -20, y0: 700 + (i * 29) % 160, vx: -sida * Math.cos(vinkel) * fart * 0.62,
+    vy: Math.sin(vinkel) * fart * 1.18, rot: (i * 47) % 360, vr: 260 + (i * 31) % 400, t0: 29.62 + (i % 9) * 0.025 });
+}
+function slut(t) {
+  const s = $('slut');
+  if (t < 28.7) { syns(s, false); $('slutJonas').style.filter = 'none'; return; }
+  syns(s, true);
+  $('slutJonas').style.filter = 'url(#klister) drop-shadow(0 20px 40px rgba(15, 23, 42, 0.35))';
+  // Jonas vinkar upp ur bildkanten.
+  // Uppåt med en mjuk kurva och en liten studs, så att bildens underkant
+  // aldrig syns ovanför bildrutans kant.
+  const jp = E.outCubic(P(t, 28.95, 29.55));
+  const studs = 14 * Math.sin(P(t, 29.4, 29.9) * Math.PI) * (1 - P(t, 29.4, 29.9));
+  const jw = 500, jh = jw * 1200 / 896;
+  const jon = $('slutJonas');
+  jon.style.width = jw + 'px';
+  const vink = Math.sin((t - 29.6) * 7) * 3 * P(t, 29.6, 29.9);
+  jon.style.transformOrigin = '50% 100%';
+  jon.style.transform = `translate(${(540 - jw + 20).toFixed(1)}px, ${(960 - jh + 60 + (1 - jp) * 660 - studs).toFixed(1)}px) rotate(${vink.toFixed(2)}deg)`;
+  jon.style.opacity = P(t, 28.95, 29.1).toFixed(3);
+  // Texten.
+  const tl = (e, t0, y) => {
+    const p = P(t, t0 - 0.05, t0 + 0.35);
+    put(e, 270, y + 26 * (1 - E.outCubic(p)), lerp(0.85, 1, E.spring(p)), 0, E.outCubic(p));
+  };
+  tl(slutEls.lycka, 29.62, 200);
+  tl(slutEls.sondag, 30.48, 276);
+  const pp = E.spring(P(t, 30.72, 31.22));
+  put($('slutPill'), 270, 382 + (1 - pp) * 20, lerp(0.6, 1, pp), 0, P(t, 30.72, 30.82));
+  // Konfetti.
+  for (const c of confetti) {
+    const dt = t - c.t0;
+    if (dt < 0) { c.e.style.visibility = 'hidden'; continue; }
+    c.e.style.visibility = 'visible';
+    const x = c.x0 + c.vx * dt, y = c.y0 + c.vy * dt + 0.5 * 900 * dt * dt;
+    c.e.style.transform = `translate(${x.toFixed(1)}px, ${y.toFixed(1)}px) rotate(${(c.rot + c.vr * dt).toFixed(1)}deg) rotateX(${(dt * 400 % 360).toFixed(1)}deg)`;
+  }
+}
+
+// Allt är redo när bilderna och typsnitten har laddats.
+window.SEEK = SEEK;
+window.READY = Promise.all([
+  document.fonts.ready,
+  ...[...document.images].map(i => i.decode().catch(() => null)),
+]).then(() => { SEEK(0); return true; });
+</script>
+</body>
+</html>

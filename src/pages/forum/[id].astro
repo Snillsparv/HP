@@ -11,7 +11,7 @@ const error = Astro.url.searchParams.get('error');
 const thread = await getThread(id);
 
 if (!thread) {
-  return Astro.redirect('/forum?error=Tråden+finns+inte');
+  return Astro.redirect(`/forum?error=${encodeURIComponent('Tråden finns inte')}`);
 }
 
 const replies = await getReplies(id);
@@ -119,7 +119,11 @@ function timeAgo(dateStr: string) {
 
 <script>
   import { behallUtkast } from '../../lib/forum-utkast.js';
-  behallUtkast(document.querySelector<HTMLFormElement>('form[action="/api/forum/reply"]'), `forumutkast:${location.pathname}`);
+  behallUtkast(document.querySelector<HTMLFormElement>('form[action="/api/forum/reply"]'), `forumutkast:${location.pathname}`, 'error');
+  // En ny tråd hamnar här när den publicerats, så dess utkast behövs inte längre.
+  if (!new URLSearchParams(location.search).has('error')) {
+    try { sessionStorage.removeItem('forumutkast:ny-trad'); } catch {}
+  }
 
   document.querySelectorAll('.btn-admin-delete').forEach(btn => {
     btn.addEventListener('click', async () => {

@@ -39,7 +39,7 @@ export const POST: APIRoute = async ({ request }) => {
 
   const stopp = await kontrolleraInlagg(user.id, 'trad', `${title}\n${body}`, ip);
   if (stopp?.raderat) {
-    return tillbaka(`/forum?error=${encodeURIComponent(stopp.fel)}`, { 'Set-Cookie': 'session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0' });
+    return tillbaka(`/forum?error=${encodeURIComponent(stopp.fel)}&raderat=1`, { 'Set-Cookie': 'session=; Path=/; HttpOnly; SameSite=Lax; Max-Age=0' });
   }
   if (stopp) {
     return fel(stopp.fel);

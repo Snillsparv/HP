@@ -24,7 +24,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Namnet visas vid varje foruminlägg, så det får inte vara reklam.
     if (namnArSpam(name)) {
       await loggaSpam(null, klientIp(request), 'registrering: namn', `${name} <${email}>`);
-      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Välj ett annat namn: högst 40 tecken och utan länkar.')}` } });
+      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Välj ett annat namn. Namnet får vara högst 40 tecken och får inte innehålla länkar eller reklam.')}` } });
     }
     if (password.length < 8) {
       return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Lösenordet måste vara minst 8 tecken')}` } });

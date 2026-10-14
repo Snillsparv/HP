@@ -37,9 +37,15 @@ export const GET: APIRoute = async ({ request }) => {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const profile = await userRes.json();
-    // Namnet visas vid foruminlägg; ett reklamnamn ersätts med början av e-postadressen.
-    if (profile.name && namnArSpam(profile.name)) {
-      profile.name = String(profile.email || '').split('@')[0].slice(0, 40);
+    // Namnet visas vid foruminlägg. Ett för långt namn kortas, och ett namn som
+    // ser ut som reklam byts mot förnamnet (aldrig mot e-postadressen).
+    {
+      let namn = String(profile.name || '').trim().slice(0, 40).trim();
+      if (!namn || namnArSpam(namn)) {
+        const fornamn = String(profile.given_name || '').trim().slice(0, 40).trim();
+        namn = fornamn && !namnArSpam(fornamn) ? fornamn : 'Användare ' + Math.random().toString(36).slice(2, 6);
+      }
+      profile.name = namn;
     }
 
     const current = await getSessionFromCookies(request.headers.get('cookie'));
@@ -52,11 +58,11 @@ export const GET: APIRoute = async ({ request }) => {
       } else if (current?.is_guest) {
         // Gäst som blir ny Google-användare: uppgradera gästen på plats så
         // att ordframstegen följer med.
-        user = await upgradeGuestToGoogleUser(current.id, profile.name || profile.email, profile.email, profile.id);
+        user = await upgradeGuestToGoogleUser(current.id, profile.name, profile.email, profile.id);
         if (user) checkNewUser(profile.name || '', profile.email).catch(() => {});
       }
       if (!user) {
-        user = await createGoogleUser(profile.name || profile.email, profile.email, profile.id);
+        user = await createGoogleUser(profile.name, profile.email, profile.id);
         checkNewUser(profile.name || '', profile.email).catch(() => {});
       }
     }

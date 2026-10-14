@@ -147,7 +147,7 @@ const svampbobLatt = !isBB && currentPath !== '/' && visaSvampBob(user, Astro.ur
         <SpamSkydd />
         <div class="signup-modal-fg">
           <label for="modal-reg-name">Namn / Användarnamn</label>
-          <input type="text" id="modal-reg-name" name="name" placeholder="Ditt namn eller alias" required />
+          <input type="text" id="modal-reg-name" name="name" placeholder="Ditt namn eller alias" maxlength="40" required />
         </div>
         <div class="signup-modal-fg">
           <label for="modal-reg-email">E-post</label>

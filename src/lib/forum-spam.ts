@@ -2,7 +2,7 @@
 // och städning av spam som postades innan filtret fanns.
 import pool from './db.js';
 import './alerts.js';
-import { spamOrsak, arEntydigSpam, namnArSpam, SPAM_MEDDELANDE, RADERAT_MEDDELANDE, STADA_SPAM } from './forum-spamfilter.js';
+import { spamOrsak, arEntydigSpam, namnArReklam, okandaLankar, SPAM_MEDDELANDE, RADERAT_MEDDELANDE, STADA_SPAM } from './forum-spamfilter.js';
 
 const ADMIN_EMAIL = 'snillsparv@gmail.com';
 
@@ -72,7 +72,8 @@ export async function kontrolleraInlagg(
   // på sajten, så att ett konto som registrerats i förväg inte kommer runt den.
   const nyttKonto = u.nytt_konto || (u.ny_i_forumet && u.utan_aktivitet);
 
-  if (namnArSpam(u.name, { kollaLangd: false })) {
+  // Namn kan inte bytas i efterhand, så här stoppas bara entydig reklam.
+  if (namnArReklam(u.name)) {
     await loggaSpam(userId, ip, 'namn', `${u.name} <${u.email}>\n${text}`);
     return { fel: 'Ditt användarnamn ser ut som reklam, så inlägget publicerades inte.', raderat: false };
   }
@@ -85,7 +86,10 @@ export async function kontrolleraInlagg(
       return { fel: RADERAT_MEDDELANDE, raderat: true };
     }
     await loggaSpam(userId, ip, orsak, text);
-    return { fel: SPAM_MEDDELANDE[orsak], raderat: false };
+    // Visa vad som lästes som länk; ofta är det ett glömt mellanslag efter en punkt.
+    const lank = orsak === 'ny_lank' ? okandaLankar(text)[0] : '';
+    const tips = lank ? ` Filtret läste "${lank.slice(0, 60)}" som en länk.` : '';
+    return { fel: SPAM_MEDDELANDE[orsak] + tips, raderat: false };
   }
 
   if (typ === 'trad' && u.tradar_timme >= 3) {
@@ -130,7 +134,7 @@ export async function stadaSpam(): Promise<{ tradar: number; svar: number; foljd
   const { rows: svar } = await urval('replies', 'p.id, p.user_id, p.body');
   const arSpam = (text: string) => {
     const o = spamOrsak(text);
-    return !!o && STADA_SPAM.includes(o);
+    return !!o && STADA_SPAM.includes(o) && okandaLankar(text).length > 0;
   };
   const tradIds = tradar.filter(t => arSpam(`${t.title}\n${t.body}`));
   const svarIds = svar.filter(r => arSpam(r.body));

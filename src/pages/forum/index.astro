@@ -112,8 +112,9 @@ function timeAgo(dateStr: string) {
 </Base>
 
 <script>
-  import { behallUtkast } from '../../lib/forum-utkast.js';
-  behallUtkast(document.querySelector<HTMLFormElement>('form[action="/api/forum/threads"]'), 'forumutkast:ny-trad');
+  import { behallUtkast, visaRaderatUtkast } from '../../lib/forum-utkast.js';
+  behallUtkast(document.querySelector<HTMLFormElement>('form[action="/api/forum/threads"]'), 'forumutkast:ny-trad', 'fel');
+  visaRaderatUtkast();
 </script>
 
 <style>

@@ -71,6 +71,21 @@ function isPlaceholder(part: string): boolean {
   return part === 'någon' || part === 'något' || part === 'någons' || part === 'sig';
 }
 
+// "sig" står bara för ett reflexivt pronomen (förtog sig, voja dig), inte för
+// vilket ord som helst: annars blir "för att förta sig" -> "för att".
+const REFLEXIVE = new Set(['sig', 'mig', 'dig', 'oss', 'er']);
+function placeholderMatches(part: string, token: string): boolean {
+  return part === 'sig' ? REFLEXIVE.has(token) : true;
+}
+
+// Första frasdelen. En token får bara vara en avkortning av delen om högst
+// en bokstav fattas (håll -> hålla), annars matchar "för" uttrycket "förta sig".
+function firstPartMatches(p: string, t: string): boolean {
+  return t.startsWith(p.slice(0, Math.max(4, p.length - 1)))
+    || (t.length >= Math.max(2, p.length - 1) && p.startsWith(t))
+    || isVerbForm(p, t);
+}
+
 function commonPrefix(a: string, b: string): number {
   let n = 0;
   const m = Math.min(a.length, b.length);
@@ -110,13 +125,18 @@ function findSpan(sentence: string, word: string): [number, number] | null {
       const key = p.slice(0, Math.max(3, p.length - 2));
       return tl.startsWith(key) || tl.includes(key) || (tl.length >= 2 && p.startsWith(tl)) || isVerbForm(p, tl);
     };
+    // Alla startpositioner prövas. En träff där alla delar hittats går före en
+    // där ett reflexivt "sig" saknas, och därefter vinner den kortaste, så att
+    // "log flera i personalen i mjugg" ger "i mjugg" och inte hela sträckan.
+    let best: { i: number; last: number; missed: number } | null = null;
     for (let i = 0; i < tokens.length; i++) {
-      const p0 = parts[0];
-      const t0 = tokens[i].text.toLowerCase();
-      if (!t0.startsWith(p0.slice(0, Math.max(4, p0.length - 1))) && !(t0.length >= 2 && p0.startsWith(t0)) && !isVerbForm(p0, t0)) continue;
-      let j = i + 1, ok = true, last = i;
+      if (!firstPartMatches(parts[0], tokens[i].text.toLowerCase())) continue;
+      let j = i + 1, ok = true, last = i, missed = 0;
       for (let k = 1; k < parts.length; k++) {
         const p = parts[k];
+        // En platshållare sist i uttrycket (åvila någon, svärma för något) ska inte
+        // dra med sig ett godtyckligt efterföljande ord.
+        if (k === parts.length - 1 && isPlaceholder(p) && p !== 'sig') break;
         let found = false;
         // upp till två inskjutna ord tillåts före varje frasdel; efter en
         // platshållare fyra, eftersom den kan stå för en hel nominalfras
@@ -124,13 +144,15 @@ function findSpan(sentence: string, word: string): [number, number] | null {
         const maxSkip = isPlaceholder(parts[k - 1]) ? 4 : 2;
         for (let skip = 0; skip <= maxSkip && j + skip < tokens.length; skip++) {
           const tl = tokens[j + skip].text.toLowerCase();
-          if (isPlaceholder(p) || partMatches(p, tl)) { last = j + skip; j = j + skip + 1; found = true; break; }
+          if (isPlaceholder(p) ? placeholderMatches(p, tl) : partMatches(p, tl)) { last = j + skip; j = j + skip + 1; found = true; break; }
         }
+        // reflexivt "sig" saknas ibland i meningen: hoppa över delen
+        if (!found && p === 'sig') { missed++; continue; }
         if (!found) { ok = false; break; }
       }
-      if (ok) return [tokens[i].start, tokens[last].end];
+      if (ok && (!best || missed < best.missed || (missed === best.missed && last - i < best.last - best.i))) best = { i, last, missed };
     }
-    return null;
+    return best ? [tokens[best.i].start, tokens[best.last].end] : null;
   }
 
   const st = stems(wordL);

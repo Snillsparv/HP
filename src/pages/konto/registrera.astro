@@ -1,11 +1,12 @@
 ---
 import Base from '../../layouts/Base.astro';
 import SpamSkydd from '../../components/SpamSkydd.astro';
+import { arLokalSokvag } from '../../lib/sokvag.js';
 
 const error = Astro.url.searchParams.get('error');
 // Sidor som kräver inloggning skickar med ?next= så att man landar rätt efteråt.
 const rawNext = Astro.url.searchParams.get('next') || '';
-const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '';
+const next = arLokalSokvag(rawNext) ? rawNext : '';
 ---
 
 <Base title="Skapa konto – HPAkuten">

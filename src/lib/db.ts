@@ -214,6 +214,33 @@ await pool.query(`CREATE TABLE IF NOT EXISTS app_flags (key TEXT PRIMARY KEY, cr
     await pool.query(`UPDATE users SET learn_review_per = 100 WHERE learn_review_per = 60`);
   }
 }
+// Ord där ord och definition låg omkastade (t.ex. "u-format uppsugningsrör"
+// med definitionen "hävert"). Raden döps om på plats, så att id, framsteg och
+// inspelningar följer med; synken mot seed-filen nedan sätter sedan
+// definition och felalternativ.
+{
+  const claim = await pool.query(
+    `INSERT INTO app_flags (key) VALUES ('rename_reversed_words_v1') ON CONFLICT (key) DO NOTHING RETURNING key`
+  );
+  if (claim.rowCount && claim.rowCount > 0) {
+    const omdopta: [string, string][] = [
+      ['u-format uppsugningsrör', 'hävert'],
+      ['ombytesrum för präst', 'sakristia'],
+      ['samling pressade växter', 'herbarium'],
+      ['mönsterband längs benet', 'revär'],
+      ['grovt ylletyg', 'vadmal'],
+    ];
+    for (const [fran, till] of omdopta) {
+      const s = (minnesordSeed as MinnesordSeed[]).find(w => w.word === till);
+      if (!s) continue;
+      await pool.query(
+        `UPDATE mnemonic_words SET word = $2, example = $3, etymology = $4, updated_at = NOW()
+         WHERE lower(word) = lower($1) AND NOT EXISTS (SELECT 1 FROM mnemonic_words WHERE lower(word) = lower($2))`,
+        [fran, till, s.example || '', s.etymology || '']
+      );
+    }
+  }
+}
 
 // Fyll ordlistan från src/lib/minnesord-seed.json första gången (tom tabell).
 // Efterföljande uppdateringar görs via importen på /admin/minnesord, som

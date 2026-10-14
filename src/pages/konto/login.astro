@@ -1,10 +1,11 @@
 ---
 import Base from '../../layouts/Base.astro';
+import { arLokalSokvag } from '../../lib/sokvag.js';
 
 const error = Astro.url.searchParams.get('error');
 // Sidor som kräver inloggning skickar med ?next= så att man landar rätt efteråt.
 const rawNext = Astro.url.searchParams.get('next') || '';
-const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : '';
+const next = arLokalSokvag(rawNext) ? rawNext : '';
 ---
 
 <Base title="Logga in – HPAkuten">
@@ -34,6 +35,9 @@ const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : ''
         </div>
         <button type="submit" class="btn btn-primary" style="width: 100%;">Logga in</button>
       </form>
+      <p style="font-size: 0.85rem; color: var(--color-muted); margin-top: 1rem;">
+        Glömt lösenordet? Har du en Gmail-adress kan du logga in med Fortsätt med Google ovan, så kommer du till samma konto. Annars kan du skriva till mig i formuläret längst ner på sidan, så hjälper jag dig.
+      </p>
 
       <p style="text-align: center; margin-top: 1.5rem; color: var(--color-muted);">
         Inget konto? <a href={next ? `/konto/registrera?next=${encodeURIComponent(next)}` : '/konto/registrera'}>Skapa ett gratis</a>

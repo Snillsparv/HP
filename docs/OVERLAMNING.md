@@ -47,9 +47,15 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
   klickar igenom alla frågor, kollar bilder och förklaringar),
   `prep_prov.py <utkatalog> <provsida-url> [<normsida-url>]` (laddar ned PDF:er,
   renderar sidor, dumpar text, tolkar normering).
-- Serien är komplett: HT 2012 till HT 2025 utom HT 2021 (sajtens
-  huvudmaterial) och VT 2016 (UHR har ingen provfrågesida). Före HT 2012
-  publicerar studera.nu bara normeringstabeller.
+- Serien omfattar HT 2012 till HT 2025 utom HT 2021 (sajtens
+  huvudmaterial). Två tillfällen saknas men finns hos UHR: VT 2016 (provet
+  2016-04-09; provsidan ligger utanför /fpn/:
+  https://www.studera.nu/hogskoleprov/provfragor-hosten-2016/provfragor-varen-2016/,
+  pass 2 till 5, facit-vt2016.pdf, normering på
+  /hogskoleprov/fpn/normeringstabeller-varen-2016/) och VT 2026 (provet
+  2026-04-18, på /hogskoleprov/resultat/resultat/senaste/; hämta det innan
+  HT 2026-resultaten ersätter sidan). Före HT 2012 publicerar studera.nu bara
+  normeringstabeller.
 
 ## Svamp-Bob-temat (Otto)
 

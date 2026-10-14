@@ -832,14 +832,18 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
   // Innehåll som fälls fram under en knapp (ordkortet efter ett svar) hamnar
   // ofta under skärmkanten på mobilen. Här scrollas det fram automatiskt, men
   // bara när det behövs: syns det redan i sin helhet står sidan still.
-  function revealInView(el, topMargin) {
+  // keep är det som måste stå kvar i bild (ordet med svarsalternativen). Det
+  // får aldrig glida upp under menyn, så att rätt svar alltid syns efter ett
+  // fel svar. Resten av kortet scrollar man själv fram.
+  function revealInView(el, keep) {
     if (!el) return;
-    const marginal = topMargin || 84;
+    const marginal = 84;
     requestAnimationFrame(() => {
       const r = el.getBoundingClientRect();
       const vh = window.innerHeight || document.documentElement.clientHeight;
       if (r.top >= marginal && r.bottom <= vh - 8) return;
-      const y = r.top + window.scrollY - marginal;
+      const top = keep ? Math.min(r.top, keep.getBoundingClientRect().top) : r.top;
+      const y = top + window.scrollY - marginal;
       window.scrollTo({ top: Math.max(0, y), behavior: glid() });
     });
   }
@@ -957,10 +961,10 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
     if (optsBox) optsBox.classList.add('answered');
     const last = rtI === rtWords.length - 1;
     document.getElementById('fb').innerHTML = `
-      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : 'Fel, rätt svar är markerat.'}</p>
+      <p class="verdict ${ok ? 'ok' : 'no'}">${ok ? 'Rätt! ✓' : `Fel, ${esc(w.word)} betyder ”${esc(w.correct)}”.`}</p>
       ${rtCardHtml(w)}
       <div class="btn-row"><button class="btn btn-primary" id="nq">${last ? 'Visa resultatet' : 'Nästa fråga'}</button></div>`;
-    revealInView(document.getElementById('fb'));
+    revealInView(document.getElementById('fb'), app.querySelector('.w-word'));
     document.getElementById('nq').onclick = goNext;
   }
 
@@ -1319,10 +1323,11 @@ const { rows: [wordCount] } = await pool.query('SELECT COUNT(*)::int AS n FROM m
       // ska visa rätt intervall.
       w.box = 0;
       document.getElementById('fb').innerHTML = `
-        <p class="verdict no">Inte riktigt. Så här minns du (kommer igen strax):</p>
+        <p class="verdict no">Inte riktigt, ${esc(w.word)} betyder ”${esc(w.correct)}”. Så här minns du (kommer igen strax):</p>
         ${cardHtml}${nextBtn}`;
-      // Kortet visas automatiskt vid fel svar och är långt: fram med det.
-      revealInView(document.getElementById('fb'));
+      // Kortet visas automatiskt vid fel svar och är långt: fram med det, men
+      // utan att ordet och rätt svar försvinner upp ur bild.
+      revealInView(document.getElementById('fb'), app.querySelector('.w-word'));
     }
     document.getElementById('nq').onclick = goNext;
   }

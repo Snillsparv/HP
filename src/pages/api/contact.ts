@@ -2,14 +2,16 @@ import type { APIRoute } from 'astro';
 import pool from '../../lib/db.js';
 import { formularFel } from '../../lib/forum-spamfilter.js';
 import { loggaSpam, klientIp } from '../../lib/forum-spam.js';
+import { arLokalSokvag } from '../../lib/sokvag.js';
 
 // Tillbaka till sidan där formuläret skickades, med en bekräftelse eller ett
 // fel vid formuläret längst ner (#kontakt).
 function tillbaka(sida: string, status: 'tack' | 'fel' | 'falt') {
-  const url = new URL(sida.startsWith('/') && !sida.startsWith('//') ? sida : '/', 'https://x');
+  const url = new URL(arLokalSokvag(sida) ? sida : '/', 'https://x');
   url.searchParams.delete('kontakt');
   url.searchParams.set('kontakt', status);
-  return new Response(null, { status: 302, headers: { Location: `${url.pathname}${url.search}#kontakt` } });
+  const sokvag = arLokalSokvag(url.pathname) ? url.pathname : '/';
+  return new Response(null, { status: 302, headers: { Location: `${sokvag}${url.search}#kontakt` } });
 }
 
 export const POST: APIRoute = async ({ request }) => {

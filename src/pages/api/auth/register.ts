@@ -3,6 +3,7 @@ import { createUser, findUserByEmail, createSession, getSessionFromCookies, upgr
 import { checkNewUser } from '../../../lib/alerts.js';
 import { formularFel, namnArSpam } from '../../../lib/forum-spamfilter.js';
 import { loggaSpam, klientIp } from '../../../lib/forum-spam.js';
+import { arLokalSokvag } from '../../../lib/sokvag.js';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -14,6 +15,10 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!name || !email || !password || !password2) {
       return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Fyll i alla fält')}` } });
+    }
+    // E-postadressen visas på adminsidan och får inte innehålla HTML-tecken.
+    if (email.length > 254 || !/^[^\s@<>"]+@[^\s@<>"]+\.[^\s@<>"]+$/.test(email)) {
+      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Ange en giltig e-postadress.')}` } });
     }
     // Spambotar fyller i det dolda fältet eller skickar formuläret direkt.
     const formFel = formularFel(form, 2);
@@ -47,7 +52,7 @@ export const POST: APIRoute = async ({ request }) => {
     checkNewUser(name, email).catch(() => {});
     const token = await createSession(user.id);
     const redirect = form.get('redirect')?.toString() || '/forum';
-    const safeRedirect = redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/forum';
+    const safeRedirect = arLokalSokvag(redirect) ? redirect : '/forum';
 
     return new Response(null, {
       status: 302,

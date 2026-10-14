@@ -30,6 +30,10 @@ const { rows: [msgCount] } = await pool.query('SELECT COUNT(*) as count FROM con
 // Contact messages
 const { rows: recentMessages } = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
 
+// Konton vars e-postadress innehåller HTML-tecken eller blanksteg kan inte vara
+// riktiga (registreringen stoppar dem numera) och bör raderas.
+const { rows: misstankta } = await pool.query(`SELECT id, name, email FROM users WHERE email ~ '[<>"[:space:]]' ORDER BY id`);
+
 // Spamskyddet i forumet (tabellen skapas av forum-spam.ts)
 import '../lib/forum-spam.js';
 const { rows: [spamDygn] } = await pool.query(`SELECT COUNT(*)::int AS count FROM forum_spam_log WHERE created_at > NOW() - INTERVAL '1 day'`);
@@ -176,6 +180,16 @@ function timeAgo(d: string) {
             </div>
           ))}
           <button class="btn btn-sm btn-outline" id="dismiss-alerts" style="margin-top:0.5rem;">Markera som lästa</button>
+        </div>
+      )}
+
+      {misstankta.length > 0 && (
+        <div class="admin-alerts">
+          <h3>⚠️ {misstankta.length} konto{misstankta.length === 1 ? '' : 'n'} med ogiltig e-postadress</h3>
+          <p style="font-size:0.85rem; margin:0 0 0.5rem;">Adresserna innehåller HTML-tecken eller blanksteg och kan vara försök att lura adminsidan. Radera dem via användarsökningen nedan (sök på namnet).</p>
+          {misstankta.map(u => (
+            <div class="admin-alert-item"><span>{u.name}: <code>{u.email}</code></span></div>
+          ))}
         </div>
       )}
 
@@ -349,8 +363,8 @@ function timeAgo(d: string) {
       <details class="admin-section">
         <summary>Meddelanden ({msgCount.count})</summary>
         <table>
-          <thead><tr><th>Namn</th><th>E-post</th><th>Meddelande</th><th>När</th></tr></thead>
-          <tbody>{recentMessages.map(m => <tr><td>{m.name}</td><td style="font-size:0.85rem;">{m.email}</td><td style="font-size:0.85rem; max-width:300px;">{m.message}</td><td style="font-size:0.85rem;">{timeAgo(m.created_at)}</td></tr>)}</tbody>
+          <thead><tr><th>Namn</th><th>E-post</th><th>Meddelande</th><th>När</th><th></th></tr></thead>
+          <tbody>{recentMessages.map(m => <tr><td>{m.name}</td><td style="font-size:0.85rem;">{m.email}</td><td style="font-size:0.85rem; max-width:300px;">{m.message}</td><td style="font-size:0.85rem;">{timeAgo(m.created_at)}</td><td style="white-space:nowrap;"><button type="button" class="msg-radera" data-id={m.id} title="Ta bort meddelandet">✕</button> <button type="button" class="msg-radera" data-email={m.email} title="Ta bort alla meddelanden från adressen">✕ alla</button></td></tr>)}</tbody>
         </table>
       </details>
 
@@ -532,7 +546,7 @@ function timeAgo(d: string) {
       const data = await res.json();
       exportedEmails = data.users.map((u: any) => u.email).join('\n');
       const result = document.getElementById('export-emails-result')!;
-      result.innerHTML = `<p style="font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">${data.count} adresser</p><textarea readonly style="width:100%; height:100px; padding:0.5rem; font-size:0.8rem; border:1px solid var(--color-border); border-radius:var(--radius); font-family:var(--font-sans); resize:vertical;">${exportedEmails}</textarea>`;
+      result.innerHTML = `<p style="font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">${data.count} adresser</p><textarea readonly style="width:100%; height:100px; padding:0.5rem; font-size:0.8rem; border:1px solid var(--color-border); border-radius:var(--radius); font-family:var(--font-sans); resize:vertical;">${esc(exportedEmails)}</textarea>`;
       document.getElementById('copy-emails-btn')!.style.display = '';
     });
     document.getElementById('copy-emails-btn')?.addEventListener('click', async () => {
@@ -542,6 +556,17 @@ function timeAgo(d: string) {
       setTimeout(() => btn.textContent = 'Kopiera till urklipp', 2000);
     });
 
+    document.querySelectorAll<HTMLButtonElement>('.msg-radera').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const id = btn.dataset.id ? Number(btn.dataset.id) : undefined;
+        const email = btn.dataset.email;
+        if (!confirm(id ? 'Ta bort meddelandet?' : `Ta bort alla meddelanden från ${email}?`)) return;
+        const res = await fetch('/api/admin/meddelanden', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ id, email }) });
+        if (!res.ok) { alert('Det gick inte att ta bort.'); return; }
+        if (id) btn.closest('tr')?.remove();
+        else document.querySelectorAll<HTMLButtonElement>('.msg-radera[data-email]').forEach(b => { if (b.dataset.email === email) b.closest('tr')?.remove(); });
+      });
+    });
     document.getElementById('dismiss-alerts')?.addEventListener('click', async () => {
       await fetch('/api/admin/alerts', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'dismiss-all' }) });
       document.querySelector('.admin-alerts')?.remove();
@@ -611,6 +636,9 @@ function timeAgo(d: string) {
     padding: 0.5rem;
     overflow-x: auto;
   }
+
+  .msg-radera { background: none; border: 1px solid var(--color-border); border-radius: 6px; color: #b91c1c; font-size: 0.75rem; padding: 0.15rem 0.4rem; cursor: pointer; }
+  .msg-radera:hover { background: #fef2f2; }
 
   .admin-alerts {
     padding: 1rem 1.2rem;

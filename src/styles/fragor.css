@@ -83,10 +83,14 @@
 .dtk-diagram { margin-bottom: 1.5rem; text-align: center; min-height: 300px; display: flex; align-items: center; justify-content: center; }
 .dtk-diagram-img { max-width: 100%; border: 1px solid var(--color-border); border-radius: var(--radius); background: #fff; cursor: zoom-in; }
 .dtk-rotated { transform: rotate(90deg); transform-origin: center center; margin: -10% 0; }
-.dtk-zoom-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; cursor: pointer; }
+.dtk-zoom-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; cursor: pointer; overflow: auto; overscroll-behavior: contain; }
 .dtk-zoom-inner { width: 100%; height: 100%; display: flex; align-items: center; justify-content: center; padding: 1rem; }
 .dtk-zoom-inner img { max-width: 95vw; max-height: 95vh; background: #fff; border-radius: var(--radius); box-shadow: 0 8px 32px rgba(0,0,0,0.4); }
 .dtk-zoom-inner img.dtk-zoom-rotated { transform: rotate(90deg); max-width: 95vh; max-height: 95vw; }
+.dtk-zoom-inner img:not(.dtk-zoom-rotated) { cursor: zoom-in; }
+.dtk-zoom-full .dtk-zoom-inner { display: block; width: max-content; height: auto; }
+.dtk-zoom-full .dtk-zoom-inner img { max-width: none; max-height: none; cursor: zoom-out; }
+.dtk-zoom-stang { position: fixed; top: 0.6rem; right: 0.6rem; z-index: 1001; width: 2.5rem; height: 2.5rem; border: none; border-radius: 50%; background: rgba(255,255,255,0.9); box-shadow: 0 2px 8px rgba(0,0,0,0.5); font-size: 1.2rem; line-height: 1; cursor: pointer; }
 
 /* LÄS-texten visas som text direkt på sidan */
 .las-box { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius); margin-bottom: 1.2rem; box-shadow: var(--shadow); }

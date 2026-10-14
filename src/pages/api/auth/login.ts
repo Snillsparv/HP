@@ -1,6 +1,7 @@
 import type { APIRoute } from 'astro';
 import { findUserByEmail, verifyPassword, createSession, getSessionFromCookies, migrateGuestToUser } from '../../../lib/auth.js';
 import { arSvampBob } from '../../../lib/svampbob.js';
+import { arLokalSokvag } from '../../../lib/sokvag.js';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -27,7 +28,7 @@ export const POST: APIRoute = async ({ request }) => {
     // Sidor som kräver inloggning kan skicka med vart användaren ska efteråt.
     // Svamp-Bob-kontot landar alltid på startsidan, där temat väntar.
     const redirect = form.get('redirect')?.toString() || '/trana';
-    const safeRedirect = arSvampBob(user) ? '/' : redirect.startsWith('/') && !redirect.startsWith('//') ? redirect : '/trana';
+    const safeRedirect = arSvampBob(user) ? '/' : arLokalSokvag(redirect) ? redirect : '/trana';
 
     return new Response(null, {
       status: 302,

@@ -149,7 +149,9 @@ export function forklaringHTML(q: Fraga): string {
   return '<div class="pq-res-expl pq-res-expl--saknas">Textförklaring till den här uppgiften kommer.</div>';
 }
 
-/** Klick på diagram och LÄS-bilder öppnar dem i helskärm. */
+/** Klick på diagram och LÄS-bilder öppnar dem i helskärm. Klick på den
+ * förstorade bilden växlar till full upplösning (scrolla för att flytta),
+ * klick utanför bilden eller på krysset stänger. */
 export function bindZoom(root: ParentNode) {
   root.querySelectorAll('.dtk-diagram-img').forEach(img => {
     img.addEventListener('click', () => {
@@ -157,12 +159,27 @@ export function bindZoom(root: ParentNode) {
       const isRotated = img.classList.contains('dtk-rotated');
       const overlay = document.createElement('div');
       overlay.className = 'dtk-zoom-overlay';
-      overlay.innerHTML = `<div class="dtk-zoom-inner"><img src="${src}" class="${isRotated ? 'dtk-zoom-rotated' : ''}" /></div>`;
+      overlay.innerHTML = `<div class="dtk-zoom-inner"><img src="${src}" class="${isRotated ? 'dtk-zoom-rotated' : ''}" /></div><button type="button" class="dtk-zoom-stang" aria-label="Stäng">✕</button>`;
       document.body.appendChild(overlay);
+      const big = overlay.querySelector('img') as HTMLImageElement;
       let touchMoved = false;
       overlay.addEventListener('touchstart', () => { touchMoved = false; });
       overlay.addEventListener('touchmove', () => { touchMoved = true; });
-      overlay.addEventListener('click', () => { if (!touchMoved) overlay.remove(); });
+      overlay.addEventListener('click', e => {
+        if (touchMoved) return;
+        // Klick på bilden växlar till full upplösning, centrerat där man klickade.
+        if (e.target === big && !isRotated) {
+          const r = big.getBoundingClientRect();
+          const fx = (e.clientX - r.left) / r.width;
+          const fy = (e.clientY - r.top) / r.height;
+          if (overlay.classList.toggle('dtk-zoom-full')) {
+            overlay.scrollLeft = big.offsetLeft + fx * big.offsetWidth - overlay.clientWidth / 2;
+            overlay.scrollTop = big.offsetTop + fy * big.offsetHeight - overlay.clientHeight / 2;
+          }
+          return;
+        }
+        overlay.remove();
+      });
     });
   });
 }

@@ -1,4 +1,5 @@
 import type { APIRoute } from 'astro';
+import { arLokalSokvag } from '../../../lib/sokvag.js';
 
 const GOOGLE_CLIENT_ID = import.meta.env.GOOGLE_CLIENT_ID || '';
 const REDIRECT_URI = import.meta.env.GOOGLE_REDIRECT_URI || 'http://localhost:4321/api/auth/google/callback';
@@ -18,7 +19,7 @@ export const GET: APIRoute = async ({ url }) => {
     access_type: 'offline',
     prompt: 'select_account',
   });
-  if (next.startsWith('/') && !next.startsWith('//')) params.set('state', next);
+  if (arLokalSokvag(next)) params.set('state', next);
 
   return new Response(null, {
     status: 302,

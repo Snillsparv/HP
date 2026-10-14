@@ -10,7 +10,13 @@ export const POST: APIRoute = async ({ request }) => {
     return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 403 });
   }
 
-  const { action, threadId, replyId, body } = await request.json();
+  const { action, threadId, replyId, userId, body } = await request.json();
+
+  // Spamkonton: kontot raderas och trådar, svar och sessioner följer med.
+  if (action === 'delete-user' && userId) {
+    await pool.query('DELETE FROM users WHERE id = $1 AND email <> $2', [userId, ADMIN_EMAIL]);
+    return new Response(JSON.stringify({ ok: true }));
+  }
 
   if (action === 'delete-thread' && threadId) {
     await pool.query('DELETE FROM threads WHERE id = $1', [threadId]);

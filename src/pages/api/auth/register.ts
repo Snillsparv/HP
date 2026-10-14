@@ -1,6 +1,8 @@
 import type { APIRoute } from 'astro';
 import { createUser, findUserByEmail, createSession, getSessionFromCookies, upgradeGuestToUser } from '../../../lib/auth.js';
 import { checkNewUser } from '../../../lib/alerts.js';
+import { formularFel } from '../../../lib/forum-spamfilter.js';
+import { loggaSpam, klientIp } from '../../../lib/forum-spam.js';
 
 export const POST: APIRoute = async ({ request }) => {
   try {
@@ -12,6 +14,12 @@ export const POST: APIRoute = async ({ request }) => {
 
     if (!name || !email || !password || !password2) {
       return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Fyll i alla fält')}` } });
+    }
+    // Spambotar fyller i det dolda fältet eller skickar formuläret direkt.
+    const formFel = formularFel(form, 2);
+    if (formFel) {
+      await loggaSpam(null, klientIp(request), `registrering: ${formFel}`, `${name} <${email}>`);
+      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Något gick fel. Ladda om sidan och försök igen.')}` } });
     }
     if (password.length < 8) {
       return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Lösenordet måste vara minst 8 tecken')}` } });

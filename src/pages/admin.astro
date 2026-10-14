@@ -30,6 +30,12 @@ const { rows: [msgCount] } = await pool.query('SELECT COUNT(*) as count FROM con
 // Contact messages
 const { rows: recentMessages } = await pool.query('SELECT * FROM contact_messages ORDER BY created_at DESC');
 
+// Spamskyddet i forumet (tabellen skapas av forum-spam.ts)
+import '../lib/forum-spam.js';
+const { rows: [spamDygn] } = await pool.query(`SELECT COUNT(*)::int AS count FROM forum_spam_log WHERE created_at > NOW() - INTERVAL '1 day'`);
+const { rows: [spamVecka] } = await pool.query(`SELECT COUNT(*)::int AS count FROM forum_spam_log WHERE created_at > NOW() - INTERVAL '7 days'`);
+const { rows: spamLogg } = await pool.query('SELECT orsak, text, created_at FROM forum_spam_log ORDER BY created_at DESC LIMIT 30');
+
 // Recent users
 const { rows: recentUsers } = await pool.query(`
   SELECT id, name, email, avatar_color, train_step, created_at
@@ -345,6 +351,17 @@ function timeAgo(d: string) {
         <table>
           <thead><tr><th>Namn</th><th>E-post</th><th>Meddelande</th><th>När</th></tr></thead>
           <tbody>{recentMessages.map(m => <tr><td>{m.name}</td><td style="font-size:0.85rem;">{m.email}</td><td style="font-size:0.85rem; max-width:300px;">{m.message}</td><td style="font-size:0.85rem;">{timeAgo(m.created_at)}</td></tr>)}</tbody>
+        </table>
+      </details>
+
+      <details class="admin-section">
+        <summary>Spamskydd i forumet ({spamDygn.count} stoppade senaste dygnet, {spamVecka.count} senaste veckan)</summary>
+        <div>
+          <p style="font-size:0.85rem; color:var(--color-muted); margin:0.3rem 0 0.6rem;">Inlägg och registreringar som filtret stoppat. Om något här ser ut att vara skrivet av en riktig person, säg till så justeras filtret.</p>
+        </div>
+        <table>
+          <thead><tr><th>När</th><th>Orsak</th><th>Text</th></tr></thead>
+          <tbody>{spamLogg.map(s => <tr><td style="font-size:0.85rem; white-space:nowrap;">{timeAgo(s.created_at)}</td><td style="font-size:0.85rem;">{s.orsak}</td><td style="font-size:0.8rem; max-width:420px; word-break:break-word;">{s.text.slice(0, 200)}</td></tr>)}</tbody>
         </table>
       </details>
 

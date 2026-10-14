@@ -1,5 +1,6 @@
 ---
 import Base from '../../layouts/Base.astro';
+import SpamSkydd from '../../components/SpamSkydd.astro';
 
 const error = Astro.url.searchParams.get('error');
 // Sidor som kräver inloggning skickar med ?next= så att man landar rätt efteråt.
@@ -24,6 +25,7 @@ const next = rawNext.startsWith('/') && !rawNext.startsWith('//') ? rawNext : ''
 
       <form method="POST" action="/api/auth/register">
         {next && <input type="hidden" name="redirect" value={next} />}
+        <SpamSkydd />
         <div class="form-group">
           <label for="reg-name">Namn / Användarnamn</label>
           <input type="text" id="reg-name" name="name" placeholder="Ditt namn eller alias" required />

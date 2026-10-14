@@ -2,10 +2,12 @@
 import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
 import { getThread, getReplies } from '../../lib/forum.js';
+import SpamSkydd from '../../components/SpamSkydd.astro';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const isAdmin = user?.email === 'snillsparv@gmail.com';
 const id = Number(Astro.params.id);
+const error = Astro.url.searchParams.get('error');
 const thread = await getThread(id);
 
 if (!thread) {
@@ -56,6 +58,9 @@ function timeAgo(dateStr: string) {
         {isAdmin && (
           <div class="admin-actions">
             <button class="btn-admin-delete" data-action="delete-thread" data-thread-id={thread.id}>Ta bort tråd</button>
+            {thread.user_id !== user?.id && (
+              <button class="btn-admin-delete" data-action="delete-user" data-user-id={thread.user_id} data-name={thread.user_name}>Radera kontot och allt det skrivit</button>
+            )}
           </div>
         )}
       </article>
@@ -78,6 +83,9 @@ function timeAgo(dateStr: string) {
               {isAdmin && (
                 <div class="admin-actions">
                   <button class="btn-admin-delete" data-action="delete-reply" data-reply-id={r.id}>Ta bort</button>
+                  {r.user_id !== user?.id && (
+                    <button class="btn-admin-delete" data-action="delete-user" data-user-id={r.user_id} data-name={r.user_name}>Radera kontot och allt det skrivit</button>
+                  )}
                 </div>
               )}
             </div>
@@ -89,8 +97,10 @@ function timeAgo(dateStr: string) {
       {user ? (
         <div class="reply-form-section">
           <h3>Skriv ett svar</h3>
+          {error && <div class="tip-box warning"><strong>{error}</strong></div>}
           <form method="POST" action="/api/forum/reply">
             <input type="hidden" name="thread_id" value={String(thread.id)} />
+            <SpamSkydd />
             <div class="form-group">
               <textarea name="body" rows="4" placeholder="Skriv ditt svar här..." required></textarea>
             </div>
@@ -113,14 +123,22 @@ function timeAgo(dateStr: string) {
       const action = btn.getAttribute('data-action');
       const threadId = btn.getAttribute('data-thread-id');
       const replyId = btn.getAttribute('data-reply-id');
-      const what = action === 'delete-thread' ? 'hela tråden' : 'svaret';
-      if (!confirm(`Vill du verkligen ta bort ${what}?`)) return;
+      const userId = btn.getAttribute('data-user-id');
+      const fraga = action === 'delete-user'
+        ? `Vill du radera kontot ${btn.getAttribute('data-name')} och alla dess trådar och svar? Det går inte att ångra.`
+        : `Vill du verkligen ta bort ${action === 'delete-thread' ? 'hela tråden' : 'svaret'}?`;
+      if (!confirm(fraga)) return;
       await fetch('/api/forum/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action, threadId: threadId ? Number(threadId) : undefined, replyId: replyId ? Number(replyId) : undefined }),
+        body: JSON.stringify({
+          action,
+          threadId: threadId ? Number(threadId) : undefined,
+          replyId: replyId ? Number(replyId) : undefined,
+          userId: userId ? Number(userId) : undefined,
+        }),
       });
-      if (action === 'delete-thread') window.location.href = '/forum';
+      if (action === 'delete-thread' || (action === 'delete-user' && btn.closest('.thread-post'))) window.location.href = '/forum';
       else window.location.reload();
     });
   });

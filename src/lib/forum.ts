@@ -1,4 +1,6 @@
 import pool from './db.js';
+// Laddar spamskyddet, som städar bort spam när servern startar.
+import './forum-spam.js';
 
 export interface Thread {
   id: number;

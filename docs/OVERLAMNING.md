@@ -138,6 +138,15 @@ det riktiga provet. Skiss:
 - `questions-kvant2-ht2021.ts` och `questions-verbal2-ht2021.ts` lägger in texten som `explanation` på frågor utan `videoId`. Provsidornas genomgång visar video om den finns, annars texten. Fokuserad träning visar samma text via frågebanken.
 - Spelar Jonas in en video senare räcker det att lägga till `videoId` på frågan: då visas videon i stället för texten.
 
+## Spamskydd i forumet
+
+- Bakgrund: från 10 oktober 2026 postade en bot omkring 1 800 engelska apotekstrådar med länkar, från ett nytt konto per tråd.
+- Reglerna finns i `src/lib/forum-spamfilter.ts` (rena funktioner): läkemedels- och kasinoord (vanliga läkemedelsnamn räknas bara när texten inte är på svenska), engelsk text med extern länk, engelsk text utan länk (vänligt meddelande om att forumet är på svenska) och externa länkar från konton yngre än ett dygn. Länkar till hpakuten.se är alltid tillåtna.
+- `src/lib/forum-spam.ts` kontrollerar varje ny tråd och nytt svar: spam stoppas och loggas i `forum_spam_log`, och ett helt nytt konto utan annan aktivitet som skickar uppenbar spam raderas direkt. Tempogränser: tre trådar per timme och åtta svar per tio minuter per konto. Nödbroms: när nya konton (yngre än ett dygn) startat fem trådar under en timme stoppas fler trådar från nya konton tillfälligt.
+- Formulären för registrering, ny tråd och svar har dolda fält (`src/components/SpamSkydd.astro`): ett fält som bara botar fyller i, och tidpunkten då formuläret visades (för snabba inskick stoppas).
+- Städning: när forummodulen laddas (och en kvart senare) tas trådar och svar sedan 1 oktober 2026 bort som filtret säkert klassar som spam, liksom konton som bara använts till spam. Resultatet syns som ett meddelande på `/admin`.
+- På `/admin` finns sektionen "Spamskydd i forumet" med de senaste stoppade försöken. I en forumtråd har admin knappen "Radera kontot och allt det skrivit".
+
 ## Hjärnkartan (spindeldiagram över delproven)
 
 - Design: `docs/svaghetstraning/hjarnkarta.md`. Kod: `src/lib/fokus/hjarnkarta.ts`

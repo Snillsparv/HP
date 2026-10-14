@@ -2,6 +2,7 @@
 import { getSessionFromCookies } from '../lib/auth.js';
 import { visaSvampBob } from '../lib/svampbob.js';
 import SvampBob from '../components/SvampBob.astro';
+import SpamSkydd from '../components/SpamSkydd.astro';
 
 interface Props {
   title: string;
@@ -143,6 +144,7 @@ const svampbobLatt = !isBB && currentPath !== '/' && visaSvampBob(user, Astro.ur
 
       <form method="POST" action="/api/auth/register">
         <input type="hidden" name="redirect" id="modal-redirect" value="" />
+        <SpamSkydd />
         <div class="signup-modal-fg">
           <label for="modal-reg-name">Namn / Användarnamn</label>
           <input type="text" id="modal-reg-name" name="name" placeholder="Ditt namn eller alias" required />

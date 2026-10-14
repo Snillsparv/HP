@@ -1,0 +1,13 @@
+---
+// Dolda fält mot spambotar, kontrolleras med formularFel() i
+// lib/forum-spamfilter.ts: ett fält som människor inte ser och därför lämnar
+// tomt, och tidpunkten då formuläret visades.
+---
+<div class="spamskydd" aria-hidden="true">
+  <label>Lämna tomt <input type="text" name="website" tabindex="-1" autocomplete="off" /></label>
+</div>
+<input type="hidden" name="t" value={Date.now().toString(36)} />
+
+<style>
+  .spamskydd { position: absolute; left: -10000px; top: auto; width: 1px; height: 1px; overflow: hidden; }
+</style>

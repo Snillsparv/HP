@@ -2,6 +2,7 @@
 import Base from '../../layouts/Base.astro';
 import { getSessionFromCookies } from '../../lib/auth.js';
 import { getThreads } from '../../lib/forum.js';
+import SpamSkydd from '../../components/SpamSkydd.astro';
 
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const category = Astro.url.searchParams.get('kategori') || '';
@@ -76,6 +77,7 @@ function timeAgo(dateStr: string) {
         <div class="forum-new-thread">
           <h2>Starta en ny tråd</h2>
           <form method="POST" action="/api/forum/threads">
+            <SpamSkydd />
             <div class="form-group">
               <label for="thread-category">Kategori</label>
               <select id="thread-category" name="category" required>

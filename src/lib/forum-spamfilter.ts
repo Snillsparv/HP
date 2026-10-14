@@ -92,18 +92,26 @@ export function harSpamord(text: string): boolean {
   return HARDA_RE.test(text) || (MJUKA_RE.test(text) && !serSvenskUt(text));
 }
 
+// Länkmarkering i HTML eller BBCode. Forumet visar bara ren text, så en
+// människa har ingen anledning att skriva sådant.
+const LANKKOD_RE = /<a\s[^>]*href|\[url[\]=]|\[link[\]=]/i;
+
 export type SpamOrsak =
   | 'spamord'         // läkemedel, kasino o.d.
+  | 'lankkod'         // <a href=...> eller [url=...]
+  | 'lankar'          // flera externa länkar i en text som inte är svensk
   | 'engelska_lank'   // engelsk text med extern länk
   | 'engelska'        // engelsk text utan länk (kan vara en riktig människa)
   | 'ny_lank';        // svensk text med extern länk från ett konto yngre än ett dygn
 
 // Säkra fall: inlägget är spam oavsett vem som skrev det.
-export const SAKER_SPAM: SpamOrsak[] = ['spamord', 'engelska_lank'];
+export const SAKER_SPAM: SpamOrsak[] = ['spamord', 'lankkod', 'lankar', 'engelska_lank'];
 
 export function spamOrsak(text: string, opts: { nyttKonto?: boolean } = {}): SpamOrsak | null {
   if (harSpamord(text)) return 'spamord';
   const lankar = externaLankar(text);
+  if (lankar.length && LANKKOD_RE.test(text)) return 'lankkod';
+  if (lankar.length >= 2 && !serSvenskUt(text)) return 'lankar';
   const engelska = serEngelskUt(text);
   if (engelska && lankar.length) return 'engelska_lank';
   if (engelska) return 'engelska';
@@ -113,6 +121,8 @@ export function spamOrsak(text: string, opts: { nyttKonto?: boolean } = {}): Spa
 
 export const SPAM_MEDDELANDE: Record<SpamOrsak, string> = {
   spamord: 'Inlägget stoppades av spamfiltret.',
+  lankkod: 'Inlägget stoppades av spamfiltret.',
+  lankar: 'Inlägget stoppades av spamfiltret.',
   engelska_lank: 'Inlägget stoppades av spamfiltret.',
   engelska: 'Forumet är på svenska. Skriv gärna ditt inlägg på svenska.',
   ny_lank: 'Nya konton kan inte dela länkar till andra sidor under det första dygnet. Ta bort länken eller försök igen i morgon.',

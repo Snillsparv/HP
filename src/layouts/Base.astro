@@ -26,6 +26,13 @@ const {
   themeColor = '#2563eb',
 } = Astro.props;
 const currentPath = Astro.url.pathname;
+// Kontaktformuläret skickar tillbaka till samma sida med ?kontakt=tack|fel|falt.
+const kontakt = Astro.url.searchParams.get('kontakt');
+const kontaktSida = (() => {
+  const u = new URL(Astro.url);
+  u.searchParams.delete('kontakt');
+  return u.pathname + u.search;
+})();
 const canonicalUrl = new URL(currentPath, 'https://www.hpakuten.se').href;
 const cookieHeader = Astro.request.headers.get('cookie');
 const user = await getSessionFromCookies(cookieHeader);
@@ -115,7 +122,17 @@ const svampbobLatt = !isBB && currentPath !== '/' && visaSvampBob(user, Astro.ur
       <div class="footer-contact" id="kontakt">
         <h3>Hör av dig!</h3>
         <p>{isBB ? 'Allt på den här sidan är helt gratis, men jag skulle bli jätteglad om du som ett litet tack skrev och berättade om du gillar innehållet och hur det gick på förlossningen! :)' : 'Allt på den här sidan är helt gratis, men jag skulle bli jätteglad om du som ett litet tack skrev och berättade om du gillar innehållet och hur det gick på provet! :)'}</p>
+        {kontakt === 'tack' ? (
+          <div class="contact-tack" role="status">
+            <strong>Tack för ditt meddelande!</strong> Jag läser allt som kommer in.
+            {!isBB && <> Har du en fråga om provet? Ställ den gärna i <a href="/forum">forumet</a>, där kan fler hjälpa till.</>}
+          </div>
+        ) : (
         <form class="contact-form" action="/api/contact" method="POST">
+          {kontakt === 'fel' && <p class="contact-fel" role="alert">Något gick fel. Ladda om sidan och försök igen.</p>}
+          {kontakt === 'falt' && <p class="contact-fel" role="alert">Fyll i namn, e-post och meddelande.</p>}
+          <input type="hidden" name="sida" value={kontaktSida} />
+          <SpamSkydd />
           <div class="contact-row">
             <input type="text" name="name" placeholder="Ditt namn" required />
             <input type="email" name="email" placeholder="Din e-post" required />
@@ -123,6 +140,7 @@ const svampbobLatt = !isBB && currentPath !== '/' && visaSvampBob(user, Astro.ur
           <textarea name="message" rows="3" placeholder="Skriv ditt meddelande..." required></textarea>
           <button type="submit" class="btn btn-primary">Skicka</button>
         </form>
+        )}
       </div>
       <p>&copy; {new Date().getFullYear()} Jonas von Essen · {isBB ? 'BBAkuten' : 'HPAkuten'}</p>
     </div>

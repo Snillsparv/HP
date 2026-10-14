@@ -1,7 +1,7 @@
 import type { APIRoute } from 'astro';
 import { createUser, findUserByEmail, createSession, getSessionFromCookies, upgradeGuestToUser } from '../../../lib/auth.js';
 import { checkNewUser } from '../../../lib/alerts.js';
-import { formularFel } from '../../../lib/forum-spamfilter.js';
+import { formularFel, namnArSpam } from '../../../lib/forum-spamfilter.js';
 import { loggaSpam, klientIp } from '../../../lib/forum-spam.js';
 
 export const POST: APIRoute = async ({ request }) => {
@@ -20,6 +20,11 @@ export const POST: APIRoute = async ({ request }) => {
     if (formFel) {
       await loggaSpam(null, klientIp(request), `registrering: ${formFel}`, `${name} <${email}>`);
       return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Något gick fel. Ladda om sidan och försök igen.')}` } });
+    }
+    // Namnet visas vid varje foruminlägg, så det får inte vara reklam.
+    if (namnArSpam(name)) {
+      await loggaSpam(null, klientIp(request), 'registrering: namn', `${name} <${email}>`);
+      return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Välj ett annat namn: högst 40 tecken och utan länkar.')}` } });
     }
     if (password.length < 8) {
       return new Response(null, { status: 302, headers: { Location: `/konto/registrera?error=${encodeURIComponent('Lösenordet måste vara minst 8 tecken')}` } });

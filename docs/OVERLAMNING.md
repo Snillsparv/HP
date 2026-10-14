@@ -140,12 +140,18 @@ det riktiga provet. Skiss:
 
 ## Spamskydd i forumet
 
-- Bakgrund: från 10 oktober 2026 postade en bot omkring 1 800 engelska apotekstrådar med länkar, från ett nytt konto per tråd.
-- Reglerna finns i `src/lib/forum-spamfilter.ts` (rena funktioner): läkemedels- och kasinoord (vanliga läkemedelsnamn räknas bara när texten inte är på svenska), engelsk text med extern länk, engelsk text utan länk (vänligt meddelande om att forumet är på svenska) och externa länkar från konton yngre än ett dygn. Länkar till hpakuten.se är alltid tillåtna.
-- `src/lib/forum-spam.ts` kontrollerar varje ny tråd och nytt svar: spam stoppas och loggas i `forum_spam_log`, och ett helt nytt konto utan annan aktivitet som skickar uppenbar spam raderas direkt. Tempogränser: tre trådar per timme och åtta svar per tio minuter per konto. Nödbroms: när nya konton (yngre än ett dygn) startat fem trådar under en timme stoppas fler trådar från nya konton tillfälligt.
-- Formulären för registrering, ny tråd och svar har dolda fält (`src/components/SpamSkydd.astro`): ett fält som bara botar fyller i, och tidpunkten då formuläret visades (för snabba inskick stoppas).
-- Städning: när forummodulen laddas (och en kvart senare) tas trådar och svar sedan 1 oktober 2026 bort som filtret säkert klassar som spam, liksom konton som bara använts till spam. Resultatet syns som ett meddelande på `/admin`.
-- På `/admin` finns sektionen "Spamskydd i forumet" med de senaste stoppade försöken. I en forumtråd har admin knappen "Radera kontot och allt det skrivit".
+- Bakgrund: från 10 oktober 2026 postade en bot omkring 1 800 engelska apotekstrådar med länkar, från ett nytt konto per tråd. Allt städades bort 14 oktober.
+- Reglerna finns i `src/lib/forum-spamfilter.ts` (rena funktioner, texten normaliseras först så att osynliga tecken och kyrilliska look-alikes inte hjälper):
+  - Varumärken för potensmedel stoppas alltid. Vanliga läkemedelsnamn (Strattera, propranolol, Zoloft ...) stoppas bara med en länk till en okänd sajt eller i engelsk text, och engelska ord som "pharmacy", "casino" och "payday" bara med en sådan länk. En svensk pluggare som nämner sin medicin eller citerar en ELF-text påverkas alltså inte.
+  - "Okänd sajt" = inte .se, inte hpakuten.se och inte en känd pluggsajt (YouTube, Quizlet, Memrise, Reddit, Google Docs, Khan Academy, studera.nu m.fl., listan `KANDA_SAJTER`).
+  - Engelsk text med en länk till en okänd sajt stoppas, liksom länkmarkering (`<a href>`, `[url]`) och flera okända länkar i en text som inte är svensk. Engelsk text utan länk släpps igenom.
+  - Konton som är nya i forumet (inget inlägg äldre än ett dygn och ingen annan aktivitet på sajten, eller kontot yngre än ett dygn) kan inte länka till okända sajter.
+  - Användarnamn med länkar eller spamord stoppas vid registrering (och vid Google-inloggning byts de mot början av e-postadressen).
+- `src/lib/forum-spam.ts` kontrollerar varje ny tråd och nytt svar. Ett stoppat inlägg får ett meddelande som säger vad som är fel, och texten finns kvar i formuläret (`src/lib/forum-utkast.ts`). Ett konto raderas direkt bara vid entydig spam (`arEntydigSpam`: spam tillsammans med en okänd länk) från ett konto yngre än ett dygn utan någon annan aktivitet; användaren får då ett meddelande om det. Tempogränser: tre trådar per timme och åtta svar per tio minuter per konto. Nödbroms: när konton som är nya i forumet startat åtta trådar under en timme stoppas fler sådana trådar tillfälligt.
+- Formulären för registrering, ny tråd och svar har dolda fält (`src/components/SpamSkydd.astro`): ett fält som bara botar fyller i, och tidpunkten då formuläret visades (tre sekunder för trådar, en sekund för svar).
+- Städning (`stadaSpam`): rör bara inlägg från spamperioden (1 oktober till 14 oktober 2026 kl. 15.30), skrivna av konton som skapades under perioden och inte av admin. Det som postats efter att filtret kom i drift bedöms aldrig om. Resultatet syns som ett meddelande på `/admin`.
+- På `/admin` finns sektionen "Spamskydd i forumet" med de senaste stoppade försöken (inklusive namn och e-post på raderade konton). I en forumtråd har admin knappen "Radera kontot och allt det skrivit"; den vägrar för konton som också pluggat på sajten (de raderas via användarsökningen).
+- Ej gjort: begränsning av antal registreringar per IP-adress och signerad tidsstämpel i formulären. Behövs om en bot börjar registrera konton i förväg och vänta ett dygn.
 
 ## Hjärnkartan (spindeldiagram över delproven)
 

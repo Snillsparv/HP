@@ -42,7 +42,7 @@ function timeAgo(dateStr: string) {
     <div class="container">
       <p class="thread-breadcrumb">
         <a href="/forum">Forum</a> &rsaquo;
-        <a href={`/forum?kategori=${thread.category}`}>{categoryLabels[thread.category] || thread.category}</a>
+        <a href={`/forum?kategori=${categoryLabels[thread.category] ? thread.category : 'allmant'}`}>{categoryLabels[thread.category] || categoryLabels.allmant}</a>
       </p>
 
       <article class="thread-post">
@@ -95,7 +95,7 @@ function timeAgo(dateStr: string) {
 
       <!-- Reply form -->
       {user ? (
-        <div class="reply-form-section">
+        <div class="reply-form-section" id="svara">
           <h3>Skriv ett svar</h3>
           {error && <div class="tip-box warning"><strong>{error}</strong></div>}
           <form method="POST" action="/api/forum/reply">
@@ -118,6 +118,9 @@ function timeAgo(dateStr: string) {
 </Base>
 
 <script>
+  import { behallUtkast } from '../../lib/forum-utkast.js';
+  behallUtkast(document.querySelector<HTMLFormElement>('form[action="/api/forum/reply"]'), `forumutkast:${location.pathname}`);
+
   document.querySelectorAll('.btn-admin-delete').forEach(btn => {
     btn.addEventListener('click', async () => {
       const action = btn.getAttribute('data-action');
@@ -125,10 +128,10 @@ function timeAgo(dateStr: string) {
       const replyId = btn.getAttribute('data-reply-id');
       const userId = btn.getAttribute('data-user-id');
       const fraga = action === 'delete-user'
-        ? `Vill du radera kontot ${btn.getAttribute('data-name')} och alla dess trådar och svar? Det går inte att ångra.`
+        ? `Vill du radera kontot ${btn.getAttribute('data-name')}? Alla dess trådar och svar försvinner, och även svar som andra skrivit i dess trådar. Det går inte att ångra.`
         : `Vill du verkligen ta bort ${action === 'delete-thread' ? 'hela tråden' : 'svaret'}?`;
       if (!confirm(fraga)) return;
-      await fetch('/api/forum/admin', {
+      const res = await fetch('/api/forum/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -138,6 +141,11 @@ function timeAgo(dateStr: string) {
           userId: userId ? Number(userId) : undefined,
         }),
       });
+      if (!res.ok) {
+        const svar = await res.json().catch(() => ({}));
+        alert(svar.error || `Det gick inte (${res.status}).`);
+        return;
+      }
       if (action === 'delete-thread' || (action === 'delete-user' && btn.closest('.thread-post'))) window.location.href = '/forum';
       else window.location.reload();
     });

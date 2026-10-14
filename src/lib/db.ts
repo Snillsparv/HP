@@ -53,6 +53,15 @@ await pool.query(`
   );
 `);
 
+// Index för kolumner som ON DELETE CASCADE och forumets spamskydd söker på,
+// så att det går snabbt att radera ett konto.
+await pool.query(`
+  CREATE INDEX IF NOT EXISTS sessions_user_idx ON sessions (user_id);
+  CREATE INDEX IF NOT EXISTS threads_user_idx ON threads (user_id);
+  CREATE INDEX IF NOT EXISTS replies_user_idx ON replies (user_id);
+  CREATE INDEX IF NOT EXISTS replies_thread_idx ON replies (thread_id);
+`);
+
 // Migrations for existing databases
 await pool.query(`
   ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_color TEXT DEFAULT '#2563eb';
@@ -178,6 +187,7 @@ await pool.query(`
     created_at TIMESTAMPTZ DEFAULT NOW()
   );
   CREATE INDEX IF NOT EXISTS test_results_user_test_idx ON test_results (user_id, test_id);
+  CREATE INDEX IF NOT EXISTS fokus_rundor_user_idx ON fokus_rundor (user_id);
 `);
 
 type RelatedWord = { word: string; gloss: string };

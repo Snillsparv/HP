@@ -3,6 +3,7 @@ import { findUserByGoogleId, findUserByEmail, createGoogleUser, createSession, g
 import pool from '../../../../lib/db.js';
 import { checkNewUser } from '../../../../lib/alerts.js';
 import { arSvampBob } from '../../../../lib/svampbob.js';
+import { namnArSpam } from '../../../../lib/forum-spamfilter.js';
 
 const GOOGLE_CLIENT_ID = import.meta.env.GOOGLE_CLIENT_ID || '';
 const GOOGLE_CLIENT_SECRET = import.meta.env.GOOGLE_CLIENT_SECRET || '';
@@ -36,6 +37,10 @@ export const GET: APIRoute = async ({ request }) => {
       headers: { Authorization: `Bearer ${tokens.access_token}` },
     });
     const profile = await userRes.json();
+    // Namnet visas vid foruminlägg; ett reklamnamn ersätts med början av e-postadressen.
+    if (profile.name && namnArSpam(profile.name)) {
+      profile.name = String(profile.email || '').split('@')[0].slice(0, 40);
+    }
 
     const current = await getSessionFromCookies(request.headers.get('cookie'));
     let user = await findUserByGoogleId(profile.id);

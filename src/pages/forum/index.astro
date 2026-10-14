@@ -8,6 +8,8 @@ const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const category = Astro.url.searchParams.get('kategori') || '';
 const threads = await getThreads(category || undefined);
 const error = Astro.url.searchParams.get('error');
+// Fel från formuläret för ny tråd visas vid formuläret.
+const formFel = Astro.url.searchParams.get('fel');
 
 const categories = [
   { value: 'allmant', label: 'Allmänt om HP', desc: 'Generella frågor, tips och diskussioner om högskoleprovet.' },
@@ -56,7 +58,7 @@ function timeAgo(dateStr: string) {
           {threads.map(t => (
             <a href={`/forum/${t.id}`} class="thread-item">
               <div class="thread-main">
-                <span class="thread-category-tag">{categories.find(c => c.value === t.category)?.label.split('(')[0].trim() || t.category}</span>
+                <span class="thread-category-tag">{(categories.find(c => c.value === t.category) || categories[0]).label.split('(')[0].trim()}</span>
                 <h3>{t.title}</h3>
                 <p class="thread-meta">
                   av <strong>{t.user_name}</strong> · {timeAgo(t.created_at)} · {t.reply_count} {t.reply_count === 1 ? 'svar' : 'svar'}
@@ -74,8 +76,9 @@ function timeAgo(dateStr: string) {
 
       <!-- New thread -->
       {user ? (
-        <div class="forum-new-thread">
+        <div class="forum-new-thread" id="ny-trad">
           <h2>Starta en ny tråd</h2>
+          {formFel && <div class="tip-box warning"><strong>{formFel}</strong></div>}
           <form method="POST" action="/api/forum/threads">
             <SpamSkydd />
             <div class="form-group">
@@ -107,6 +110,11 @@ function timeAgo(dateStr: string) {
     </div>
   </div>
 </Base>
+
+<script>
+  import { behallUtkast } from '../../lib/forum-utkast.js';
+  behallUtkast(document.querySelector<HTMLFormElement>('form[action="/api/forum/threads"]'), 'forumutkast:ny-trad');
+</script>
 
 <style>
   .forum-categories {

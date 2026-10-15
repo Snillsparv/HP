@@ -4,6 +4,7 @@
 import type { ExtraPass, Provtillfalle, ExtraFraga } from './types.js';
 
 export const provtillfallen: Provtillfalle[] = [
+  { id: 'vt2026', name: 'Våren 2026', date: '2026-04-18', source: 'https://www.studera.nu/hogskoleprov/resultat/resultat/senaste/' },
   { id: 'ht2025', name: 'Hösten 2025', date: '2025-10-19', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-facit-och-normering-hosten-2025/' },
   { id: 'vt2025', name: 'Våren 2025', date: '2025-04-05', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-varen-2025/' },
   { id: 'ht2024', name: 'Hösten 2024', date: '2024-10-20', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-och-facit-hosten-2024/' },
@@ -23,6 +24,7 @@ export const provtillfallen: Provtillfalle[] = [
   { id: 'ht2017', name: 'Hösten 2017', date: '2017-10-21', source: 'https://www.studera.nu/hogskoleprov/fpn/facit-och-provfragor-hosten-2017/' },
   { id: 'vt2017', name: 'Våren 2017', date: '2017-04-01', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-varen-2017/' },
   { id: 'ht2016', name: 'Hösten 2016', date: '2016-10-29', source: 'https://www.studera.nu/hogskoleprov/fpn/provfragor-hosten-2016/' },
+  { id: 'vt2016', name: 'Våren 2016', date: '2016-04-09', source: 'https://www.studera.nu/hogskoleprov/provfragor-hosten-2016/provfragor-varen-2016/' },
   { id: 'ht2015', name: 'Hösten 2015', date: '2015-10-24', source: 'https://www.studera.nu/hogskoleprov/fpn/facit-provfragor-och-normering-hosten-2015/' },
   { id: 'vt2015', name: 'Våren 2015', date: '2015-03-28', source: 'https://www.studera.nu/hogskoleprov/fpn/facit-provfragor-och-normering-varen-2015/' },
   { id: 'ht2014', name: 'Hösten 2014', date: '2014-10-25', source: 'https://www.studera.nu/hogskoleprov/fpn/facit-provfragor-och-normering-hosten-2014/' },

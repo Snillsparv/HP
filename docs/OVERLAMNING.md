@@ -39,23 +39,26 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
 - Bilder: `public/extraprov/<id>/*.webp`, klippta med
   `verktyg/extraprov/klipp_figurer.py`.
 - Rätt svar kommer alltid från UHR:s officiella facit-PDF, aldrig från egna
-  lösningar. Kontroll av alla 26 prov mot facit-PDF:erna:
+  lösningar. Kontroll av alla 28 prov mot facit-PDF:erna:
   `python3 verktyg/extraprov/kolla_facit_alla.py` (laddar ned facit till
-  `~/.cache/hp-facit` vid behov, senast "ALLT OK" för 3 640 uppgifter).
-- Övriga verktyg i `verktyg/extraprov/`: `validera-tex.mjs <filer>` (KaTeX),
+  `~/.cache/hp-facit` vid behov, senast "ALLT OK" för 3 920 uppgifter).
+  Skriptet hittar även facit som heter `hp-25b.pdf` (HT 2025) och hoppar över
+  ELF:s exempelfacit som ligger på vissa provsidor.
+- Övriga verktyg i `verktyg/extraprov/`: `validera-tex.mjs <filer>` (KaTeX;
+  katex finns inte i repots node_modules, installera det separat i en egen
+  katalog och kör skriptet därifrån),
   `testa-pass.mjs <passid...>` (Playwright mot lokal server på 4321:
   klickar igenom alla frågor, kollar bilder och förklaringar),
   `prep_prov.py <utkatalog> <provsida-url> [<normsida-url>]` (laddar ned PDF:er,
   renderar sidor, dumpar text, tolkar normering).
-- Serien omfattar HT 2012 till HT 2025 utom HT 2021 (sajtens
-  huvudmaterial). Två tillfällen saknas men finns hos UHR: VT 2016 (provet
-  2016-04-09; provsidan ligger utanför /fpn/:
-  https://www.studera.nu/hogskoleprov/provfragor-hosten-2016/provfragor-varen-2016/,
-  pass 2 till 5, facit-vt2016.pdf, normering på
-  /hogskoleprov/fpn/normeringstabeller-varen-2016/) och VT 2026 (provet
-  2026-04-18, på /hogskoleprov/resultat/resultat/senaste/; hämta det innan
-  HT 2026-resultaten ersätter sidan). Före HT 2012 publicerar studera.nu bara
-  normeringstabeller.
+- Serien omfattar HT 2012 till VT 2026 utom HT 2021 (sajtens
+  huvudmaterial). VT 2016 (provet 2016-04-09) har sin provsida utanför /fpn/:
+  https://www.studera.nu/hogskoleprov/provfragor-hosten-2016/provfragor-varen-2016/.
+  VT 2026 (provet 2026-04-18) låg på /hogskoleprov/resultat/resultat/senaste/,
+  som byts ut när nästa provs resultat kommer; facit finns kvar på
+  https://www.studera.nu/globalassets/05-hogskoleprovet/hp-2026-04-18/hogskoleprovet-facit-26a.pdf.
+  Nya prov läggs till på samma sätt: hämta dem medan de ligger på "senaste".
+  Före HT 2012 publicerar studera.nu bara normeringstabeller.
 
 ## Svamp-Bob-temat (Otto)
 

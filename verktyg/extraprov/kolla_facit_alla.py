@@ -8,15 +8,25 @@ UHR = os.environ.get('HP_FACIT_DIR') or os.path.join(os.path.expanduser('~'), '.
 reg = open(ROT + 'register.ts', encoding='utf-8').read()
 prov = re.findall(r"id: '([a-z0-9]+)',\s*name: '([^']*)',\s*date: '([^']*)',\s*source: '([^']*)'", reg)
 
+# Prov vars provsida är tillfällig ("senaste") hämtar facit direkt.
+FAST_FACIT = {
+    'vt2026': 'https://www.studera.nu/globalassets/05-hogskoleprovet/hp-2026-04-18/hogskoleprovet-facit-26a.pdf',
+}
+
 def hamta_facit(pid, url):
     d = os.path.join(UHR, pid); os.makedirs(d, exist_ok=True)
     lokala = sorted(f for f in glob.glob(os.path.join(d, '*facit*.pdf')) if 'exempel' not in f)
     if lokala:
         v1 = [f for f in lokala if 'version-1' in f or 'v1' in f or 'version1' in f]
         return (v1 or lokala)[0], 'lokal'
+    if pid in FAST_FACIT:
+        ut = os.path.join(d, 'facit-dl.pdf')
+        subprocess.run(['curl', '-sL', '-o', ut, FAST_FACIT[pid]], check=True)
+        return ut, 'nedladdad ' + FAST_FACIT[pid]
     sida = subprocess.run(['curl', '-sL', url], capture_output=True, text=True).stdout
-    lankar = re.findall(r'href="([^"]*facit[^"]*\.pdf)"', sida, re.I)
-    lankar = [html.unescape(l) for l in lankar]
+    # Facit heter oftast *facit*.pdf men ibland bara hp-25b.pdf; exempelprovens facit hoppas över.
+    lankar = re.findall(r'href="([^"]*(?:facit[^"]*|/hp-\d{2}[ab])\.pdf)"', sida, re.I)
+    lankar = [html.unescape(l) for l in lankar if 'exempel' not in l.lower()]
     if not lankar:
         return None, 'ingen facitlänk på ' + url
     v1 = [l for l in lankar if 'version-1' in l or 'v1' in l or 'version1' in l]

@@ -47,8 +47,9 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
 - Övriga verktyg i `verktyg/extraprov/`: `validera-tex.mjs <filer>` (KaTeX;
   katex finns inte i repots node_modules, installera det separat i en egen
   katalog och kör skriptet därifrån),
-  `testa-pass.mjs <passid...>` (Playwright mot lokal server på 4321:
-  klickar igenom alla frågor, kollar bilder och förklaringar),
+  `testa-pass.mjs <passid...>` (Playwright mot lokal server på 4321, eller
+  mot sajten med `HP_BAS=https://www.hpakuten.se`: klickar igenom alla
+  frågor, kollar bilder och förklaringar),
   `prep_prov.py <utkatalog> <provsida-url> [<normsida-url>]` (laddar ned PDF:er,
   renderar sidor, dumpar text, tolkar normering).
 - Serien omfattar HT 2012 till VT 2026 utom HT 2021 (sajtens

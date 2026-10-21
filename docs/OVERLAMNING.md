@@ -55,10 +55,10 @@ någon annan) kan fortsätta från ett annat konto utan att tappa sammanhang.
 - Serien omfattar HT 2012 till VT 2026 utom HT 2021 (sajtens
   huvudmaterial). VT 2016 (provet 2016-04-09) har sin provsida utanför /fpn/:
   https://www.studera.nu/hogskoleprov/provfragor-hosten-2016/provfragor-varen-2016/.
-  VT 2026 (provet 2026-04-18) låg på /hogskoleprov/resultat/resultat/senaste/,
-  som byts ut när nästa provs resultat kommer; facit finns kvar på
-  https://www.studera.nu/globalassets/05-hogskoleprovet/hp-2026-04-18/hogskoleprovet-facit-26a.pdf.
-  Nya prov läggs till på samma sätt: hämta dem medan de ligger på "senaste".
+  Nya prov ligger först på /hogskoleprov/resultat/resultat/senaste/, som byts
+  ut vid nästa prov; sedan flyttar UHR dem till /hogskoleprov/fpn/ (VT 2026:
+  provfragor-facit-och-normering-varen-20262/). Byt källänken i registret
+  när provet har flyttat.
   Före HT 2012 publicerar studera.nu bara normeringstabeller.
 
 ## Svamp-Bob-temat (Otto)

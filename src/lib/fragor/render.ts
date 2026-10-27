@@ -4,6 +4,8 @@
 // extraprovens provlöpare och av fokuserad träning. Stilarna ligger i
 // src/styles/fragor.css.
 
+import { harVideo, videoIframe } from '../video.js';
+
 export interface Fraga {
   num: number;
   text: string;
@@ -145,7 +147,7 @@ export function tranaLankHTML(alt: TranaLank): string {
 /** Förklaringen till en fråga: textförklaring, annars video, annars platshållare. */
 export function forklaringHTML(q: Fraga): string {
   if (q.explanation) return `<div class="pq-res-expl"><p class="pq-res-expl-label">Förklaring</p>${q.explanation}</div>`;
-  if (q.videoId) return `<div class="pq-res-video" style="margin-top:1rem;"><p style="font-weight:600; font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">Förklaring:</p><div class="video-embed"><iframe src="https://player.vimeo.com/video/${q.videoId}?dnt=1&title=0&byline=0&portrait=0" title="Förklaring uppgift ${q.num}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div></div>`;
+  if (harVideo(q.videoId)) return `<div class="pq-res-video" style="margin-top:1rem;"><p style="font-weight:600; font-size:0.85rem; color:var(--color-muted); margin-bottom:0.5rem;">Förklaring:</p><div class="video-embed">${videoIframe(q.videoId, `Förklaring uppgift ${q.num}`, { lazy: true })}</div></div>`;
   return '<div class="pq-res-expl pq-res-expl--saknas">Textförklaring till den här uppgiften kommer.</div>';
 }
 

@@ -21,6 +21,7 @@ import Base from '../layouts/Base.astro';
     import { part3 } from '../lib/exercises-part3.js';
     import { part4 } from '../lib/exercises-part4.js';
     import type { Exercise, Category } from '../lib/exercises.js';
+    import { harVideo, videoIframe } from '../lib/video.js';
 
     const allCats = [...cats1, ...part2, ...part3, ...part4];
     const find = (id: string) => allCats.find(c => c.id === id)!;
@@ -113,17 +114,17 @@ import Base from '../layouts/Base.astro';
     }
 
     function initVideoPlaceholders() {
-      // On exercises page, load Vimeo embeds directly (not lazy placeholders)
+      // On exercises page, load video embeds directly (not lazy placeholders)
       root.querySelectorAll('.video-placeholder').forEach(el => {
         const id = el.getAttribute('data-vimeo');
-        el.outerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${id}?dnt=1&title=0&byline=0&portrait=0" title="Video" frameborder="0" allow="fullscreen; picture-in-picture" allowfullscreen loading="lazy"></iframe></div>`;
+        el.outerHTML = `<div class="video-embed">${videoIframe(id, 'Video', { lazy: true })}</div>`;
       });
     }
 
     function renderCategoryList() {
       // Show intro video
       currentVideoId = null;
-      videoRoot.innerHTML = `<div style="margin-bottom:1.5rem;"><div class="video-embed"><iframe src="https://player.vimeo.com/video/${introVideo}?dnt=1&title=0&byline=0&portrait=0" title="Introduktion" frameborder="0" allow="fullscreen; picture-in-picture" allowfullscreen></iframe></div><p style="text-align:center; color:var(--color-muted); font-size:0.85rem; margin-top:0.5rem;">Se min introduktion till matten på HP</p></div>`;
+      videoRoot.innerHTML = `<div style="margin-bottom:1.5rem;"><div class="video-embed">${videoIframe(introVideo, 'Introduktion')}</div><p style="text-align:center; color:var(--color-muted); font-size:0.85rem; margin-top:0.5rem;">Se min introduktion till matten på HP</p></div>`;
 
       root.innerHTML = `
         <div class="ganger-box">
@@ -204,8 +205,8 @@ import Base from '../layouts/Base.astro';
       const newVideoId = catVideos[currentCat.id] || null;
       if (newVideoId !== currentVideoId) {
         currentVideoId = newVideoId;
-        if (newVideoId) {
-          videoRoot.innerHTML = `<div style="margin-bottom:1rem;"><div class="video-embed"><iframe src="https://player.vimeo.com/video/${newVideoId}?dnt=1&title=0&byline=0&portrait=0" title="Video" frameborder="0" allow="fullscreen; picture-in-picture" allowfullscreen></iframe></div><p style="text-align:center; color:var(--color-muted); font-size:0.8rem; margin-top:0.3rem;">Se min genomgång av ${currentCat.name.replace(/^\d+\.\s*/, '').replace(/^Bonus:\s*/, '')}</p></div>`;
+        if (harVideo(newVideoId)) {
+          videoRoot.innerHTML = `<div style="margin-bottom:1rem;"><div class="video-embed">${videoIframe(newVideoId, 'Video')}</div><p style="text-align:center; color:var(--color-muted); font-size:0.8rem; margin-top:0.3rem;">Se min genomgång av ${currentCat.name.replace(/^\d+\.\s*/, '').replace(/^Bonus:\s*/, '')}</p></div>`;
         } else {
           videoRoot.innerHTML = '';
         }

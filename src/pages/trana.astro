@@ -5,6 +5,7 @@ import { extraStatistik, formatAntal } from '../lib/extraprov/register.js';
 import { hamtaHandelser } from '../lib/fokus/historik.js';
 import { byggHjarnkarta } from '../lib/fokus/hjarnkarta.js';
 import { miniKartaSVG } from '../lib/fokus/hjarnkarta-vy.js';
+import { videoIframe } from '../lib/video.js';
 const user = await getSessionFromCookies(Astro.request.headers.get('cookie'));
 const serverStep = user?.train_step || 1;
 const extra = extraStatistik();
@@ -57,7 +58,7 @@ const miniKarta = miniKartaSVG(56, karta);
             <h2>Se överblicken</h2>
           </div>
           <p>Börja med att titta på den här videon så att du förstår hur provet är upplagt.</p>
-          <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181680968?dnt=1&title=0&byline=0&portrait=0" title="Överblick över högskoleprovet" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
+          <div class="video-embed" set:html={videoIframe('1181680968', 'Överblick över högskoleprovet')} />
           <button class="btn btn-primary train-done-btn" data-next="2">Jag har kollat!</button>
         </div>
 
@@ -226,6 +227,8 @@ const miniKarta = miniKartaSVG(56, karta);
   </script>
 
   <script>
+    import { videoIframe } from '../lib/video.js';
+
     const STORAGE_KEY = 'hp-train-step';
     // Ordsteget 4b sköts in som steg 5, så sparade steg från gamla
     // numreringen (5, 6, 7) knuffas fram ett snäpp en gång.
@@ -314,7 +317,7 @@ const miniKarta = miniKartaSVG(56, karta);
         } else {
           btn.classList.add('delprov-video-btn--active');
           player.style.display = 'block';
-          player.innerHTML = `<div class="video-embed"><iframe src="https://player.vimeo.com/video/${vimeoId}?dnt=1&title=0&byline=0&portrait=0" title="${btn.textContent}" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>`;
+          player.innerHTML = `<div class="video-embed">${videoIframe(vimeoId, btn.textContent || 'Video')}</div>`;
         }
       });
     });

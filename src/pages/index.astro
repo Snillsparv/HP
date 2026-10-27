@@ -4,6 +4,7 @@ import { getSessionFromCookies } from '../lib/auth.js';
 import { extraStatistik, formatAntal } from '../lib/extraprov/register.js';
 import { visaSvampBob, svampbobKaka } from '../lib/svampbob.js';
 import SvampBob from '../components/SvampBob.astro';
+import { videoIframe } from '../lib/video.js';
 
 const cookieHeader = Astro.request.headers.get('cookie');
 const user = await getSessionFromCookies(cookieHeader);
@@ -210,7 +211,7 @@ const extra = extraStatistik();
       </p>
 
       <div style="max-width: 800px; margin: 2rem auto;">
-        <div class="video-embed"><iframe src="https://player.vimeo.com/video/1181837285?dnt=1&title=0&byline=0&portrait=0" title="Introduktion till HPAkuten" frameborder="0" allow="autoplay; fullscreen; picture-in-picture" allowfullscreen></iframe></div>
+        <div class="video-embed" set:html={videoIframe('1181837285', 'Introduktion till HPAkuten')} />
       </div>
 
       <div class="guide-text">

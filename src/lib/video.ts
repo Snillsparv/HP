@@ -145,10 +145,11 @@ export function harVideo(vimeoId: string | null | undefined): boolean {
 export function videoUrl(vimeoId: string | null | undefined, val: VideoVal = {}): string | null {
   if (!vimeoId || !(vimeoId in BUNNY)) return null;
   // preload=false gör att ingen video laddas ner förrän någon trycker på play,
-  // levelCap=true håller kvaliteten i nivå med spelarens storlek. Båda sparar
-  // trafik, vilket är det Bunny tar betalt för.
+  // vilket sparar trafik (det Bunny tar betalt för). Kvaliteten är inte spärrad
+  // till spelarens storlek, så spelaren går upp till 1080p så fort besökarens
+  // uppkoppling räcker.
   const spela = val.autoplay ? 'true' : 'false';
-  return `https://player.mediadelivery.net/embed/${BIBLIOTEK}/${BUNNY[vimeoId]}?autoplay=${spela}&preload=${spela}&levelCap=true`;
+  return `https://player.mediadelivery.net/embed/${BIBLIOTEK}/${BUNNY[vimeoId]}?autoplay=${spela}&preload=${spela}`;
 }
 
 /** Hela iframe-taggen för en video, eller tom sträng om videon saknas. */

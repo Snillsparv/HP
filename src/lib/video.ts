@@ -69,7 +69,7 @@ const BUNNY: Record<string, string> = {
   '1183892098': 'c93ff532-5e30-445d-ae5e-523871deeb1d', // KVANT2 19
   '1183888958': '58c19945-ecd8-49b5-a7f8-7a542415f2b9', // KVANT2 2
   '1183892338': '1d731d61-9364-4dcf-aa7a-e88c9147c466', // KVANT2 20
-  // '1183892559': saknas ännu i Bunny (KVANT2 21)
+  '1183892559': '04eebd6f-2a4f-4068-ad6f-b05b28048549', // KVANT2 21
   '1183892737': 'b56ec8d7-1046-43d6-a15f-261de44a6765', // KVANT2 22
   '1183893245': '814d107d-5bd0-44b4-b21b-0354474c84a4', // KVANT2 23
   '1183893523': '31ee13bf-9c2c-4132-bd42-a7df1b2fea6e', // KVANT2 24
